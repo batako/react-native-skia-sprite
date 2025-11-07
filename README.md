@@ -58,6 +58,7 @@ export function HeroPreview() {
 - `image`: Accepts both `require()` assets and `SkImage` values.
 - `data.frames`: Array of `{ x, y, w, h, duration? }`. `duration` (ms) overrides the default fps per frame.
 - `data.animations` / `animations`: Map animation names to frame indexes (e.g. `{ walk: [0, 1, 2] }`). Pass an explicit `animations` prop when you need runtime overrides.
+- `data.animationsMeta` / `animationsMeta`: Optional per-animation flags (e.g. `{ blink: { loop: false } }`) that override the component-level `loop` prop.
 - `initialAnimation`: Name of the animation that should play first. Falls back to the first available animation or raw frame order.
 - `autoplay`: Whether the component should start advancing frames immediately (defaults to `true`).
 - `speedScale`: Multiplier applied to frame timing (`2` renders twice as fast, `0.5` slows down).
@@ -65,6 +66,34 @@ export function HeroPreview() {
 - `fps`: Default playback speed for frames without an explicit `duration`.
 - `loop`: When `false`, stops on the last frame of the active animation and fires `onEnd` once.
 - `spriteScale`: Scales the rendered width/height without modifying frame data (defaults to `1`).
+
+### Controlling playback
+
+`SpriteAnimator` exposes an imperative handle so you can drive playback from buttons, editors, or gesture handlers:
+
+```tsx
+import { SpriteAnimator, type SpriteAnimatorHandle } from "react-native-skia-sprite-animator";
+
+const animatorRef = useRef<SpriteAnimatorHandle>(null);
+
+return (
+  <>
+    <SpriteAnimator ref={animatorRef} data={heroData} image={heroSheet} autoplay={false} />
+    <Button title="Play Idle" onPress={() => animatorRef.current?.play("idle")} />
+    <Button title="Blink Once" onPress={() => animatorRef.current?.play("blink", { speedScale: 1.5 })} />
+    <Button title="Pause" onPress={() => animatorRef.current?.pause()} />
+    <Button title="Resume" onPress={() => animatorRef.current?.resume()} />
+  </>
+);
+```
+
+Available methods:
+
+- `play(name?: string, opts?: { fromFrame?: number; speedScale?: number })`: Switch animations (or restart the current one) and begin playback when the sequence has at least two frames.
+- `stop()`: Halt playback and reset the current animation to frame `0`.
+- `pause()` / `resume()`: Suspend or restart the internal timer without changing the current frame index.
+- `setFrame(frameIndex: number)`: Jump to any frame within the active animation, regardless of playing state.
+- `isPlaying()` / `getCurrentAnimation()`: Inspect the latest animator status without forcing a re-render.
 
 ### SpriteData JSON shape
 
@@ -79,6 +108,10 @@ const data: SpriteData = {
   animations: {
     walk: [0, 1],
     blink: [1],
+  },
+  animationsMeta: {
+    walk: { loop: true },
+    blink: { loop: false },
   },
   meta: {
     displayName: "Hero Walk",
@@ -110,6 +143,9 @@ const payload: SpriteSavePayload = {
   },
   animations: {
     walk: [0, 1, 2],
+  },
+  animationsMeta: {
+    blink: { loop: false },
   },
 };
 

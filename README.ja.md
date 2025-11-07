@@ -58,6 +58,7 @@ export function HeroPreview() {
 - `image`: `require()` や `SkImage` をそのまま渡せます。
 - `data.frames`: `{ x, y, w, h, duration? }` の配列。`duration` を指定するとフレーム単位でミリ秒制御できます。
 - `data.animations` / `animations`: `{ walk: [0, 1, 2] }` のようにアニメーション名とフレーム番号を紐づけます。ランタイムで差し替えたい場合は props の `animations` を渡してください。
+- `data.animationsMeta` / `animationsMeta`: `{ blink: { loop: false } }` のようにアニメーション単位の設定を記述し、コンポーネント全体の `loop` 設定を上書きできます。
 - `initialAnimation`: 再生開始時に選択するアニメーション名。指定が無い場合は最初のアニメーション、または素のフレーム順を使います。
 - `autoplay`: コンポーネントがマウントされた直後に自動で再生するかどうか (デフォルト `true`)。
 - `speedScale`: 再生速度の倍率。`2` で 2 倍速、`0.5` で半分の速度になります。
@@ -65,6 +66,34 @@ export function HeroPreview() {
 - `fps`: `duration` を指定していないフレームのデフォルト速度。
 - `loop`: false の場合はアニメーションの最後のフレームで停止し、`onEnd` が一度だけ呼ばれます。
 - `spriteScale`: 描画サイズを倍率指定したい場合に使用します (デフォルト 1)。
+
+### 再生制御 (Imperative Handle)
+
+`SpriteAnimator` は `ref` 経由で Imperative Handle を公開しているため、ボタンやエディタ UI から直接アニメーションを制御できます。
+
+```tsx
+import { SpriteAnimator, type SpriteAnimatorHandle } from "react-native-skia-sprite-animator";
+
+const animatorRef = useRef<SpriteAnimatorHandle>(null);
+
+return (
+  <>
+    <SpriteAnimator ref={animatorRef} data={heroData} image={heroSheet} autoplay={false} />
+    <Button title="Play Idle" onPress={() => animatorRef.current?.play("idle")} />
+    <Button title="Blink Once" onPress={() => animatorRef.current?.play("blink", { speedScale: 1.5 })} />
+    <Button title="Pause" onPress={() => animatorRef.current?.pause()} />
+    <Button title="Resume" onPress={() => animatorRef.current?.resume()} />
+  </>
+);
+```
+
+利用できるメソッド:
+
+- `play(name?: string, opts?: { fromFrame?: number; speedScale?: number })`: 指定アニメーションを最初または任意のフレームから再生開始。
+- `stop()`: 再生を止め、現在のアニメーションをフレーム `0` に戻す。
+- `pause()` / `resume()`: 現在位置を維持したままタイマーを一時停止／再開。
+- `setFrame(frameIndex: number)`: 再生状態に関わらず、アクティブなアニメーション内の任意フレームへジャンプ。
+- `isPlaying()` / `getCurrentAnimation()`: 最新の再生状態やアニメーション名を参照（レンダーは発生しません）。
 
 ### SpriteData の JSON 例
 
@@ -79,6 +108,10 @@ const data: SpriteData = {
   animations: {
     walk: [0, 1],
     blink: [1],
+  },
+  animationsMeta: {
+    walk: { loop: true },
+    blink: { loop: false },
   },
   meta: {
     displayName: "Hero Walk",
@@ -110,6 +143,9 @@ const payload: SpriteSavePayload = {
   },
   animations: {
     walk: [0, 1, 2],
+  },
+  animationsMeta: {
+    blink: { loop: false },
   },
 };
 

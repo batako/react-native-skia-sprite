@@ -20,16 +20,16 @@ Godot の `AnimatedSprite2D` に近い操作性を `react-native-skia-sprite-ani
 
 ### Phase 2: 再生制御ロジック
 
-- [ ] hooks: `const [animState, setAnimState] = useState({ name, playing, frameCursor, speed });` を導入。  
-- [ ] `useEffect` のタイマーは「現在のアニメーションに属するフレーム列」を参照するようリファクタ。  
-- [ ] `loop` はアニメーションごとに指定できるようにし、`animationsMeta?: Record<string, { loop?: boolean }>` を検討。  
-- [ ] `play(name: string, opts?: { fromFrame?: number })` の実装:  
+- [x] hooks: `const [animState, setAnimState] = useState({ name, playing, frameCursor, speed });` を導入。  
+- [x] `useEffect` のタイマーは「現在のアニメーションに属するフレーム列」を参照するようリファクタ。  
+- [x] `loop` はアニメーションごとに指定できるようにし、`animationsMeta?: Record<string, { loop?: boolean }>` を検討。  
+- [x] `play(name: string, opts?: { fromFrame?: number })` の実装:  
   - 既存のタイマーをクリア  
   - 指定アニメーションの最初（または `fromFrame`）から再生  
   - state を更新して再生ループを再開
-- [ ] `stop()`→ playing=false, カーソル維持 or 0 に戻す (オプション)  
-- [ ] `pause()` / `resume()`→ タイマー停止と再開  
-- [ ] `setFrame(frameIndex: number)`→ playing 状態に関係なくフレームを即時反映
+- [x] `stop()`→ playing=false, カーソル維持 or 0 に戻す (オプション)  
+- [x] `pause()` / `resume()`→ タイマー停止と再開  
+- [x] `setFrame(frameIndex: number)`→ playing 状態に関係なくフレームを即時反映
 
 ### Phase 3: Imperative handle / events
 

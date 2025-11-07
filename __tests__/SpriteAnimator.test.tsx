@@ -1,6 +1,10 @@
 import React from "react";
 import { act, create, ReactTestRenderer } from "react-test-renderer";
-import { SpriteAnimator, type SpriteFrame } from "../src/SpriteAnimator";
+import {
+  SpriteAnimator,
+  type SpriteAnimatorHandle,
+  type SpriteFrame,
+} from "../src/SpriteAnimator";
 import type { ImageSourcePropType } from "react-native";
 import type { SkImage } from "@shopify/react-native-skia";
 
@@ -59,7 +63,7 @@ describe("SpriteAnimator", () => {
     expect(imageNode.props.height).toBe(512);
   });
 
-  it("advances frames according to fps and calls onEnd when loop is false", () => {
+  it("advances frames according to fps and calls onEnd when loop is false", async () => {
     const onEnd = jest.fn();
     const renderer = renderComponent(
       <SpriteAnimator
@@ -71,7 +75,7 @@ describe("SpriteAnimator", () => {
       />
     );
 
-    act(() => {
+    await act(async () => {
       jest.advanceTimersByTime(110);
     });
 
@@ -79,8 +83,11 @@ describe("SpriteAnimator", () => {
     expect(imageNode.props.x).toBe(-64);
     expect(imageNode.props.y).toBeCloseTo(0);
 
-    act(() => {
+    await act(async () => {
       jest.advanceTimersByTime(110);
+    });
+    await act(async () => {
+      jest.runOnlyPendingTimers();
     });
 
     expect(onEnd).toHaveBeenCalledTimes(1);
@@ -184,5 +191,119 @@ describe("SpriteAnimator", () => {
       { translateX: 64 },
       { scaleX: -1 },
     ]);
+  });
+
+  it("allows controlling playback via the imperative ref", () => {
+    const controller = React.createRef<SpriteAnimatorHandle>();
+    const renderer = renderComponent(
+      <SpriteAnimator
+        ref={controller}
+        image={mockSkImage()}
+        data={{ frames }}
+        animations={{ reverse: [1, 0] }}
+        autoplay={false}
+      />
+    );
+
+    act(() => {
+      controller.current?.play("reverse");
+    });
+
+    let imageNode = renderer.root.findByType(skiaMock.MockSkiaImage);
+    expect(imageNode.props.x).toBe(-64);
+
+    act(() => {
+      controller.current?.setFrame(1);
+    });
+
+    imageNode = renderer.root.findByType(skiaMock.MockSkiaImage);
+    expect(imageNode.props.x).toBeCloseTo(0);
+  });
+
+  it("stops playback and resets to the first frame", () => {
+    const controller = React.createRef<SpriteAnimatorHandle>();
+    const renderer = renderComponent(
+      <SpriteAnimator ref={controller} image={mockSkImage()} data={{ frames }} autoplay={false} />
+    );
+
+    act(() => {
+      controller.current?.play();
+    });
+    expect(controller.current?.isPlaying()).toBe(true);
+
+    act(() => {
+      controller.current?.stop();
+    });
+
+    expect(controller.current?.isPlaying()).toBe(false);
+    const imageNode = renderer.root.findByType(skiaMock.MockSkiaImage);
+    expect(imageNode.props.x).toBeCloseTo(0);
+  });
+
+  it("pauses and resumes playback", () => {
+    const controller = React.createRef<SpriteAnimatorHandle>();
+    const renderer = renderComponent(
+      <SpriteAnimator ref={controller} image={mockSkImage()} data={{ frames }} fps={10} />
+    );
+
+    act(() => {
+      controller.current?.play();
+    });
+
+    act(() => {
+      jest.advanceTimersByTime(110);
+    });
+
+    let imageNode = renderer.root.findByType(skiaMock.MockSkiaImage);
+    expect(imageNode.props.x).toBe(-64);
+
+    act(() => {
+      controller.current?.pause();
+    });
+    expect(controller.current?.isPlaying()).toBe(false);
+
+    act(() => {
+      controller.current?.resume();
+    });
+    act(() => {
+      jest.advanceTimersByTime(110);
+    });
+
+    imageNode = renderer.root.findByType(skiaMock.MockSkiaImage);
+    expect(imageNode.props.x).toBeCloseTo(0);
+  });
+
+  it("honors per-animation loop overrides via animationsMeta", async () => {
+    const controller = React.createRef<SpriteAnimatorHandle>();
+    const onEnd = jest.fn();
+    renderComponent(
+      <SpriteAnimator
+        ref={controller}
+        image={mockSkImage()}
+        data={{ frames }}
+        animations={{ blink: [0, 1] }}
+        animationsMeta={{ blink: { loop: false } }}
+        loop
+        fps={10}
+        autoplay={false}
+        onEnd={onEnd}
+      />
+    );
+
+    act(() => {
+      controller.current?.play("blink");
+    });
+    expect(controller.current?.getCurrentAnimation()).toBe("blink");
+
+    await act(async () => {
+      jest.advanceTimersByTime(220);
+    });
+    await act(async () => {
+      jest.runOnlyPendingTimers();
+    });
+    await act(async () => {
+      jest.runOnlyPendingTimers();
+    });
+    expect(onEnd).toHaveBeenCalledTimes(1);
   });
 });
