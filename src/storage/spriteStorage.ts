@@ -1,30 +1,54 @@
-/* eslint-disable jsdoc/require-jsdoc */
 import * as FileSystem from 'expo-file-system/legacy';
 import type { SpriteAnimations, SpriteAnimationsMeta, SpriteFrame } from '../SpriteAnimator';
 
+/**
+ * Metadata describing stored sprite assets.
+ */
 export interface SpriteMetadata {
+  /** Human-friendly name for the sprite. */
   displayName: string;
+  /** Absolute file path to the stored image asset. */
   imageUri: string;
+  /** Creation timestamp in milliseconds. */
   createdAt: number;
+  /** Version number assigned when exporting the sprite. */
   version: number;
   [key: string]: unknown;
 }
 
+/**
+ * Summary returned when listing sprites from storage.
+ */
 export interface SpriteSummary {
+  /** Unique sprite identifier. */
   id: string;
+  /** Display name stored in the registry. */
   displayName: string;
+  /** Path to the stored image asset. */
   imageUri: string;
+  /** Creation timestamp in milliseconds. */
   createdAt: number;
 }
 
+/**
+ * Shape of the payload accepted when saving a sprite.
+ */
 export type SpriteSavePayload<TExtra = Record<string, unknown>> = {
+  /** Optional identifier used when updating an existing sprite. */
   id?: string;
+  /** Frame definitions to persist. */
   frames: SpriteFrame[];
+  /** Optional animation sequences to persist. */
   animations?: SpriteAnimations;
+  /** Optional animation metadata overrides. */
   animationsMeta?: SpriteAnimationsMeta;
+  /** Metadata stored alongside the sprite. */
   meta?: Partial<SpriteMetadata>;
 } & TExtra;
 
+/**
+ * Fully persisted sprite entry loaded from disk.
+ */
 export type StoredSprite<TExtra = Record<string, unknown>> = Omit<
   SpriteSavePayload<TExtra>,
   'meta' | 'id'
@@ -33,8 +57,13 @@ export type StoredSprite<TExtra = Record<string, unknown>> = Omit<
   meta: SpriteMetadata;
 };
 
+/**
+ * Parameters accepted by the saveSprite helper.
+ */
 export interface SaveSpriteParams<TExtra = Record<string, unknown>> {
+  /** Path to a temporary image file that will be persisted. */
   imageTempUri: string;
+  /** Sprite data describing the sprite sheet and metadata. */
   sprite: SpriteSavePayload<TExtra>;
 }
 
@@ -50,10 +79,17 @@ const ensureTrailingSlash = (value: string) => (value.endsWith('/') ? value : `$
 let rootDirectoryOverride: string | null = null;
 let ensurePromise: Promise<void> | null = null;
 
+/**
+ * Configuration options controlling sprite storage locations.
+ */
 export interface SpriteStorageConfig {
+  /** Optional override for the directory used to store assets. */
   rootDir?: string;
 }
 
+/**
+ * Overrides the root directory used by spriteStorage helpers.
+ */
 export const configureSpriteStorage = (config: SpriteStorageConfig = {}) => {
   rootDirectoryOverride = config.rootDir ? ensureTrailingSlash(config.rootDir) : null;
   ensurePromise = null;
@@ -81,6 +117,9 @@ const ensureDir = async (path: string) => {
   }
 };
 
+/**
+ * Ensures the storage directories exist on disk.
+ */
 const ensureStorage = async () => {
   if (!ensurePromise) {
     ensurePromise = (async () => {
@@ -103,6 +142,9 @@ const deleteIfExists = async (path: string | null | undefined) => {
   }
 };
 
+/**
+ * Reads the sprite registry file from disk.
+ */
 const readRegistry = async (): Promise<SpriteRegistry> => {
   await ensureStorage();
   const path = registryPath();
@@ -126,6 +168,9 @@ const writeRegistry = async (registry: SpriteRegistry) => {
   await FileSystem.writeAsStringAsync(registryPath(), JSON.stringify(registry, null, 2));
 };
 
+/**
+ * Adds or updates a sprite entry inside the registry.
+ */
 const upsertRegistry = async (summary: SpriteSummary) => {
   const registry = await readRegistry();
   const index = registry.items.findIndex((item) => item.id === summary.id);
@@ -137,6 +182,9 @@ const upsertRegistry = async (summary: SpriteSummary) => {
   await writeRegistry(registry);
 };
 
+/**
+ * Removes a sprite summary from the registry.
+ */
 const removeFromRegistry = async (id: string) => {
   const registry = await readRegistry();
   const nextItems = registry.items.filter((item) => item.id !== id);
@@ -147,11 +195,17 @@ const removeFromRegistry = async (id: string) => {
   await writeRegistry(registry);
 };
 
+/**
+ * Extracts the file extension portion of a URI.
+ */
 const extractExtension = (uri: string) => {
   const match = /\.([a-zA-Z0-9]+)(?:\?|$)/.exec(uri);
   return match ? match[1] : 'png';
 };
 
+/**
+ * Generates a unique identifier for a new sprite entry.
+ */
 const createSpriteId = () => {
   if (typeof globalThis.crypto?.randomUUID === 'function') {
     return globalThis.crypto.randomUUID();
@@ -159,6 +213,9 @@ const createSpriteId = () => {
   return `sprite_${Math.random().toString(36).slice(2, 10)}`;
 };
 
+/**
+ * Persists sprite metadata and image assets to disk.
+ */
 export const saveSprite = async <TExtra extends Record<string, unknown>>({
   imageTempUri,
   sprite,
@@ -225,6 +282,9 @@ export const saveSprite = async <TExtra extends Record<string, unknown>>({
   return storedSprite;
 };
 
+/**
+ * Loads a stored sprite entry by identifier.
+ */
 export const loadSprite = async <TExtra extends Record<string, unknown>>(
   id: string,
 ): Promise<StoredSprite<TExtra> | null> => {
@@ -238,11 +298,17 @@ export const loadSprite = async <TExtra extends Record<string, unknown>>(
   return JSON.parse(raw) as StoredSprite<TExtra>;
 };
 
+/**
+ * Lists the sprite summaries persisted on disk.
+ */
 export const listSprites = async (): Promise<SpriteSummary[]> => {
   const registry = await readRegistry();
   return registry.items;
 };
 
+/**
+ * Removes a sprite entry including its stored files.
+ */
 export const deleteSprite = async (id: string) => {
   const sprite = await loadSprite(id);
   if (!sprite) {
@@ -253,12 +319,18 @@ export const deleteSprite = async (id: string) => {
   await removeFromRegistry(id);
 };
 
+/**
+ * Deletes the entire sprite storage directory.
+ */
 export const clearSpriteStorage = async () => {
   const base = resolveBaseDir();
   await deleteIfExists(base);
   ensurePromise = null;
 };
 
+/**
+ * Exposes the directory layout used by spriteStorage.
+ */
 export const getSpriteStoragePaths = () => ({
   root: resolveBaseDir(),
   images: imagesDir(),

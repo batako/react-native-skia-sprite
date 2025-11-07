@@ -1,4 +1,13 @@
-/* eslint-disable jsdoc/require-jsdoc */
+import {
+  Canvas,
+  Group,
+  Skia,
+  Image as SkiaImage,
+  useImage,
+  type DataSourceParam,
+  type SkImage,
+  type Transforms3d,
+} from '@shopify/react-native-skia';
 import React, {
   forwardRef,
   memo,
@@ -10,21 +19,18 @@ import React, {
   useState,
 } from 'react';
 import type { ImageSourcePropType, StyleProp, ViewStyle } from 'react-native';
-import {
-  Canvas,
-  Group,
-  Image as SkiaImage,
-  Skia,
-  useImage,
-  type DataSourceParam,
-  type SkImage,
-  type Transforms3d,
-} from '@shopify/react-native-skia';
 
+/**
+ * Describes a single rectangular frame within a sprite sheet.
+ */
 export interface SpriteFrame {
+  /** X coordinate in pixels within the sprite sheet. */
   x: number;
+  /** Y coordinate in pixels within the sprite sheet. */
   y: number;
+  /** Width of the frame in pixels. */
   w: number;
+  /** Height of the frame in pixels. */
   h: number;
   /**
    * Optional per-frame duration in milliseconds.
@@ -33,68 +39,135 @@ export interface SpriteFrame {
   duration?: number;
 }
 
+/**
+ * Mapping of animation names to the sequence of frame indexes they should play.
+ */
 export type SpriteAnimations = Record<string, number[]>;
 
+/**
+ * Additional per-animation metadata.
+ */
 export interface SpriteAnimationMeta {
+  /** Indicates whether the animation should loop when it reaches the end. */
   loop?: boolean;
 }
 
+/**
+ * Mapping of animation names to their metadata overrides.
+ */
 export type SpriteAnimationsMeta = Record<string, SpriteAnimationMeta>;
 
+/**
+ * Metadata payload forwarded alongside sprite frames.
+ */
 export interface SpriteDataMeta {
+  /** Optional URI for the sprite image on disk. */
   imageUri?: string;
+  /** Human-readable name for the sprite. */
   displayName?: string;
+  /** Anchor point used by consuming applications. */
   origin?: { x: number; y: number };
+  /** Arbitrary version number assigned by the editor. */
   version?: number;
   [key: string]: unknown;
 }
 
+/**
+ * Payload describing the sprite sheet and the available animations.
+ */
 export interface SpriteData {
+  /** List of rectangular frames that compose the sprite sheet. */
   frames: SpriteFrame[];
+  /** Named animation definitions referencing frame indexes. */
   animations?: SpriteAnimations;
+  /** Optional animation metadata overrides keyed by name. */
   animationsMeta?: SpriteAnimationsMeta;
+  /** Free-form metadata attached to the sprite. */
   meta?: SpriteDataMeta;
 }
 
+/**
+ * Options for the `play` method exposed via the imperative handle.
+ */
 export interface SpriteAnimatorPlayOptions {
+  /** Frame index to start playback from. */
   fromFrame?: number;
+  /** Local speed override that multiplies the component speedScale. */
   speedScale?: number;
 }
 
+/**
+ * Payload describing the frame that was just rendered.
+ */
 export interface SpriteAnimatorFrameChangeEvent {
+  /** Name of the animation currently active. */
   animationName: string | null;
+  /** Frame index relative to the global frames array. */
   frameIndex: number;
+  /** Cursor position within the active animation sequence. */
   frameCursor: number;
 }
 
+/**
+ * Public methods exposed via the `SpriteAnimator` imperative handle.
+ */
 export interface SpriteAnimatorHandle {
+  /** Starts or swaps an animation sequence. */
   play: (name?: string | null, opts?: SpriteAnimatorPlayOptions) => void;
+  /** Stops playback and resets the cursor. */
   stop: () => void;
+  /** Temporarily pauses playback without changing the cursor. */
   pause: () => void;
+  /** Resumes playback if it was previously paused. */
   resume: () => void;
+  /** Moves the cursor to a specific frame. */
   setFrame: (frameIndex: number) => void;
+  /** Returns whether an animation is actively playing. */
   isPlaying: () => boolean;
+  /** Returns the name of the animation that is currently active. */
   getCurrentAnimation: () => string | null;
 }
 
+/**
+ * Allowed image sources for the SpriteAnimator component.
+ */
 export type SpriteAnimatorSource = SkImage | ImageSourcePropType;
 
+/**
+ * Props accepted by the SpriteAnimator component.
+ */
 export interface SpriteAnimatorProps {
+  /** Image or Skia surface the frames are extracted from. */
   image: SpriteAnimatorSource;
+  /** Sprite sheet data describing frames and animations. */
   data: SpriteData;
+  /** Optional runtime override for available animations. */
   animations?: SpriteAnimations;
+  /** Optional runtime override for animation metadata like looping. */
   animationsMeta?: SpriteAnimationsMeta;
+  /** Default frames per second when per-frame duration is absent. */
   fps?: number;
+  /** Global fallback for whether animations should loop. */
   loop?: boolean;
+  /** Automatically start playback when the component mounts. */
   autoplay?: boolean;
+  /** Name of the animation that should run initially. */
   initialAnimation?: string;
+  /** Multiplier applied to playback speed. */
   speedScale?: number;
+  /** Whether frames should be mirrored horizontally. */
   flipX?: boolean;
+  /** Whether frames should be mirrored vertically. */
   flipY?: boolean;
+  /** Callback invoked when a non-looping animation finishes. */
   onEnd?: () => void;
+  /** Callback invoked with the animation name when it finishes. */
   onAnimationEnd?: (name: string | null) => void;
+  /** Callback invoked whenever the rendered frame changes. */
   onFrameChange?: (event: SpriteAnimatorFrameChangeEvent) => void;
+  /** Scales the rendered sprite without modifying frame data. */
   spriteScale?: number;
+  /** Style applied to the underlying Skia Canvas. */
   style?: StyleProp<ViewStyle>;
 }
 
@@ -123,12 +196,18 @@ const isSkImage = (image: SpriteAnimatorSource): image is SkImage => {
   );
 };
 
+/**
+ * Filters out invalid frame indexes from an animation sequence.
+ */
 const sanitizeSequence = (sequence: number[], frameCount: number) => {
   return sequence
     .map((value) => (typeof value === 'number' ? value : -1))
     .filter((index) => index >= 0 && index < frameCount);
 };
 
+/**
+ * Internal component that renders the sprite sheet using Skia primitives.
+ */
 const SpriteAnimatorComponent = (
   {
     image,

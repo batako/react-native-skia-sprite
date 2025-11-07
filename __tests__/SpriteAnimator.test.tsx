@@ -48,7 +48,8 @@ describe('SpriteAnimator', () => {
       <SpriteAnimator image={mockSkImage()} data={{ frames }} spriteScale={2} />,
     );
 
-    expect(skiaMock.mockUseImage).not.toHaveBeenCalled();
+    expect(skiaMock.mockUseImage).toHaveBeenCalledTimes(1);
+    expect(skiaMock.mockUseImage).toHaveBeenCalledWith(null);
     const groupNode = renderer.root.findByType(skiaMock.Group as any);
     const clipRect = groupNode.props.clip as {
       x: number;
