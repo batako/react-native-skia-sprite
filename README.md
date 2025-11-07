@@ -66,6 +66,8 @@ export function HeroPreview() {
 - `fps`: Default playback speed for frames without an explicit `duration`.
 - `loop`: When `false`, stops on the last frame of the active animation and fires `onEnd` once.
 - `spriteScale`: Scales the rendered width/height without modifying frame data (defaults to `1`).
+- `onAnimationEnd`: Called once when a non-looping animation finishes. Receives the animation name (or `null` when playing the raw frame order).
+- `onFrameChange`: Fired every time the rendered frame changes. Receives `{ animationName, frameIndex, frameCursor }`.
 
 ### Controlling playback
 
@@ -120,6 +122,20 @@ const data: SpriteData = {
     version: 2,
   },
 };
+```
+
+### Frame events
+
+Hook into animation progress by wiring `onFrameChange` and `onAnimationEnd`. The frame-change payload shape is exported as `SpriteAnimatorFrameChangeEvent`:
+
+```ts
+import type { SpriteAnimatorFrameChangeEvent } from "react-native-skia-sprite-animator";
+
+const handleFrameChange = (event: SpriteAnimatorFrameChangeEvent) => {
+  console.log(event.animationName, event.frameIndex);
+};
+
+<SpriteAnimator onFrameChange={handleFrameChange} onAnimationEnd={(name) => console.log("done", name)} />;
 ```
 
 ## spriteStorage API

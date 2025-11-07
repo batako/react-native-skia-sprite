@@ -306,4 +306,31 @@ describe("SpriteAnimator", () => {
     });
     expect(onEnd).toHaveBeenCalledTimes(1);
   });
+
+  it("invokes onFrameChange when setFrame is called", () => {
+    const onFrameChange = jest.fn();
+    const controller = React.createRef<SpriteAnimatorHandle>();
+    renderComponent(
+      <SpriteAnimator
+        ref={controller}
+        image={mockSkImage()}
+        data={{ frames }}
+        autoplay={false}
+        onFrameChange={onFrameChange}
+      />
+    );
+
+    onFrameChange.mockClear();
+    act(() => {
+      controller.current?.setFrame(1);
+    });
+
+    expect(onFrameChange).toHaveBeenCalledTimes(1);
+    expect(onFrameChange).toHaveBeenCalledWith({
+      animationName: null,
+      frameIndex: 1,
+      frameCursor: 1,
+    });
+  });
+
 });

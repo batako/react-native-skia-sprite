@@ -66,6 +66,8 @@ export function HeroPreview() {
 - `fps`: `duration` を指定していないフレームのデフォルト速度。
 - `loop`: false の場合はアニメーションの最後のフレームで停止し、`onEnd` が一度だけ呼ばれます。
 - `spriteScale`: 描画サイズを倍率指定したい場合に使用します (デフォルト 1)。
+- `onAnimationEnd`: ループしないアニメーションが最後のフレームまで到達したときに一度だけ呼ばれます（引数はアニメーション名、または `null`）。
+- `onFrameChange`: 描画フレームが変わるたびに `{ animationName, frameIndex, frameCursor }` を受け取ります。
 
 ### 再生制御 (Imperative Handle)
 
@@ -120,6 +122,20 @@ const data: SpriteData = {
     version: 2,
   },
 };
+
+### フレームイベント
+
+`onFrameChange` / `onAnimationEnd` を使うと、再生状況を UI に反映できます。フレームイベントの型は `SpriteAnimatorFrameChangeEvent` として公開しています。
+
+```ts
+import type { SpriteAnimatorFrameChangeEvent } from "react-native-skia-sprite-animator";
+
+const handleFrameChange = (event: SpriteAnimatorFrameChangeEvent) => {
+  console.log(event.animationName, event.frameIndex);
+};
+
+<SpriteAnimator onFrameChange={handleFrameChange} onAnimationEnd={(name) => console.log("finish", name)} />;
+```
 ```
 
 ## spriteStorage API

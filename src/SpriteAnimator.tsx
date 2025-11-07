@@ -60,6 +60,12 @@ export interface SpriteAnimatorPlayOptions {
   speedScale?: number;
 }
 
+export interface SpriteAnimatorFrameChangeEvent {
+  animationName: string | null;
+  frameIndex: number;
+  frameCursor: number;
+}
+
 export interface SpriteAnimatorHandle {
   play: (name?: string | null, opts?: SpriteAnimatorPlayOptions) => void;
   stop: () => void;
@@ -85,6 +91,8 @@ export interface SpriteAnimatorProps {
   flipX?: boolean;
   flipY?: boolean;
   onEnd?: () => void;
+  onAnimationEnd?: (name: string | null) => void;
+  onFrameChange?: (event: SpriteAnimatorFrameChangeEvent) => void;
   spriteScale?: number;
   style?: StyleProp<ViewStyle>;
 }
@@ -131,12 +139,14 @@ const SpriteAnimatorComponent = (
     autoplay = true,
     initialAnimation,
     speedScale = 1,
-    flipX = false,
-    flipY = false,
-    spriteScale = 1,
-    style,
-    onEnd,
-  }: SpriteAnimatorProps,
+  flipX = false,
+  flipY = false,
+  spriteScale = 1,
+  style,
+  onEnd,
+  onAnimationEnd,
+  onFrameChange,
+}: SpriteAnimatorProps,
   ref: React.Ref<SpriteAnimatorHandle>
 ) => {
   const frames = data?.frames ?? [];
@@ -144,9 +154,17 @@ const SpriteAnimatorComponent = (
   const dataAnimationsMeta = data?.animationsMeta;
   const onEndRef = useRef<SpriteAnimatorProps["onEnd"]>(undefined);
   onEndRef.current = onEnd;
+  const onAnimationEndRef = useRef<SpriteAnimatorProps["onAnimationEnd"]>(undefined);
+  onAnimationEndRef.current = onAnimationEnd;
+  const onFrameChangeRef = useRef<SpriteAnimatorProps["onFrameChange"]>(undefined);
+  onFrameChangeRef.current = onFrameChange;
 
   const animationEndRef = useRef<{ name: string | null } | null>(null);
   const onEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastFrameEventRef = useRef<{
+    animationName: string | null;
+    frameIndex: number;
+  } | null>(null);
 
   const defaultOrder = useMemo(() => frames.map((_, index) => index), [frames]);
 
@@ -309,9 +327,11 @@ const SpriteAnimatorComponent = (
     }
     onEndTimerRef.current = setTimeout(() => {
       onEndTimerRef.current = null;
-      if (animationEndRef.current) {
-        onEndRef.current?.();
+      const payload = animationEndRef.current;
+      if (payload) {
         animationEndRef.current = null;
+        onAnimationEndRef.current?.(payload.name ?? null);
+        onEndRef.current?.();
       }
     }, 0);
   }, []);
@@ -485,6 +505,30 @@ const SpriteAnimatorComponent = (
   const activeFrameIndex =
     activeSequence[animState.frameCursor] ?? activeSequence[0] ?? 0;
   const currentFrame = frames[activeFrameIndex];
+
+  useEffect(() => {
+    if (!currentFrame) {
+      lastFrameEventRef.current = null;
+      return;
+    }
+    const payload: SpriteAnimatorFrameChangeEvent = {
+      animationName: animState.name,
+      frameIndex: activeFrameIndex,
+      frameCursor: animState.frameCursor,
+    };
+    const prev = lastFrameEventRef.current;
+    if (
+      !prev ||
+      prev.animationName !== payload.animationName ||
+      prev.frameIndex !== payload.frameIndex
+    ) {
+      lastFrameEventRef.current = {
+        animationName: payload.animationName,
+        frameIndex: payload.frameIndex,
+      };
+      onFrameChangeRef.current?.(payload);
+    }
+  }, [activeFrameIndex, animState.frameCursor, animState.name, currentFrame]);
 
   const clipRect = useMemo(() => {
     if (!currentFrame) {
