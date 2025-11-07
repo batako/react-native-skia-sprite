@@ -10,7 +10,7 @@ npm install react-native-skia-sprite
 npx expo install react-native @shopify/react-native-skia expo-file-system
 ```
 
-> Tested with Expo SDK 52, React Native 0.82, and React 19.
+> Tested with Expo SDK 52, React Native 0.82 (works with >=0.81), and React 19.
 
 ## Using SpriteAnimator
 
@@ -89,9 +89,11 @@ await deleteSprite(saved.id);
 ```bash
 npm install
 npm run build
+# optional: generate the same tarball npm publish would ship
+npm pack
 ```
 
-Build artifacts land in `dist/` (commonjs + type declarations). Hooks/UI components are intentionally out of scope so each app can design its own editor. Editor APIs arrive in the next roadmap milestone.
+Build artifacts land in `dist/` (ESM + type declarations). Hooks/UI components are intentionally out of scope so each app can design its own editor. Editor APIs arrive in the next roadmap milestone.
 
 ## License
 
