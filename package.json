@@ -2,6 +2,7 @@
   "name": "react-native-skia-sprite",
   "version": "0.1.0",
   "description": "Sprite animation primitives for React Native Skia with Expo-friendly storage helpers.",
+  "type": "module",
   "main": "dist/index.js",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -18,7 +19,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "clean": "rimraf dist",
-    "test": "jest"
+    "test": "jest --config jest.config.cjs"
   },
   "keywords": [
     "react-native",
