@@ -1,6 +1,6 @@
 # react-native-skia-sprite-animator
 
-`react-native-skia-sprite-animator` は React Native/Expo 上の [@shopify/react-native-skia](https://shopify.github.io/react-native-skia/) を利用してスプライトアニメーションを再生し、`expo-file-system` に JSON/画像を保存するための UI非依存ライブラリです。v0.1 では「再生 (SpriteAnimator)」と「保存 (spriteStorage)」の 2 機能を提供します。
+`react-native-skia-sprite-animator` は React Native/Expo 上の [@shopify/react-native-skia](https://shopify.github.io/react-native-skia/) を利用してスプライトアニメーションを再生し、`expo-file-system` に JSON/画像を保存するための UI非依存ライブラリです。「再生 (SpriteAnimator)」と「保存 (spriteStorage)」の 2 機能を提供します。
 
 ## インストール
 

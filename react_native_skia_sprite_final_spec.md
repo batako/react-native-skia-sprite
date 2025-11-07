@@ -156,9 +156,10 @@ const json = editor.exportJSON({
 | バージョン | 主要機能                                     |
 | ---------- | -------------------------------------------- |
 | v0.1       | SpriteAnimator + spriteStorage               |
-| v0.2       | useSpriteEditor + SpriteEditUtils            |
-| v0.3       | SpriteTemplate API 実装 (テンプレート可変更) |
-| v0.4       | npm公開 + デモUI(サンプルエディタ)           |
+| v0.2       | SpriteAnimator AnimatedSprite2D パリティ対応 |
+| v0.3       | useSpriteEditor + SpriteEditUtils            |
+| v0.4       | SpriteTemplate API 実装 (テンプレート可変更) |
+| v0.5       | npm公開 + デモUI(サンプルエディタ)           |
 
 ---
 

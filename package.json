@@ -1,29 +1,7 @@
 {
   "name": "react-native-skia-sprite-animator",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Sprite animation primitives for React Native Skia with Expo-friendly storage helpers.",
-  "type": "module",
-  "main": "dist/index.js",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
-    }
-  },
-  "sideEffects": false,
-  "files": [
-    "dist"
-  ],
-  "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "clean": "rimraf dist",
-    "test": "jest --config jest.config.cjs",
-    "lint": "eslint . --ext .ts,.tsx,.js",
-    "format": "prettier --write .",
-    "format:check": "prettier --check ."
-  },
   "keywords": [
     "react-native",
     "expo",
@@ -33,6 +11,7 @@
     "sprite-animation",
     "animation"
   ],
+  "license": "MIT",
   "author": {
     "name": "batako",
     "url": "https://batako.net"
@@ -43,12 +22,27 @@
       "url": "https://github.com/BatakoStudio"
     }
   ],
-  "license": "MIT",
-  "peerDependencies": {
-    "@shopify/react-native-skia": ">=2.3.0",
-    "expo-file-system": ">=19.0.0",
-    "react": ">=19.0.0",
-    "react-native": ">=0.81.0"
+  "sideEffects": false,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rimraf dist",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint . --ext .ts,.tsx,.js",
+    "test": "jest --config jest.config.cjs"
   },
   "devDependencies": {
     "@shopify/react-native-skia": "^2.3.10",
@@ -69,7 +63,12 @@
     "react-test-renderer": "^19.0.0",
     "rimraf": "^5.0.5",
     "ts-jest": "^29.1.1",
-    "typescript": "^5.3.3",
-    "prettier": "^3.6.2"
+    "typescript": "^5.3.3"
+  },
+  "peerDependencies": {
+    "@shopify/react-native-skia": ">=2.3.0",
+    "expo-file-system": ">=19.0.0",
+    "react": ">=19.0.0",
+    "react-native": ">=0.81.0"
   }
 }
