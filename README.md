@@ -1,11 +1,11 @@
-# react-native-skia-sprite
+# react-native-skia-sprite-animator
 
-`react-native-skia-sprite` is a UI-agnostic helper built for React Native/Expo projects that rely on [@shopify/react-native-skia](https://shopify.github.io/react-native-skia/). It focuses on two things in v0.1: playing sprite-sheet animations (`SpriteAnimator`) and persisting sprite JSON + images to `expo-file-system` (`spriteStorage`).
+`react-native-skia-sprite-animator` is a UI-agnostic helper built for React Native/Expo projects that rely on [@shopify/react-native-skia](https://shopify.github.io/react-native-skia/). It focuses on two things in v0.1: playing sprite-sheet animations (`SpriteAnimator`) and persisting sprite JSON + images to `expo-file-system` (`spriteStorage`).
 
 ## Installation
 
 ```bash
-npm install react-native-skia-sprite
+npm install react-native-skia-sprite-animator
 # peer dependencies
 npx expo install react-native @shopify/react-native-skia expo-file-system
 ```
@@ -15,7 +15,7 @@ npx expo install react-native @shopify/react-native-skia expo-file-system
 ## Using SpriteAnimator
 
 ```tsx
-import { SpriteAnimator } from "react-native-skia-sprite";
+import { SpriteAnimator } from "react-native-skia-sprite-animator";
 import heroSheet from "../assets/hero.png";
 
 const frames = [
@@ -55,7 +55,7 @@ import {
   listSprites,
   deleteSprite,
   type SpriteSavePayload,
-} from "react-native-skia-sprite";
+} from "react-native-skia-sprite-animator";
 
 const payload: SpriteSavePayload = {
   frames,

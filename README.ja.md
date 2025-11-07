@@ -1,11 +1,11 @@
-# react-native-skia-sprite
+# react-native-skia-sprite-animator
 
-`react-native-skia-sprite` は React Native/Expo 上の [@shopify/react-native-skia](https://shopify.github.io/react-native-skia/) を利用してスプライトアニメーションを再生し、`expo-file-system` に JSON/画像を保存するための UI非依存ライブラリです。v0.1 では「再生 (SpriteAnimator)」と「保存 (spriteStorage)」の 2 機能を提供します。
+`react-native-skia-sprite-animator` は React Native/Expo 上の [@shopify/react-native-skia](https://shopify.github.io/react-native-skia/) を利用してスプライトアニメーションを再生し、`expo-file-system` に JSON/画像を保存するための UI非依存ライブラリです。v0.1 では「再生 (SpriteAnimator)」と「保存 (spriteStorage)」の 2 機能を提供します。
 
 ## インストール
 
 ```bash
-npm install react-native-skia-sprite
+npm install react-native-skia-sprite-animator
 # peer dependency
 npx expo install react-native @shopify/react-native-skia expo-file-system
 ```
@@ -15,7 +15,7 @@ npx expo install react-native @shopify/react-native-skia expo-file-system
 ## SpriteAnimator の使い方
 
 ```tsx
-import { SpriteAnimator } from "react-native-skia-sprite";
+import { SpriteAnimator } from "react-native-skia-sprite-animator";
 import heroSheet from "../assets/hero.png";
 
 const frames = [
@@ -55,7 +55,7 @@ import {
   listSprites,
   deleteSprite,
   type SpriteSavePayload,
-} from "react-native-skia-sprite";
+} from "react-native-skia-sprite-animator";
 
 const payload: SpriteSavePayload = {
   frames,
