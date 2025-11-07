@@ -15,22 +15,39 @@ npx expo install react-native @shopify/react-native-skia expo-file-system
 ## SpriteAnimator の使い方
 
 ```tsx
-import { SpriteAnimator } from "react-native-skia-sprite-animator";
+import { SpriteAnimator, type SpriteData } from "react-native-skia-sprite-animator";
 import heroSheet from "../assets/hero.png";
 
-const frames = [
-  { x: 0, y: 0, w: 64, h: 64 },
-  { x: 64, y: 0, w: 64, h: 64 },
-  { x: 128, y: 0, w: 64, h: 64 },
-];
+const heroData: SpriteData = {
+  frames: [
+    { x: 0, y: 0, w: 64, h: 64 },
+    { x: 64, y: 0, w: 64, h: 64 },
+    { x: 128, y: 0, w: 64, h: 64 },
+  ],
+  animations: {
+    idle: [0, 1, 2, 1],
+    blink: [2],
+  },
+  meta: {
+    displayName: "Hero Sprite",
+    origin: { x: 0.5, y: 1 },
+  },
+};
 
 export function HeroPreview() {
   return (
     <SpriteAnimator
       image={heroSheet}
-      data={{ frames }}
+      data={heroData}
+      initialAnimation="idle"
+      animations={heroData.animations}
+      autoplay
       fps={12}
       loop
+      speedScale={1}
+      flipX={false}
+      flipY={false}
+      spriteScale={1}
       style={{ width: 64, height: 64 }}
       onEnd={() => console.log("animation finished")}
     />
@@ -40,9 +57,37 @@ export function HeroPreview() {
 
 - `image`: `require()` や `SkImage` をそのまま渡せます。
 - `data.frames`: `{ x, y, w, h, duration? }` の配列。`duration` を指定するとフレーム単位でミリ秒制御できます。
+- `data.animations` / `animations`: `{ walk: [0, 1, 2] }` のようにアニメーション名とフレーム番号を紐づけます。ランタイムで差し替えたい場合は props の `animations` を渡してください。
+- `initialAnimation`: 再生開始時に選択するアニメーション名。指定が無い場合は最初のアニメーション、または素のフレーム順を使います。
+- `autoplay`: コンポーネントがマウントされた直後に自動で再生するかどうか (デフォルト `true`)。
+- `speedScale`: 再生速度の倍率。`2` で 2 倍速、`0.5` で半分の速度になります。
+- `flipX` / `flipY`: 画像を左右・上下に反転して描画します (フレームデータの編集は不要)。
 - `fps`: `duration` を指定していないフレームのデフォルト速度。
-- `loop`: false の場合は最後のフレームで停止し、`onEnd` が一度だけ呼ばれます。
+- `loop`: false の場合はアニメーションの最後のフレームで停止し、`onEnd` が一度だけ呼ばれます。
 - `spriteScale`: 描画サイズを倍率指定したい場合に使用します (デフォルト 1)。
+
+### SpriteData の JSON 例
+
+`SpriteData` はそのまま JSON 保存しやすい構造になっています。
+
+```ts
+const data: SpriteData = {
+  frames: [
+    { x: 0, y: 0, w: 64, h: 64, duration: 120 },
+    { x: 64, y: 0, w: 64, h: 64 },
+  ],
+  animations: {
+    walk: [0, 1],
+    blink: [1],
+  },
+  meta: {
+    displayName: "Hero Walk",
+    imageUri: "file:///sprites/images/img_hero.png",
+    origin: { x: 0.5, y: 1 },
+    version: 2,
+  },
+};
+```
 
 ## spriteStorage API
 

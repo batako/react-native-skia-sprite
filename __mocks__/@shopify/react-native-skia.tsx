@@ -8,10 +8,12 @@ export const Canvas = ({ children }: { children?: React.ReactNode }) =>
 export const Group = ({
   children,
   clip,
+  transform,
 }: {
   children?: React.ReactNode;
   clip?: unknown;
-}) => React.createElement("skia-group", { clip }, children);
+  transform?: unknown;
+}) => React.createElement("skia-group", { clip, transform }, children);
 
 export const MockSkiaImage = (props: Record<string, unknown>) =>
   React.createElement("skia-image", props);

@@ -1,5 +1,5 @@
 import * as FileSystem from "expo-file-system/legacy";
-import type { SpriteFrame } from "../SpriteAnimator";
+import type { SpriteAnimations, SpriteFrame } from "../SpriteAnimator";
 
 export interface SpriteMetadata {
   displayName: string;
@@ -19,6 +19,7 @@ export interface SpriteSummary {
 export type SpriteSavePayload<TExtra = Record<string, unknown>> = {
   id?: string;
   frames: SpriteFrame[];
+  animations?: SpriteAnimations;
   meta?: Partial<SpriteMetadata>;
 } & TExtra;
 

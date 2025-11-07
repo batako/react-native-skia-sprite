@@ -89,6 +89,24 @@ describe("SpriteAnimator", () => {
     expect(imageNode.props.y).toBeCloseTo(0);
   });
 
+  it("respects speedScale to accelerate frame playback", () => {
+    const renderer = renderComponent(
+      <SpriteAnimator
+        image={mockSkImage()}
+        data={{ frames }}
+        fps={10}
+        speedScale={2}
+      />
+    );
+
+    act(() => {
+      jest.advanceTimersByTime(60);
+    });
+
+    const imageNode = renderer.root.findByType(skiaMock.MockSkiaImage);
+    expect(imageNode.props.x).toBe(-64);
+  });
+
   it("uses useImage for asset sources and skips autoplay for single-frame data", () => {
     const assetSource = "bundle://hero.png" as ImageSourcePropType;
     const resolvedImage = mockSkImage();
@@ -126,5 +144,45 @@ describe("SpriteAnimator", () => {
 
     const images = renderer.root.findAllByType(skiaMock.MockSkiaImage);
     expect(images).toHaveLength(0);
+  });
+
+  it("selects the initial animation sequence by name when animations are provided", () => {
+    const renderer = renderComponent(
+      <SpriteAnimator
+        image={mockSkImage()}
+        data={{
+          frames: [
+            { x: 0, y: 0, w: 64, h: 64 },
+            { x: 64, y: 0, w: 64, h: 64 },
+            { x: 128, y: 0, w: 64, h: 64 },
+          ],
+        }}
+        animations={{ blink: [2, 1] }}
+        initialAnimation="blink"
+        autoplay={false}
+      />
+    );
+
+    const imageNode = renderer.root.findByType(skiaMock.MockSkiaImage);
+    expect(imageNode.props.x).toBe(-128);
+  });
+
+  it("applies flip transforms when flipX or flipY are provided", () => {
+    const renderer = renderComponent(
+      <SpriteAnimator
+        image={mockSkImage()}
+        data={{ frames }}
+        flipX
+      />
+    );
+
+    const groupNodes = renderer.root.findAllByType(skiaMock.Group as any);
+    const transformGroup = groupNodes.find(
+      (node) => Array.isArray(node.props.transform)
+    );
+    expect(transformGroup?.props.transform).toEqual([
+      { translateX: 64 },
+      { scaleX: -1 },
+    ]);
   });
 });

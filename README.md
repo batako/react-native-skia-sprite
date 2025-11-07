@@ -15,22 +15,39 @@ npx expo install react-native @shopify/react-native-skia expo-file-system
 ## Using SpriteAnimator
 
 ```tsx
-import { SpriteAnimator } from "react-native-skia-sprite-animator";
+import { SpriteAnimator, type SpriteData } from "react-native-skia-sprite-animator";
 import heroSheet from "../assets/hero.png";
 
-const frames = [
-  { x: 0, y: 0, w: 64, h: 64 },
-  { x: 64, y: 0, w: 64, h: 64 },
-  { x: 128, y: 0, w: 64, h: 64 },
-];
+const heroData: SpriteData = {
+  frames: [
+    { x: 0, y: 0, w: 64, h: 64 },
+    { x: 64, y: 0, w: 64, h: 64 },
+    { x: 128, y: 0, w: 64, h: 64 },
+  ],
+  animations: {
+    idle: [0, 1, 2, 1],
+    blink: [2],
+  },
+  meta: {
+    displayName: "Hero Sprite",
+    origin: { x: 0.5, y: 1 },
+  },
+};
 
 export function HeroPreview() {
   return (
     <SpriteAnimator
       image={heroSheet}
-      data={{ frames }}
+      data={heroData}
+      initialAnimation="idle"
+      animations={heroData.animations}
+      autoplay
       fps={12}
       loop
+      speedScale={1}
+      flipX={false}
+      flipY={false}
+      spriteScale={1}
       style={{ width: 64, height: 64 }}
       onEnd={() => console.log("animation finished")}
     />
@@ -40,9 +57,37 @@ export function HeroPreview() {
 
 - `image`: Accepts both `require()` assets and `SkImage` values.
 - `data.frames`: Array of `{ x, y, w, h, duration? }`. `duration` (ms) overrides the default fps per frame.
+- `data.animations` / `animations`: Map animation names to frame indexes (e.g. `{ walk: [0, 1, 2] }`). Pass an explicit `animations` prop when you need runtime overrides.
+- `initialAnimation`: Name of the animation that should play first. Falls back to the first available animation or raw frame order.
+- `autoplay`: Whether the component should start advancing frames immediately (defaults to `true`).
+- `speedScale`: Multiplier applied to frame timing (`2` renders twice as fast, `0.5` slows down).
+- `flipX` / `flipY`: Mirror the rendered sprite horizontally or vertically without changing the source image.
 - `fps`: Default playback speed for frames without an explicit `duration`.
-- `loop`: When `false`, stops on the last frame and fires `onEnd` once.
-- `spriteScale`: Scales the rendered width/height without modifying frame data (defaults to 1).
+- `loop`: When `false`, stops on the last frame of the active animation and fires `onEnd` once.
+- `spriteScale`: Scales the rendered width/height without modifying frame data (defaults to `1`).
+
+### SpriteData JSON shape
+
+`SpriteData` is intentionally JSON-friendly so you can persist/export it as-is:
+
+```ts
+const data: SpriteData = {
+  frames: [
+    { x: 0, y: 0, w: 64, h: 64, duration: 120 },
+    { x: 64, y: 0, w: 64, h: 64 },
+  ],
+  animations: {
+    walk: [0, 1],
+    blink: [1],
+  },
+  meta: {
+    displayName: "Hero Walk",
+    imageUri: "file:///sprites/images/img_hero.png",
+    origin: { x: 0.5, y: 1 },
+    version: 2,
+  },
+};
+```
 
 ## spriteStorage API
 
