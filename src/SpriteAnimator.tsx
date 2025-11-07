@@ -1,3 +1,4 @@
+/* eslint-disable jsdoc/require-jsdoc */
 import React, {
   forwardRef,
   memo,
@@ -7,8 +8,8 @@ import React, {
   useMemo,
   useRef,
   useState,
-} from "react";
-import type { ImageSourcePropType, StyleProp, ViewStyle } from "react-native";
+} from 'react';
+import type { ImageSourcePropType, StyleProp, ViewStyle } from 'react-native';
 import {
   Canvas,
   Group,
@@ -18,7 +19,7 @@ import {
   type DataSourceParam,
   type SkImage,
   type Transforms3d,
-} from "@shopify/react-native-skia";
+} from '@shopify/react-native-skia';
 
 export interface SpriteFrame {
   x: number;
@@ -116,15 +117,15 @@ const clamp = (value: number, min: number, max: number) => {
 const isSkImage = (image: SpriteAnimatorSource): image is SkImage => {
   return Boolean(
     image &&
-      typeof image === "object" &&
-      typeof (image as SkImage).width === "function" &&
-      typeof (image as SkImage).height === "function"
+      typeof image === 'object' &&
+      typeof (image as SkImage).width === 'function' &&
+      typeof (image as SkImage).height === 'function',
   );
 };
 
 const sanitizeSequence = (sequence: number[], frameCount: number) => {
   return sequence
-    .map((value) => (typeof value === "number" ? value : -1))
+    .map((value) => (typeof value === 'number' ? value : -1))
     .filter((index) => index >= 0 && index < frameCount);
 };
 
@@ -139,24 +140,24 @@ const SpriteAnimatorComponent = (
     autoplay = true,
     initialAnimation,
     speedScale = 1,
-  flipX = false,
-  flipY = false,
-  spriteScale = 1,
-  style,
-  onEnd,
-  onAnimationEnd,
-  onFrameChange,
-}: SpriteAnimatorProps,
-  ref: React.Ref<SpriteAnimatorHandle>
+    flipX = false,
+    flipY = false,
+    spriteScale = 1,
+    style,
+    onEnd,
+    onAnimationEnd,
+    onFrameChange,
+  }: SpriteAnimatorProps,
+  ref: React.Ref<SpriteAnimatorHandle>,
 ) => {
-  const frames = data?.frames ?? [];
+  const frames = useMemo(() => data?.frames ?? [], [data]);
   const dataAnimations = data?.animations;
   const dataAnimationsMeta = data?.animationsMeta;
-  const onEndRef = useRef<SpriteAnimatorProps["onEnd"]>(undefined);
+  const onEndRef = useRef<SpriteAnimatorProps['onEnd']>(undefined);
   onEndRef.current = onEnd;
-  const onAnimationEndRef = useRef<SpriteAnimatorProps["onAnimationEnd"]>(undefined);
+  const onAnimationEndRef = useRef<SpriteAnimatorProps['onAnimationEnd']>(undefined);
   onAnimationEndRef.current = onAnimationEnd;
-  const onFrameChangeRef = useRef<SpriteAnimatorProps["onFrameChange"]>(undefined);
+  const onFrameChangeRef = useRef<SpriteAnimatorProps['onFrameChange']>(undefined);
   onFrameChangeRef.current = onFrameChange;
 
   const animationEndRef = useRef<{ name: string | null } | null>(null);
@@ -202,7 +203,7 @@ const SpriteAnimatorComponent = (
       }
       return fallbackAnimationName;
     },
-    [fallbackAnimationName, sanitizedAnimations]
+    [fallbackAnimationName, sanitizedAnimations],
   );
 
   const resolveSequence = useCallback(
@@ -212,31 +213,31 @@ const SpriteAnimatorComponent = (
       }
       return defaultOrder;
     },
-    [defaultOrder, sanitizedAnimations]
+    [defaultOrder, sanitizedAnimations],
   );
 
   const shouldLoopFor = useCallback(
     (name?: string | null) => {
       if (name && mergedAnimationsMeta && mergedAnimationsMeta[name]) {
         const metaLoop = mergedAnimationsMeta[name]?.loop;
-        if (typeof metaLoop === "boolean") {
+        if (typeof metaLoop === 'boolean') {
           return metaLoop;
         }
       }
       return loop;
     },
-    [loop, mergedAnimationsMeta]
+    [loop, mergedAnimationsMeta],
   );
 
   const normalizedSpeedScale =
-    typeof speedScale === "number" && Number.isFinite(speedScale) && speedScale > 0
+    typeof speedScale === 'number' && Number.isFinite(speedScale) && speedScale > 0
       ? speedScale
       : 1;
 
   const initialAnimationName = ensureAnimationName(initialAnimation);
   const initialSequence = resolveSequence(initialAnimationName);
   const [animState, setAnimState] = useState<AnimationState>(() => ({
-    name: initialSequence.length ? initialAnimationName ?? null : null,
+    name: initialSequence.length ? (initialAnimationName ?? null) : null,
     playing: autoplay && initialSequence.length > 1,
     frameCursor: 0,
     speed: 1,
@@ -245,7 +246,8 @@ const SpriteAnimatorComponent = (
   animStateRef.current = animState;
 
   const imageIsSkImage = isSkImage(image);
-  const assetImage = imageIsSkImage ? null : useImage((image as unknown) as DataSourceParam);
+  const assetSource = imageIsSkImage ? null : (image as unknown as DataSourceParam);
+  const assetImage = useImage(assetSource);
   const resolvedImage = imageIsSkImage ? image : assetImage;
   const stableFps = Math.max(1, fps);
 
@@ -341,7 +343,7 @@ const SpriteAnimatorComponent = (
       animationEndRef.current = { name: name ?? null };
       scheduleOnEndCallback();
     },
-    [scheduleOnEndCallback]
+    [scheduleOnEndCallback],
   );
 
   useEffect(() => {
@@ -367,10 +369,10 @@ const SpriteAnimatorComponent = (
       if (nextCursor < sequence.length) {
         return { ...prev, frameCursor: nextCursor };
       }
-        if (!shouldLoopFor(prev.name)) {
-          markAnimationEnded(prev.name ?? null);
-          return { ...prev, playing: false };
-        }
+      if (!shouldLoopFor(prev.name)) {
+        markAnimationEnded(prev.name ?? null);
+        return { ...prev, playing: false };
+      }
       return { ...prev, frameCursor: 0 };
     });
   }, [markAnimationEnded, resolveSequence, shouldLoopFor]);
@@ -409,20 +411,19 @@ const SpriteAnimatorComponent = (
   const play = useCallback(
     (name?: string | null, opts?: SpriteAnimatorPlayOptions) => {
       setAnimState((prev) => {
-        const targetName =
-          name === undefined ? prev.name : ensureAnimationName(name ?? null);
+        const targetName = name === undefined ? prev.name : ensureAnimationName(name ?? null);
         const sequence = resolveSequence(targetName);
         if (!sequence.length) {
           return prev;
         }
         const fromFrame =
-          typeof opts?.fromFrame === "number"
+          typeof opts?.fromFrame === 'number'
             ? clamp(Math.floor(opts.fromFrame), 0, sequence.length - 1)
             : targetName === prev.name
-            ? prev.frameCursor
-            : 0;
+              ? prev.frameCursor
+              : 0;
         const nextSpeed =
-          typeof opts?.speedScale === "number" &&
+          typeof opts?.speedScale === 'number' &&
           Number.isFinite(opts.speedScale) &&
           opts.speedScale > 0
             ? opts.speedScale
@@ -436,7 +437,7 @@ const SpriteAnimatorComponent = (
         };
       });
     },
-    [ensureAnimationName, resolveSequence]
+    [ensureAnimationName, resolveSequence],
   );
 
   const stop = useCallback(() => {
@@ -484,7 +485,7 @@ const SpriteAnimatorComponent = (
         return { ...prev, frameCursor: nextCursor };
       });
     },
-    [resolveSequence]
+    [resolveSequence],
   );
 
   useImperativeHandle(
@@ -498,12 +499,11 @@ const SpriteAnimatorComponent = (
       isPlaying: () => animStateRef.current.playing,
       getCurrentAnimation: () => animStateRef.current.name,
     }),
-    [pause, play, resume, setFrame, stop]
+    [pause, play, resume, setFrame, stop],
   );
 
   const activeSequence = resolveSequence(animState.name);
-  const activeFrameIndex =
-    activeSequence[animState.frameCursor] ?? activeSequence[0] ?? 0;
+  const activeFrameIndex = activeSequence[animState.frameCursor] ?? activeSequence[0] ?? 0;
   const currentFrame = frames[activeFrameIndex];
 
   useEffect(() => {
@@ -534,12 +534,7 @@ const SpriteAnimatorComponent = (
     if (!currentFrame) {
       return null;
     }
-    return Skia.XYWHRect(
-      0,
-      0,
-      currentFrame.w * spriteScale,
-      currentFrame.h * spriteScale
-    );
+    return Skia.XYWHRect(0, 0, currentFrame.w * spriteScale, currentFrame.h * spriteScale);
   }, [currentFrame, spriteScale]);
 
   const translatedImage = useMemo(() => {
@@ -591,7 +586,7 @@ const SpriteAnimatorComponent = (
 };
 
 const ForwardedSpriteAnimator = forwardRef<SpriteAnimatorHandle, SpriteAnimatorProps>(
-  SpriteAnimatorComponent
+  SpriteAnimatorComponent,
 );
 
 /**

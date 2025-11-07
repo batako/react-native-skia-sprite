@@ -6,7 +6,7 @@ module.exports = {
   testEnvironment: 'jsdom',
   testMatch: ['**/__tests__/**/*.test.ts?(x)'],
   moduleNameMapper: pathsToModuleNameMapper(compilerOptions.paths || {}, {
-    prefix: '<rootDir>/'
+    prefix: '<rootDir>/',
   }),
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   clearMocks: true,

@@ -1,9 +1,10 @@
-import React from "react";
+/* eslint-disable jsdoc/require-jsdoc */
+import React from 'react';
 
 export const mockUseImage = jest.fn(() => null);
 
 export const Canvas = ({ children }: { children?: React.ReactNode }) =>
-  React.createElement("skia-canvas", null, children);
+  React.createElement('skia-canvas', null, children);
 
 export const Group = ({
   children,
@@ -13,13 +14,12 @@ export const Group = ({
   children?: React.ReactNode;
   clip?: unknown;
   transform?: unknown;
-}) => React.createElement("skia-group", { clip, transform }, children);
+}) => React.createElement('skia-group', { clip, transform }, children);
 
 export const MockSkiaImage = (props: Record<string, unknown>) =>
-  React.createElement("skia-image", props);
+  React.createElement('skia-image', props);
 
-export const Image = (props: Record<string, unknown>) =>
-  React.createElement(MockSkiaImage, props);
+export const Image = (props: Record<string, unknown>) => React.createElement(MockSkiaImage, props);
 
 export const Skia = {
   XYWHRect: (x: number, y: number, w: number, h: number) => ({ x, y, w, h }),

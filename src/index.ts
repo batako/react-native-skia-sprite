@@ -1,2 +1,2 @@
-export * from "./SpriteAnimator";
-export * from "./storage/spriteStorage";
+export * from './SpriteAnimator';
+export * from './storage/spriteStorage';

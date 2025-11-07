@@ -3,18 +3,16 @@ type Entry = {
   data?: string;
 };
 
+/* eslint-disable jsdoc/require-jsdoc */
 const store = new Map<string, Entry>();
 
-const DEFAULT_DOCUMENT_DIR = "file:///mock/documents/";
-const DEFAULT_CACHE_DIR = "file:///mock/cache/";
+const DEFAULT_DOCUMENT_DIR = 'file:///mock/documents/';
+const DEFAULT_CACHE_DIR = 'file:///mock/cache/';
 
 export let documentDirectory: string | null = DEFAULT_DOCUMENT_DIR;
 export let cacheDirectory: string | null = DEFAULT_CACHE_DIR;
 
-export const __setWritableDirectories = (
-  doc: string | null,
-  cache: string | null
-) => {
+export const __setWritableDirectories = (doc: string | null, cache: string | null) => {
   documentDirectory = doc;
   cacheDirectory = cache;
 };
@@ -48,10 +46,7 @@ export const getInfoAsync = async (uri: string) => {
   };
 };
 
-export const makeDirectoryAsync = async (
-  uri: string,
-  _options?: { intermediates?: boolean }
-) => {
+export const makeDirectoryAsync = async (uri: string, _options?: { intermediates?: boolean }) => {
   ensureDirectory(uri);
 };
 
@@ -64,13 +59,10 @@ export const readAsStringAsync = async (uri: string) => {
   if (!entry || entry.isDirectory) {
     throw new Error(`File not found: ${uri}`);
   }
-  return entry.data ?? "";
+  return entry.data ?? '';
 };
 
-export const deleteAsync = async (
-  uri: string,
-  _options?: { idempotent?: boolean }
-) => {
+export const deleteAsync = async (uri: string, _options?: { idempotent?: boolean }) => {
   store.delete(uri);
 };
 

@@ -6,10 +6,7 @@ const suppressedPatterns = [/react-test-renderer is deprecated/];
 
 console.error = (...args: unknown[]) => {
   const [first] = args;
-  if (
-    typeof first === "string" &&
-    suppressedPatterns.some((pattern) => pattern.test(first))
-  ) {
+  if (typeof first === 'string' && suppressedPatterns.some((pattern) => pattern.test(first))) {
     return;
   }
   originalConsoleError(...args);

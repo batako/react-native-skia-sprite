@@ -1,22 +1,20 @@
-import React from "react";
-import { act, create, ReactTestRenderer } from "react-test-renderer";
-import {
-  SpriteAnimator,
-  type SpriteAnimatorHandle,
-  type SpriteFrame,
-} from "../src/SpriteAnimator";
-import type { ImageSourcePropType } from "react-native";
-import type { SkImage } from "@shopify/react-native-skia";
+import React from 'react';
+import { act, create, ReactTestRenderer } from 'react-test-renderer';
+import { SpriteAnimator, type SpriteAnimatorHandle, type SpriteFrame } from '../src/SpriteAnimator';
+import type { ImageSourcePropType } from 'react-native';
+import type { SkImage } from '@shopify/react-native-skia';
 
-jest.mock("@shopify/react-native-skia");
+jest.mock('@shopify/react-native-skia');
 
-const skiaMock = jest.requireMock("@shopify/react-native-skia") as typeof import("../__mocks__/@shopify/react-native-skia");
+const skiaMock = jest.requireMock(
+  '@shopify/react-native-skia',
+) as typeof import('../__mocks__/@shopify/react-native-skia');
 
 const mockSkImage = (): SkImage =>
   ({
     width: () => 256,
     height: () => 256,
-  } as unknown as SkImage);
+  }) as unknown as SkImage;
 
 const renderComponent = (ui: React.ReactElement) => {
   let renderer!: ReactTestRenderer;
@@ -26,7 +24,7 @@ const renderComponent = (ui: React.ReactElement) => {
   return renderer;
 };
 
-describe("SpriteAnimator", () => {
+describe('SpriteAnimator', () => {
   const frames: SpriteFrame[] = [
     { x: 0, y: 0, w: 64, h: 64 },
     { x: 64, y: 0, w: 64, h: 64 },
@@ -45,14 +43,19 @@ describe("SpriteAnimator", () => {
     jest.useRealTimers();
   });
 
-  it("renders the first frame rectangle", () => {
+  it('renders the first frame rectangle', () => {
     const renderer = renderComponent(
-      <SpriteAnimator image={mockSkImage()} data={{ frames }} spriteScale={2} />
+      <SpriteAnimator image={mockSkImage()} data={{ frames }} spriteScale={2} />,
     );
 
     expect(skiaMock.mockUseImage).not.toHaveBeenCalled();
     const groupNode = renderer.root.findByType(skiaMock.Group as any);
-    const clipRect = groupNode.props.clip as { x: number; y: number; width: number; height: number };
+    const clipRect = groupNode.props.clip as {
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+    };
     expect(clipRect).toBeTruthy();
     expect(clipRect.x).toBe(0);
     expect(clipRect.y).toBe(0);
@@ -63,7 +66,7 @@ describe("SpriteAnimator", () => {
     expect(imageNode.props.height).toBe(512);
   });
 
-  it("advances frames according to fps and calls onEnd when loop is false", async () => {
+  it('advances frames according to fps and calls onEnd when loop is false', async () => {
     const onEnd = jest.fn();
     const renderer = renderComponent(
       <SpriteAnimator
@@ -72,7 +75,7 @@ describe("SpriteAnimator", () => {
         fps={10}
         loop={false}
         onEnd={onEnd}
-      />
+      />,
     );
 
     await act(async () => {
@@ -96,14 +99,9 @@ describe("SpriteAnimator", () => {
     expect(imageNode.props.y).toBeCloseTo(0);
   });
 
-  it("respects speedScale to accelerate frame playback", () => {
+  it('respects speedScale to accelerate frame playback', () => {
     const renderer = renderComponent(
-      <SpriteAnimator
-        image={mockSkImage()}
-        data={{ frames }}
-        fps={10}
-        speedScale={2}
-      />
+      <SpriteAnimator image={mockSkImage()} data={{ frames }} fps={10} speedScale={2} />,
     );
 
     act(() => {
@@ -114,13 +112,13 @@ describe("SpriteAnimator", () => {
     expect(imageNode.props.x).toBe(-64);
   });
 
-  it("uses useImage for asset sources and skips autoplay for single-frame data", () => {
-    const assetSource = "bundle://hero.png" as ImageSourcePropType;
+  it('uses useImage for asset sources and skips autoplay for single-frame data', () => {
+    const assetSource = 'bundle://hero.png' as ImageSourcePropType;
     const resolvedImage = mockSkImage();
     skiaMock.mockUseImage.mockReturnValue(resolvedImage as any);
 
     const renderer = renderComponent(
-      <SpriteAnimator image={assetSource} data={{ frames: [frames[0]] }} />
+      <SpriteAnimator image={assetSource} data={{ frames: [frames[0]] }} />,
     );
 
     expect(skiaMock.mockUseImage).toHaveBeenCalledTimes(1);
@@ -129,10 +127,10 @@ describe("SpriteAnimator", () => {
     expect(imageNode.props.x).toBeCloseTo(0);
   });
 
-  it("clears pending timers on unmount", () => {
-    const clearSpy = jest.spyOn(global, "clearTimeout");
+  it('clears pending timers on unmount', () => {
+    const clearSpy = jest.spyOn(global, 'clearTimeout');
     const renderer = renderComponent(
-      <SpriteAnimator image={mockSkImage()} data={{ frames }} fps={12} />
+      <SpriteAnimator image={mockSkImage()} data={{ frames }} fps={12} />,
     );
 
     act(() => {
@@ -144,16 +142,16 @@ describe("SpriteAnimator", () => {
     clearSpy.mockRestore();
   });
 
-  it("renders nothing when no frames are provided", () => {
+  it('renders nothing when no frames are provided', () => {
     const renderer = renderComponent(
-      <SpriteAnimator image={mockSkImage()} data={{ frames: [] }} />
+      <SpriteAnimator image={mockSkImage()} data={{ frames: [] }} />,
     );
 
     const images = renderer.root.findAllByType(skiaMock.MockSkiaImage);
     expect(images).toHaveLength(0);
   });
 
-  it("selects the initial animation sequence by name when animations are provided", () => {
+  it('selects the initial animation sequence by name when animations are provided', () => {
     const renderer = renderComponent(
       <SpriteAnimator
         image={mockSkImage()}
@@ -167,33 +165,24 @@ describe("SpriteAnimator", () => {
         animations={{ blink: [2, 1] }}
         initialAnimation="blink"
         autoplay={false}
-      />
+      />,
     );
 
     const imageNode = renderer.root.findByType(skiaMock.MockSkiaImage);
     expect(imageNode.props.x).toBe(-128);
   });
 
-  it("applies flip transforms when flipX or flipY are provided", () => {
+  it('applies flip transforms when flipX or flipY are provided', () => {
     const renderer = renderComponent(
-      <SpriteAnimator
-        image={mockSkImage()}
-        data={{ frames }}
-        flipX
-      />
+      <SpriteAnimator image={mockSkImage()} data={{ frames }} flipX />,
     );
 
     const groupNodes = renderer.root.findAllByType(skiaMock.Group as any);
-    const transformGroup = groupNodes.find(
-      (node) => Array.isArray(node.props.transform)
-    );
-    expect(transformGroup?.props.transform).toEqual([
-      { translateX: 64 },
-      { scaleX: -1 },
-    ]);
+    const transformGroup = groupNodes.find((node) => Array.isArray(node.props.transform));
+    expect(transformGroup?.props.transform).toEqual([{ translateX: 64 }, { scaleX: -1 }]);
   });
 
-  it("allows controlling playback via the imperative ref", () => {
+  it('allows controlling playback via the imperative ref', () => {
     const controller = React.createRef<SpriteAnimatorHandle>();
     const renderer = renderComponent(
       <SpriteAnimator
@@ -202,11 +191,11 @@ describe("SpriteAnimator", () => {
         data={{ frames }}
         animations={{ reverse: [1, 0] }}
         autoplay={false}
-      />
+      />,
     );
 
     act(() => {
-      controller.current?.play("reverse");
+      controller.current?.play('reverse');
     });
 
     let imageNode = renderer.root.findByType(skiaMock.MockSkiaImage);
@@ -220,10 +209,10 @@ describe("SpriteAnimator", () => {
     expect(imageNode.props.x).toBeCloseTo(0);
   });
 
-  it("stops playback and resets to the first frame", () => {
+  it('stops playback and resets to the first frame', () => {
     const controller = React.createRef<SpriteAnimatorHandle>();
     const renderer = renderComponent(
-      <SpriteAnimator ref={controller} image={mockSkImage()} data={{ frames }} autoplay={false} />
+      <SpriteAnimator ref={controller} image={mockSkImage()} data={{ frames }} autoplay={false} />,
     );
 
     act(() => {
@@ -240,10 +229,10 @@ describe("SpriteAnimator", () => {
     expect(imageNode.props.x).toBeCloseTo(0);
   });
 
-  it("pauses and resumes playback", () => {
+  it('pauses and resumes playback', () => {
     const controller = React.createRef<SpriteAnimatorHandle>();
     const renderer = renderComponent(
-      <SpriteAnimator ref={controller} image={mockSkImage()} data={{ frames }} fps={10} />
+      <SpriteAnimator ref={controller} image={mockSkImage()} data={{ frames }} fps={10} />,
     );
 
     act(() => {
@@ -273,7 +262,7 @@ describe("SpriteAnimator", () => {
     expect(imageNode.props.x).toBeCloseTo(0);
   });
 
-  it("honors per-animation loop overrides via animationsMeta", async () => {
+  it('honors per-animation loop overrides via animationsMeta', async () => {
     const controller = React.createRef<SpriteAnimatorHandle>();
     const onEnd = jest.fn();
     renderComponent(
@@ -287,13 +276,13 @@ describe("SpriteAnimator", () => {
         fps={10}
         autoplay={false}
         onEnd={onEnd}
-      />
+      />,
     );
 
     act(() => {
-      controller.current?.play("blink");
+      controller.current?.play('blink');
     });
-    expect(controller.current?.getCurrentAnimation()).toBe("blink");
+    expect(controller.current?.getCurrentAnimation()).toBe('blink');
 
     await act(async () => {
       jest.advanceTimersByTime(220);
@@ -307,7 +296,7 @@ describe("SpriteAnimator", () => {
     expect(onEnd).toHaveBeenCalledTimes(1);
   });
 
-  it("invokes onFrameChange when setFrame is called", () => {
+  it('invokes onFrameChange when setFrame is called', () => {
     const onFrameChange = jest.fn();
     const controller = React.createRef<SpriteAnimatorHandle>();
     renderComponent(
@@ -317,7 +306,7 @@ describe("SpriteAnimator", () => {
         data={{ frames }}
         autoplay={false}
         onFrameChange={onFrameChange}
-      />
+      />,
     );
 
     onFrameChange.mockClear();
@@ -333,7 +322,7 @@ describe("SpriteAnimator", () => {
     });
   });
 
-  it("updates the current animation name when play is called", () => {
+  it('updates the current animation name when play is called', () => {
     const controller = React.createRef<SpriteAnimatorHandle>();
     renderComponent(
       <SpriteAnimator
@@ -343,19 +332,18 @@ describe("SpriteAnimator", () => {
         animations={{ walk: [0, 1], blink: [1] }}
         initialAnimation="walk"
         autoplay={false}
-      />
+      />,
     );
 
-    expect(controller.current?.getCurrentAnimation()).toBe("walk");
+    expect(controller.current?.getCurrentAnimation()).toBe('walk');
 
     act(() => {
-      controller.current?.play("blink");
+      controller.current?.play('blink');
     });
-    expect(controller.current?.getCurrentAnimation()).toBe("blink");
-
+    expect(controller.current?.getCurrentAnimation()).toBe('blink');
   });
 
-  it("calls onAnimationEnd when a non-looping animation finishes", async () => {
+  it('calls onAnimationEnd when a non-looping animation finishes', async () => {
     const controller = React.createRef<SpriteAnimatorHandle>();
     const onAnimationEnd = jest.fn();
     renderComponent(
@@ -367,11 +355,11 @@ describe("SpriteAnimator", () => {
         loop={false}
         autoplay={false}
         onAnimationEnd={onAnimationEnd}
-      />
+      />,
     );
 
     act(() => {
-      controller.current?.play("blink");
+      controller.current?.play('blink');
     });
 
     await act(async () => {
@@ -385,7 +373,6 @@ describe("SpriteAnimator", () => {
     });
 
     expect(onAnimationEnd).toHaveBeenCalledTimes(1);
-    expect(onAnimationEnd).toHaveBeenCalledWith("blink");
+    expect(onAnimationEnd).toHaveBeenCalledWith('blink');
   });
-
 });

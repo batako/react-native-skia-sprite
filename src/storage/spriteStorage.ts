@@ -1,9 +1,6 @@
-import * as FileSystem from "expo-file-system/legacy";
-import type {
-  SpriteAnimations,
-  SpriteAnimationsMeta,
-  SpriteFrame,
-} from "../SpriteAnimator";
+/* eslint-disable jsdoc/require-jsdoc */
+import * as FileSystem from 'expo-file-system/legacy';
+import type { SpriteAnimations, SpriteAnimationsMeta, SpriteFrame } from '../SpriteAnimator';
 
 export interface SpriteMetadata {
   displayName: string;
@@ -30,7 +27,7 @@ export type SpriteSavePayload<TExtra = Record<string, unknown>> = {
 
 export type StoredSprite<TExtra = Record<string, unknown>> = Omit<
   SpriteSavePayload<TExtra>,
-  "meta" | "id"
+  'meta' | 'id'
 > & {
   id: string;
   meta: SpriteMetadata;
@@ -48,8 +45,7 @@ interface SpriteRegistry {
   items: SpriteSummary[];
 }
 
-const ensureTrailingSlash = (value: string) =>
-  value.endsWith("/") ? value : `${value}/`;
+const ensureTrailingSlash = (value: string) => (value.endsWith('/') ? value : `${value}/`);
 
 let rootDirectoryOverride: string | null = null;
 let ensurePromise: Promise<void> | null = null;
@@ -67,12 +63,9 @@ const resolveBaseDir = () => {
   if (rootDirectoryOverride) {
     return rootDirectoryOverride;
   }
-  const writable =
-    FileSystem.documentDirectory ?? FileSystem.cacheDirectory ?? null;
+  const writable = FileSystem.documentDirectory ?? FileSystem.cacheDirectory ?? null;
   if (!writable) {
-    throw new Error(
-      "expo-file-system did not provide a writable directory for sprite storage."
-    );
+    throw new Error('expo-file-system did not provide a writable directory for sprite storage.');
   }
   return `${ensureTrailingSlash(writable)}sprites/`;
 };
@@ -130,10 +123,7 @@ const readRegistry = async (): Promise<SpriteRegistry> => {
 };
 
 const writeRegistry = async (registry: SpriteRegistry) => {
-  await FileSystem.writeAsStringAsync(
-    registryPath(),
-    JSON.stringify(registry, null, 2)
-  );
+  await FileSystem.writeAsStringAsync(registryPath(), JSON.stringify(registry, null, 2));
 };
 
 const upsertRegistry = async (summary: SpriteSummary) => {
@@ -159,11 +149,11 @@ const removeFromRegistry = async (id: string) => {
 
 const extractExtension = (uri: string) => {
   const match = /\.([a-zA-Z0-9]+)(?:\?|$)/.exec(uri);
-  return match ? match[1] : "png";
+  return match ? match[1] : 'png';
 };
 
 const createSpriteId = () => {
-  if (typeof globalThis.crypto?.randomUUID === "function") {
+  if (typeof globalThis.crypto?.randomUUID === 'function') {
     return globalThis.crypto.randomUUID();
   }
   return `sprite_${Math.random().toString(36).slice(2, 10)}`;
@@ -174,10 +164,10 @@ export const saveSprite = async <TExtra extends Record<string, unknown>>({
   sprite,
 }: SaveSpriteParams<TExtra>): Promise<StoredSprite<TExtra>> => {
   if (!imageTempUri) {
-    throw new Error("imageTempUri is required to save a sprite.");
+    throw new Error('imageTempUri is required to save a sprite.');
   }
   if (!sprite?.frames?.length) {
-    throw new Error("sprite.frames must contain at least one frame.");
+    throw new Error('sprite.frames must contain at least one frame.');
   }
 
   await ensureStorage();
@@ -195,12 +185,11 @@ export const saveSprite = async <TExtra extends Record<string, unknown>>({
   const metaInput = (sprite.meta ?? {}) as Partial<SpriteMetadata>;
   const metadata: SpriteMetadata = {
     displayName:
-      typeof metaInput.displayName === "string"
+      typeof metaInput.displayName === 'string'
         ? metaInput.displayName
         : `Sprite ${spriteId.slice(0, 6)}`,
-    createdAt:
-      typeof metaInput.createdAt === "number" ? metaInput.createdAt : Date.now(),
-    version: typeof metaInput.version === "number" ? metaInput.version : 1,
+    createdAt: typeof metaInput.createdAt === 'number' ? metaInput.createdAt : Date.now(),
+    version: typeof metaInput.version === 'number' ? metaInput.version : 1,
     imageUri: destination,
   };
 
@@ -208,12 +197,7 @@ export const saveSprite = async <TExtra extends Record<string, unknown>>({
     if (value === undefined) {
       return;
     }
-    if (
-      key === "displayName" ||
-      key === "createdAt" ||
-      key === "version" ||
-      key === "imageUri"
-    ) {
+    if (key === 'displayName' || key === 'createdAt' || key === 'version' || key === 'imageUri') {
       return;
     }
     (metadata as Record<string, unknown>)[key] = value;
@@ -228,7 +212,7 @@ export const saveSprite = async <TExtra extends Record<string, unknown>>({
 
   await FileSystem.writeAsStringAsync(
     `${metaDir()}${spriteId}.json`,
-    JSON.stringify(storedSprite, null, 2)
+    JSON.stringify(storedSprite, null, 2),
   );
 
   await upsertRegistry({
@@ -242,7 +226,7 @@ export const saveSprite = async <TExtra extends Record<string, unknown>>({
 };
 
 export const loadSprite = async <TExtra extends Record<string, unknown>>(
-  id: string
+  id: string,
 ): Promise<StoredSprite<TExtra> | null> => {
   await ensureStorage();
   const path = `${metaDir()}${id}.json`;
