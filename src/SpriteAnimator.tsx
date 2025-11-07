@@ -2,6 +2,7 @@ import React, { memo, useEffect, useMemo, useRef, useState } from "react";
 import type { ImageSourcePropType, StyleProp, ViewStyle } from "react-native";
 import {
   Canvas,
+  Group,
   Image as SkiaImage,
   Skia,
   useImage,
@@ -111,30 +112,44 @@ const SpriteAnimatorBase = ({
   }, [autoplay, frames, loop, stableFps]);
 
   const currentFrame = frames[frameIndex];
-  const frameRect = useMemo(() => {
+
+  const clipRect = useMemo(() => {
     if (!currentFrame) {
       return null;
     }
     return Skia.XYWHRect(
-      currentFrame.x,
-      currentFrame.y,
-      currentFrame.w,
-      currentFrame.h
+      0,
+      0,
+      currentFrame.w * spriteScale,
+      currentFrame.h * spriteScale
     );
-  }, [currentFrame]);
+  }, [currentFrame, spriteScale]);
+
+  const translatedImage = useMemo(() => {
+    if (!resolvedImage || !currentFrame) {
+      return null;
+    }
+    return {
+      width: resolvedImage.width() * spriteScale,
+      height: resolvedImage.height() * spriteScale,
+      x: -currentFrame.x * spriteScale,
+      y: -currentFrame.y * spriteScale,
+    };
+  }, [currentFrame, resolvedImage, spriteScale]);
 
   return (
     <Canvas style={style}>
-      {resolvedImage && currentFrame && frameRect ? (
-        <SkiaImage
-          image={resolvedImage}
-          x={0}
-          y={0}
-          width={currentFrame.w * spriteScale}
-          height={currentFrame.h * spriteScale}
-          rect={frameRect}
-          fit="contain"
-        />
+      {resolvedImage && currentFrame && clipRect && translatedImage ? (
+        <Group clip={clipRect}>
+          <SkiaImage
+            image={resolvedImage}
+            x={translatedImage.x}
+            y={translatedImage.y}
+            width={translatedImage.width}
+            height={translatedImage.height}
+            fit="none"
+          />
+        </Group>
       ) : null}
     </Canvas>
   );

@@ -5,6 +5,14 @@ export const mockUseImage = jest.fn(() => null);
 export const Canvas = ({ children }: { children?: React.ReactNode }) =>
   React.createElement("skia-canvas", null, children);
 
+export const Group = ({
+  children,
+  clip,
+}: {
+  children?: React.ReactNode;
+  clip?: unknown;
+}) => React.createElement("skia-group", { clip }, children);
+
 export const MockSkiaImage = (props: Record<string, unknown>) =>
   React.createElement("skia-image", props);
 

@@ -47,12 +47,16 @@ describe("SpriteAnimator", () => {
     );
 
     expect(skiaMock.mockUseImage).not.toHaveBeenCalled();
+    const groupNode = renderer.root.findByType(skiaMock.Group as any);
+    const clipRect = groupNode.props.clip as { x: number; y: number; width: number; height: number };
+    expect(clipRect).toBeTruthy();
+    expect(clipRect.x).toBe(0);
+    expect(clipRect.y).toBe(0);
     const imageNode = renderer.root.findByType(skiaMock.MockSkiaImage);
-    expect(imageNode.props).toMatchObject({
-      rect: { x: 0, y: 0, w: 64, h: 64 },
-      width: 128,
-      height: 128,
-    });
+    expect(imageNode.props.x).toBeCloseTo(0);
+    expect(imageNode.props.y).toBeCloseTo(0);
+    expect(imageNode.props.width).toBe(512);
+    expect(imageNode.props.height).toBe(512);
   });
 
   it("advances frames according to fps and calls onEnd when loop is false", () => {
@@ -72,9 +76,8 @@ describe("SpriteAnimator", () => {
     });
 
     let imageNode = renderer.root.findByType(skiaMock.MockSkiaImage);
-    expect(imageNode.props).toMatchObject({
-      rect: { x: 64, y: 0, w: 64, h: 64 },
-    });
+    expect(imageNode.props.x).toBe(-64);
+    expect(imageNode.props.y).toBeCloseTo(0);
 
     act(() => {
       jest.advanceTimersByTime(110);
@@ -82,9 +85,8 @@ describe("SpriteAnimator", () => {
 
     expect(onEnd).toHaveBeenCalledTimes(1);
     imageNode = renderer.root.findByType(skiaMock.MockSkiaImage);
-    expect(imageNode.props).toMatchObject({
-      rect: { x: 64, y: 0, w: 64, h: 64 },
-    });
+    expect(imageNode.props.x).toBe(-64);
+    expect(imageNode.props.y).toBeCloseTo(0);
   });
 
   it("uses useImage for asset sources and skips autoplay for single-frame data", () => {
@@ -99,7 +101,7 @@ describe("SpriteAnimator", () => {
     expect(skiaMock.mockUseImage).toHaveBeenCalledTimes(1);
     expect(jest.getTimerCount()).toBe(0);
     const imageNode = renderer.root.findByType(skiaMock.MockSkiaImage);
-    expect(imageNode.props.rect).toMatchObject({ x: 0, y: 0, w: 64, h: 64 });
+    expect(imageNode.props.x).toBeCloseTo(0);
   });
 
   it("clears pending timers on unmount", () => {
