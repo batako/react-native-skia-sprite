@@ -33,7 +33,7 @@
     "@shopify/react-native-skia": ">=2.3.0",
     "expo-file-system": ">=19.0.0",
     "react": ">=19.0.0",
-    "react-native": ">=0.82.0"
+    "react-native": ">=0.81.0"
   },
   "devDependencies": {
     "@shopify/react-native-skia": "^2.3.10",
