@@ -39,14 +39,14 @@ Godot の `AnimatedSprite2D` に近い操作性を `react-native-skia-sprite-ani
 
 ### Phase 4: テスト・サンプル・ドキュメント
 
-- [ ] Jest:
-  - `play('walk')` を呼んだら state.name が `walk` になる
-  - `stop()` で playing=false
-  - `onAnimationEnd` がループしないアニメで呼ばれる
-  - `setFrame()` を呼んだ後、`currentFrame` が更新される
-- [ ] `PiyoSpriteDemo` にボタンを追加し、`play('walk')` / `play('blink')` 等を切り替えられるようにする。
-- [ ] README に API セクションを追加（props・ImperativeHandle の使用例）。
-- [ ] `spriteStorage` の JSON テンプレートに `animations` を追加し、保存・読み込みの互換性を確保。
+- [x] Jest:
+  - [x] `play('walk')` を呼んだら state.name が `walk` になる (`updates the current animation name when play is called`)
+  - [x] `stop()` で playing=false (`stops playback and resets to the first frame`)
+  - [x] `onAnimationEnd` がループしないアニメで呼ばれる (`calls onAnimationEnd when a non-looping animation finishes`)
+  - [x] `setFrame()` を呼んだ後、`currentFrame` が更新される (`invokes onFrameChange when setFrame is called`)
+- [x] `PiyoSpriteDemo` にボタンを追加し、`play('walk')` / `play('blink')` 等を切り替えられるようにする。
+- [x] README に API セクションを追加（props・ImperativeHandle・イベントの使用例）。
+- [x] `spriteStorage` の JSON テンプレートに `animations` / `animationsMeta` を追加し、保存・読み込みの互換性を確保。
 
 ## 依存や注意点
 

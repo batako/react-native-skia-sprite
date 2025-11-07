@@ -333,4 +333,59 @@ describe("SpriteAnimator", () => {
     });
   });
 
+  it("updates the current animation name when play is called", () => {
+    const controller = React.createRef<SpriteAnimatorHandle>();
+    renderComponent(
+      <SpriteAnimator
+        ref={controller}
+        image={mockSkImage()}
+        data={{ frames }}
+        animations={{ walk: [0, 1], blink: [1] }}
+        initialAnimation="walk"
+        autoplay={false}
+      />
+    );
+
+    expect(controller.current?.getCurrentAnimation()).toBe("walk");
+
+    act(() => {
+      controller.current?.play("blink");
+    });
+    expect(controller.current?.getCurrentAnimation()).toBe("blink");
+
+  });
+
+  it("calls onAnimationEnd when a non-looping animation finishes", async () => {
+    const controller = React.createRef<SpriteAnimatorHandle>();
+    const onAnimationEnd = jest.fn();
+    renderComponent(
+      <SpriteAnimator
+        ref={controller}
+        image={mockSkImage()}
+        data={{ frames }}
+        animations={{ blink: [0, 1] }}
+        loop={false}
+        autoplay={false}
+        onAnimationEnd={onAnimationEnd}
+      />
+    );
+
+    act(() => {
+      controller.current?.play("blink");
+    });
+
+    await act(async () => {
+      jest.advanceTimersByTime(250);
+    });
+    await act(async () => {
+      jest.runOnlyPendingTimers();
+    });
+    await act(async () => {
+      jest.runOnlyPendingTimers();
+    });
+
+    expect(onAnimationEnd).toHaveBeenCalledTimes(1);
+    expect(onAnimationEnd).toHaveBeenCalledWith("blink");
+  });
+
 });
