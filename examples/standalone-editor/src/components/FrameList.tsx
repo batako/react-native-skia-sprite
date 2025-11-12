@@ -1,13 +1,7 @@
 import React, { useCallback } from 'react';
-import {
-  Button,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { SpriteEditorApi } from 'react-native-skia-sprite-animator';
+import { IconButton } from './IconButton';
 
 export interface FrameListProps {
   editor: SpriteEditorApi;
@@ -46,36 +40,36 @@ export const FrameList = ({ editor }: FrameListProps) => {
     <View style={styles.container}>
       <Text style={styles.heading}>Frames ({frames.length})</Text>
       <View style={styles.toolbar}>
-        <View style={styles.toolbarButton}>
-          <Button title="Add" onPress={handleAddFrame} />
-        </View>
-        <View style={styles.toolbarButton}>
-          <Button title="Duplicate" onPress={handleDuplicate} disabled={!selected.length} />
-        </View>
-        <View style={styles.toolbarButton}>
-          <Button title="Delete" onPress={handleDeleteSelected} disabled={!selected.length} />
-        </View>
-        <View style={styles.toolbarButton}>
-          <Button title="Copy" onPress={editor.copySelected} disabled={!selected.length} />
-        </View>
-        <View style={styles.toolbarButton}>
-          <Button title="Cut" onPress={editor.cutSelected} disabled={!selected.length} />
-        </View>
-        <View style={styles.toolbarButton}>
-          <Button title="Paste" onPress={() => editor.pasteClipboard()} />
-        </View>
-        <View style={styles.toolbarButton}>
-          <Button title="Undo" onPress={editor.undo} disabled={!editor.canUndo} />
-        </View>
-        <View style={styles.toolbarButton}>
-          <Button title="Redo" onPress={editor.redo} disabled={!editor.canRedo} />
-        </View>
-        <View style={styles.toolbarButton}>
-          <Button title="Select All" onPress={editor.selectAll} />
-        </View>
-        <View style={styles.toolbarButton}>
-          <Button title="Clear" onPress={editor.clearSelection} />
-        </View>
+        <IconButton name="plus-square" onPress={handleAddFrame} accessibilityLabel="Add frame" />
+        <IconButton
+          name="copy"
+          onPress={handleDuplicate}
+          disabled={!selected.length}
+          accessibilityLabel="Duplicate selected frames"
+        />
+        <IconButton
+          name="trash-2"
+          onPress={handleDeleteSelected}
+          disabled={!selected.length}
+          accessibilityLabel="Delete selected frames"
+        />
+        <IconButton
+          name="clipboard"
+          onPress={editor.copySelected}
+          disabled={!selected.length}
+          accessibilityLabel="Copy selected frames"
+        />
+        <IconButton
+          name="scissors"
+          onPress={editor.cutSelected}
+          disabled={!selected.length}
+          accessibilityLabel="Cut selected frames"
+        />
+        <IconButton name="clipboard" onPress={() => editor.pasteClipboard()} accessibilityLabel="Paste frames" />
+        <IconButton name="rotate-ccw" onPress={editor.undo} disabled={!editor.canUndo} accessibilityLabel="Undo" />
+        <IconButton name="rotate-cw" onPress={editor.redo} disabled={!editor.canRedo} accessibilityLabel="Redo" />
+        <IconButton name="check-square" onPress={editor.selectAll} accessibilityLabel="Select all" />
+        <IconButton name="x-square" onPress={editor.clearSelection} accessibilityLabel="Clear selection" />
       </View>
       <ScrollView style={styles.list}>
         {frames.map((frame, index) => (
@@ -86,23 +80,23 @@ export const FrameList = ({ editor }: FrameListProps) => {
             <View style={styles.frameHeader}>
               <Text style={styles.frameTitle}>Frame #{index + 1}</Text>
               <View style={styles.frameActions}>
-                <View style={styles.actionButton}>
-                  <Button title="Select" onPress={() => editor.selectFrame(frame.id, { toggle: true })} />
-                </View>
-                <View style={styles.actionButton}>
-                  <Button
-                    title="↑"
-                    onPress={() => editor.reorderFrames(index, Math.max(0, index - 1))}
-                    disabled={index === 0}
-                  />
-                </View>
-                <View style={styles.actionButton}>
-                  <Button
-                    title="↓"
-                    onPress={() => editor.reorderFrames(index, Math.min(frames.length - 1, index + 1))}
-                    disabled={index === frames.length - 1}
-                  />
-                </View>
+                <IconButton
+                  name="mouse-pointer"
+                  onPress={() => editor.selectFrame(frame.id, { toggle: true })}
+                  accessibilityLabel="Toggle frame selection"
+                />
+                <IconButton
+                  name="arrow-up"
+                  onPress={() => editor.reorderFrames(index, Math.max(0, index - 1))}
+                  disabled={index === 0}
+                  accessibilityLabel="Move frame up"
+                />
+                <IconButton
+                  name="arrow-down"
+                  onPress={() => editor.reorderFrames(index, Math.min(frames.length - 1, index + 1))}
+                  disabled={index === frames.length - 1}
+                  accessibilityLabel="Move frame down"
+                />
               </View>
             </View>
             <View style={styles.inputsRow}>
@@ -175,10 +169,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
   },
-  toolbarButton: {
-    marginRight: 8,
-    marginBottom: 8,
-  },
   list: {
     marginTop: 12,
     maxHeight: 320,
@@ -205,9 +195,6 @@ const styles = StyleSheet.create({
   frameActions: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  actionButton: {
-    marginLeft: 6,
   },
   inputsRow: {
     flexDirection: 'row',

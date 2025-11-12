@@ -1,8 +1,9 @@
 import React from 'react';
-import { Button, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
 import { SpriteAnimator } from 'react-native-skia-sprite-animator';
 import type { DataSourceParam } from '@shopify/react-native-skia';
 import type { EditorIntegration } from '../hooks/useEditorIntegration';
+import { IconButton } from './IconButton';
 
 export interface PlaybackControlsProps {
   integration: EditorIntegration;
@@ -58,39 +59,41 @@ export const PlaybackControls = ({ integration, image }: PlaybackControlsProps) 
         />
       </View>
       <View style={styles.buttonRow}>
-        <View style={styles.button}><Button title={isPlaying ? 'Pause' : 'Play'} onPress={() => (isPlaying ? pause() : play(activeAnimation))} /></View>
-        <View style={styles.button}><Button title="Resume" onPress={resume} /></View>
-        <View style={styles.button}><Button title="Stop" onPress={stop} /></View>
-        <View style={styles.button}>
-          <Button
-            title="Seek Selection"
-            onPress={() => selectedFrameIndex !== null && seekFrame(selectedFrameIndex)}
-            disabled={selectedFrameIndex === null}
-          />
-        </View>
+        <IconButton
+          name={isPlaying ? 'pause' : 'play'}
+          onPress={() => (isPlaying ? pause() : play(activeAnimation))}
+          accessibilityLabel={isPlaying ? 'Pause' : 'Play'}
+        />
+        <IconButton name="refresh-cw" onPress={resume} accessibilityLabel="Resume" />
+        <IconButton name="square" onPress={stop} accessibilityLabel="Stop" />
+        <IconButton
+          name="target"
+          onPress={() => selectedFrameIndex !== null && seekFrame(selectedFrameIndex)}
+          disabled={selectedFrameIndex === null}
+          accessibilityLabel="Seek selected frame"
+        />
       </View>
       <View style={styles.buttonRow}>
-        <View style={styles.button}><Button title="Speed -" onPress={() => adjustSpeed(-0.25)} /></View>
-        <View style={styles.button}><Button title="Speed +" onPress={() => adjustSpeed(0.25)} /></View>
+        <IconButton name="minus" onPress={() => adjustSpeed(-0.25)} accessibilityLabel="Slow down" />
+        <IconButton name="plus" onPress={() => adjustSpeed(0.25)} accessibilityLabel="Speed up" />
         <Text style={styles.speedLabel}>Speed ×{speedScale.toFixed(2)}</Text>
       </View>
       <Text style={styles.subheading}>Animations</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.animationsRow}>
-        <View style={styles.animationChip}>
-          <Button
-            title="All Frames"
-            color={!activeAnimation ? '#4f8dff' : undefined}
-            onPress={() => handleSelectAnimation(null)}
-          />
-        </View>
+        <Pressable
+          style={[styles.animationChip, !activeAnimation && styles.animationChipActive]}
+          onPress={() => handleSelectAnimation(null)}
+        >
+          <Text style={styles.animationChipText}>All Frames</Text>
+        </Pressable>
         {availableAnimations.map((name) => (
-          <View style={styles.animationChip} key={name}>
-            <Button
-              title={name}
-              color={activeAnimation === name ? '#4f8dff' : undefined}
-              onPress={() => handleSelectAnimation(name)}
-            />
-          </View>
+          <Pressable
+            key={name}
+            style={[styles.animationChip, activeAnimation === name && styles.animationChipActive]}
+            onPress={() => handleSelectAnimation(name)}
+          >
+            <Text style={styles.animationChipText}>{name}</Text>
+          </Pressable>
         ))}
       </ScrollView>
       <Text style={styles.statusText}>
@@ -130,10 +133,6 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     marginTop: 12,
   },
-  button: {
-    marginRight: 8,
-    marginBottom: 8,
-  },
   speedLabel: {
     color: '#a5b0c5',
     alignSelf: 'center',
@@ -147,7 +146,20 @@ const styles = StyleSheet.create({
     flexGrow: 0,
   },
   animationChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     marginRight: 8,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#2a3142',
+  },
+  animationChipActive: {
+    backgroundColor: '#4f8dff33',
+    borderColor: '#4f8dff',
+  },
+  animationChipText: {
+    color: '#e5ecff',
+    fontSize: 12,
   },
   statusText: {
     marginTop: 12,

@@ -1,6 +1,7 @@
 import React from 'react';
-import { Button, StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 import type { SpriteEditorApi } from 'react-native-skia-sprite-animator';
+import { IconButton } from './IconButton';
 
 interface MetaEditorProps {
   editor: SpriteEditorApi;
@@ -68,8 +69,8 @@ export const MetaEditor = ({ editor }: MetaEditorProps) => {
         </View>
       </View>
       <View style={styles.buttonRow}>
-        <View style={styles.button}><Button title="Apply" onPress={handleApply} /></View>
-        <View style={styles.button}><Button title="Version +" onPress={incrementVersion} /></View>
+        <IconButton name="check" onPress={handleApply} accessibilityLabel="Apply metadata" />
+        <IconButton name="plus-circle" onPress={incrementVersion} accessibilityLabel="Increment version" />
       </View>
       <Text style={styles.metaSummary}>
         Active template exports this metadata via `editor.exportJSON` and persists through spriteStorage.
@@ -116,9 +117,6 @@ const styles = StyleSheet.create({
   },
   buttonRow: {
     flexDirection: 'row',
-  },
-  button: {
-    marginRight: 8,
   },
   metaSummary: {
     marginTop: 10,

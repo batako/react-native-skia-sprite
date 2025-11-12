@@ -1,10 +1,5 @@
 import React from 'react';
-import {
-  Button,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import {
   DefaultSpriteTemplate,
   deleteSprite,
@@ -14,6 +9,7 @@ import {
   type SpriteEditorApi,
   type SpriteSummary,
 } from 'react-native-skia-sprite-animator';
+import { IconButton } from './IconButton';
 
 interface StoragePanelProps {
   editor: SpriteEditorApi;
@@ -112,8 +108,8 @@ export const StoragePanel = ({ editor, imageUri, onImageUriChange }: StoragePane
     <View style={styles.container}>
       <Text style={styles.heading}>Storage</Text>
       <View style={styles.buttonRow}>
-        <View style={styles.button}><Button title="Save" onPress={handleSave} disabled={isBusy} /></View>
-        <View style={styles.button}><Button title="Refresh" onPress={refresh} disabled={isBusy} /></View>
+        <IconButton name="save" onPress={handleSave} disabled={isBusy} accessibilityLabel="Save sprite" />
+        <IconButton name="refresh-ccw" onPress={refresh} disabled={isBusy} accessibilityLabel="Refresh list" />
       </View>
       <Text style={styles.meta}>Image URI: {imageUri ?? 'not set'}</Text>
       <View style={styles.list}>
@@ -124,8 +120,18 @@ export const StoragePanel = ({ editor, imageUri, onImageUriChange }: StoragePane
               <Text style={styles.spriteMeta}>{new Date(sprite.createdAt).toLocaleString()}</Text>
             </View>
             <View style={styles.rowButtons}>
-              <View style={styles.button}><Button title="Load" onPress={() => handleLoad(sprite.id)} disabled={isBusy} /></View>
-              <View style={styles.button}><Button title="Delete" onPress={() => handleDelete(sprite.id)} disabled={isBusy} /></View>
+              <IconButton
+                name="download"
+                onPress={() => handleLoad(sprite.id)}
+                disabled={isBusy}
+                accessibilityLabel="Load sprite"
+              />
+              <IconButton
+                name="trash"
+                onPress={() => handleDelete(sprite.id)}
+                disabled={isBusy}
+                accessibilityLabel="Delete sprite"
+              />
             </View>
           </View>
         ))}
@@ -152,9 +158,7 @@ const styles = StyleSheet.create({
   },
   buttonRow: {
     flexDirection: 'row',
-  },
-  button: {
-    marginRight: 8,
+    marginBottom: 4,
   },
   meta: {
     marginTop: 8,

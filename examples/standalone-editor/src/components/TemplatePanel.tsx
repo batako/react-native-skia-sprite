@@ -1,14 +1,8 @@
 import React from 'react';
-import {
-  Button,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { SpriteEditorApi, SpriteTemplate } from 'react-native-skia-sprite-animator';
 import { DefaultSpriteTemplate } from 'react-native-skia-sprite-animator';
+import { IconButton } from './IconButton';
 
 interface TemplatePanelProps {
   editor: SpriteEditorApi;
@@ -108,8 +102,13 @@ export const TemplatePanel = ({ editor, template, onTemplateChange }: TemplatePa
         })}
       </View>
       <View style={styles.buttonRow}>
-        <View style={styles.button}><Button title="Export" onPress={handleExport} /></View>
-        <View style={styles.button}><Button title="Import" onPress={handleImport} disabled={!importText.trim()} /></View>
+        <IconButton name="download" onPress={handleExport} accessibilityLabel="Export template" />
+        <IconButton
+          name="upload"
+          onPress={handleImport}
+          disabled={!importText.trim()}
+          accessibilityLabel="Import template"
+        />
       </View>
       <Text style={styles.subheading}>Export Preview</Text>
       <TextInput
@@ -179,9 +178,6 @@ const styles = StyleSheet.create({
   buttonRow: {
     flexDirection: 'row',
     marginTop: 8,
-  },
-  button: {
-    marginRight: 8,
   },
   subheading: {
     marginTop: 12,
