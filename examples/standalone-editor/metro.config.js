@@ -7,9 +7,7 @@ const libraryRoot = workspaceRoot;
 
 const config = getDefaultConfig(projectRoot);
 
-config.watchFolders = Array.from(
-  new Set([...(config.watchFolders ?? []), libraryRoot]),
-);
+config.watchFolders = Array.from(new Set([...(config.watchFolders ?? []), libraryRoot]));
 
 config.resolver.nodeModulesPaths = [path.resolve(projectRoot, 'node_modules')];
 
@@ -21,7 +19,10 @@ config.resolver.extraNodeModules = {
   'react-native': path.resolve(projectRoot, 'node_modules/react-native'),
   'react-native-reanimated': path.resolve(projectRoot, 'node_modules/react-native-reanimated'),
   'react-native-worklets': path.resolve(projectRoot, 'node_modules/react-native-worklets'),
-  'react-native-worklets-core': path.resolve(projectRoot, 'node_modules/react-native-worklets-core'),
+  'react-native-worklets-core': path.resolve(
+    projectRoot,
+    'node_modules/react-native-worklets-core',
+  ),
 };
 
 module.exports = config;

@@ -24,7 +24,12 @@ export const useEditorIntegration = ({ editor }: UseEditorIntegrationOptions) =>
       animationsMeta: editor.state.animationsMeta,
       meta: editor.state.meta,
     } satisfies SpriteData;
-  }, [editor.state.animations, editor.state.animationsMeta, editor.state.frames, editor.state.meta]);
+  }, [
+    editor.state.animations,
+    editor.state.animationsMeta,
+    editor.state.frames,
+    editor.state.meta,
+  ]);
 
   useEffect(() => {
     animatorRef.current?.stop();
@@ -71,21 +76,19 @@ export const useEditorIntegration = ({ editor }: UseEditorIntegrationOptions) =>
     [isPlaying, pause, play],
   );
 
-  const seekFrame = useCallback(
-    (frameIndex: number) => {
-      animatorRef.current?.setFrame(frameIndex);
-      setFrameCursor(frameIndex);
-    },
-    [],
-  );
+  const seekFrame = useCallback((frameIndex: number) => {
+    animatorRef.current?.setFrame(frameIndex);
+    setFrameCursor(frameIndex);
+  }, []);
 
   const onFrameChange = useCallback((event: SpriteAnimatorFrameChangeEvent) => {
     setFrameCursor(event.frameIndex);
   }, []);
 
-  const availableAnimations = useMemo(() => Object.keys(editor.state.animations), [
-    editor.state.animations,
-  ]);
+  const availableAnimations = useMemo(
+    () => Object.keys(editor.state.animations),
+    [editor.state.animations],
+  );
 
   useEffect(() => {
     if (activeAnimation && !availableAnimations.includes(activeAnimation)) {

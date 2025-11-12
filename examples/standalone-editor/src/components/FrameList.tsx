@@ -65,11 +65,33 @@ export const FrameList = ({ editor }: FrameListProps) => {
           disabled={!selected.length}
           accessibilityLabel="Cut selected frames"
         />
-        <IconButton name="clipboard" onPress={() => editor.pasteClipboard()} accessibilityLabel="Paste frames" />
-        <IconButton name="rotate-ccw" onPress={editor.undo} disabled={!editor.canUndo} accessibilityLabel="Undo" />
-        <IconButton name="rotate-cw" onPress={editor.redo} disabled={!editor.canRedo} accessibilityLabel="Redo" />
-        <IconButton name="check-square" onPress={editor.selectAll} accessibilityLabel="Select all" />
-        <IconButton name="x-square" onPress={editor.clearSelection} accessibilityLabel="Clear selection" />
+        <IconButton
+          name="clipboard"
+          onPress={() => editor.pasteClipboard()}
+          accessibilityLabel="Paste frames"
+        />
+        <IconButton
+          name="rotate-ccw"
+          onPress={editor.undo}
+          disabled={!editor.canUndo}
+          accessibilityLabel="Undo"
+        />
+        <IconButton
+          name="rotate-cw"
+          onPress={editor.redo}
+          disabled={!editor.canRedo}
+          accessibilityLabel="Redo"
+        />
+        <IconButton
+          name="check-square"
+          onPress={editor.selectAll}
+          accessibilityLabel="Select all"
+        />
+        <IconButton
+          name="x-square"
+          onPress={editor.clearSelection}
+          accessibilityLabel="Clear selection"
+        />
       </View>
       <ScrollView style={styles.list}>
         {frames.map((frame, index) => (
@@ -93,17 +115,35 @@ export const FrameList = ({ editor }: FrameListProps) => {
                 />
                 <IconButton
                   name="arrow-down"
-                  onPress={() => editor.reorderFrames(index, Math.min(frames.length - 1, index + 1))}
+                  onPress={() =>
+                    editor.reorderFrames(index, Math.min(frames.length - 1, index + 1))
+                  }
                   disabled={index === frames.length - 1}
                   accessibilityLabel="Move frame down"
                 />
               </View>
             </View>
             <View style={styles.inputsRow}>
-              <FrameField label="X" value={frame.x} onSubmit={(value) => editor.updateFrame(frame.id, { x: value })} />
-              <FrameField label="Y" value={frame.y} onSubmit={(value) => editor.updateFrame(frame.id, { y: value })} />
-              <FrameField label="W" value={frame.w} onSubmit={(value) => editor.updateFrame(frame.id, { w: value })} />
-              <FrameField label="H" value={frame.h} onSubmit={(value) => editor.updateFrame(frame.id, { h: value })} />
+              <FrameField
+                label="X"
+                value={frame.x}
+                onSubmit={(value) => editor.updateFrame(frame.id, { x: value })}
+              />
+              <FrameField
+                label="Y"
+                value={frame.y}
+                onSubmit={(value) => editor.updateFrame(frame.id, { y: value })}
+              />
+              <FrameField
+                label="W"
+                value={frame.w}
+                onSubmit={(value) => editor.updateFrame(frame.id, { w: value })}
+              />
+              <FrameField
+                label="H"
+                value={frame.h}
+                onSubmit={(value) => editor.updateFrame(frame.id, { h: value })}
+              />
               <FrameField
                 label="ms"
                 value={frame.duration ?? DEFAULT_FRAME.duration}

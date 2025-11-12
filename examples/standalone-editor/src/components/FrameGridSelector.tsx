@@ -1,5 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import type { DataSourceParam } from '@shopify/react-native-skia';
 import type { ImageSourcePropType } from 'react-native';
 import { IconButton } from './IconButton';
@@ -94,8 +102,12 @@ export const FrameGridSelector = ({
   const [horizontalOrder, setHorizontalOrder] = useState<'ltr' | 'rtl'>('ltr');
   const [verticalOrder, setVerticalOrder] = useState<'ttb' | 'btt'>('ttb');
   const [primaryAxis, setPrimaryAxis] = useState<'horizontal' | 'vertical'>('horizontal');
-  const [imageWidth, setImageWidth] = useState(normalizedImage?.width ?? defaultCellWidth * horizontal);
-  const [imageHeight, setImageHeight] = useState(normalizedImage?.height ?? defaultCellHeight * vertical);
+  const [imageWidth, setImageWidth] = useState(
+    normalizedImage?.width ?? defaultCellWidth * horizontal,
+  );
+  const [imageHeight, setImageHeight] = useState(
+    normalizedImage?.height ?? defaultCellHeight * vertical,
+  );
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
   const [autoScaled, setAutoScaled] = useState(false);
 
@@ -119,9 +131,7 @@ export const FrameGridSelector = ({
       return;
     }
     const uri =
-      typeof resolvedImage === 'string'
-        ? resolvedImage
-        : (resolvedImage as { uri?: string }).uri;
+      typeof resolvedImage === 'string' ? resolvedImage : (resolvedImage as { uri?: string }).uri;
     if (!uri) {
       return;
     }
@@ -161,9 +171,10 @@ export const FrameGridSelector = ({
     ) {
       return;
     }
-    const fitScale = viewportSize.width > 0 && viewportSize.height > 0
-      ? Math.min(viewportSize.width / imageWidth, viewportSize.height / imageHeight)
-      : 1;
+    const fitScale =
+      viewportSize.width > 0 && viewportSize.height > 0
+        ? Math.min(viewportSize.width / imageWidth, viewportSize.height / imageHeight)
+        : 1;
     if (fitScale > 1) {
       const adjusted = fitScale * 0.9;
       setScale(parseFloat(adjusted.toFixed(2)));
@@ -270,13 +281,19 @@ export const FrameGridSelector = ({
               <Text style={styles.orderLabel}>優先軸</Text>
               <View style={styles.orderButtons}>
                 <TouchableOpacity
-                  style={[styles.orderButton, primaryAxis === 'horizontal' && styles.orderButtonActive]}
+                  style={[
+                    styles.orderButton,
+                    primaryAxis === 'horizontal' && styles.orderButtonActive,
+                  ]}
                   onPress={() => setPrimaryAxis('horizontal')}
                 >
                   <Text style={styles.orderButtonText}>水平優先</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.orderButton, primaryAxis === 'vertical' && styles.orderButtonActive]}
+                  style={[
+                    styles.orderButton,
+                    primaryAxis === 'vertical' && styles.orderButtonActive,
+                  ]}
                   onPress={() => setPrimaryAxis('vertical')}
                 >
                   <Text style={styles.orderButtonText}>垂直優先</Text>
@@ -287,13 +304,19 @@ export const FrameGridSelector = ({
               <Text style={styles.orderLabel}>水平</Text>
               <View style={styles.orderButtons}>
                 <TouchableOpacity
-                  style={[styles.orderButton, horizontalOrder === 'ltr' && styles.orderButtonActive]}
+                  style={[
+                    styles.orderButton,
+                    horizontalOrder === 'ltr' && styles.orderButtonActive,
+                  ]}
                   onPress={() => setHorizontalOrder('ltr')}
                 >
                   <Text style={styles.orderButtonText}>左→右</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.orderButton, horizontalOrder === 'rtl' && styles.orderButtonActive]}
+                  style={[
+                    styles.orderButton,
+                    horizontalOrder === 'rtl' && styles.orderButtonActive,
+                  ]}
                   onPress={() => setHorizontalOrder('rtl')}
                 >
                   <Text style={styles.orderButtonText}>右→左</Text>
@@ -321,7 +344,10 @@ export const FrameGridSelector = ({
               <TouchableOpacity style={styles.autoSelectButton} onPress={selectAllCells}>
                 <Text style={styles.autoSelectText}>全て選択</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.autoSelectButton, styles.clearButton]} onPress={() => setSelectedIds([])}>
+              <TouchableOpacity
+                style={[styles.autoSelectButton, styles.clearButton]}
+                onPress={() => setSelectedIds([])}
+              >
                 <Text style={styles.autoSelectText}>選択解除</Text>
               </TouchableOpacity>
             </View>
@@ -407,7 +433,9 @@ export const FrameGridSelector = ({
                                 width,
                                 height,
                                 borderColor: isSelected ? '#4f8dff' : 'rgba(255,255,255,0.35)',
-                                backgroundColor: isSelected ? 'rgba(79,141,255,0.15)' : 'transparent',
+                                backgroundColor: isSelected
+                                  ? 'rgba(79,141,255,0.15)'
+                                  : 'transparent',
                               },
                             ]}
                             onPress={() => toggleSelection(cell.id)}

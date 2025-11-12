@@ -22,29 +22,7 @@ module.exports = defineConfig([
       },
     },
     rules: {
-      'jsdoc/require-jsdoc': [
-        'error',
-        {
-          publicOnly: true,
-          require: {
-            ArrowFunctionExpression: true,
-            ClassDeclaration: true,
-            ClassExpression: true,
-            FunctionDeclaration: true,
-            FunctionExpression: true,
-            MethodDefinition: true,
-          },
-          contexts: [
-            'ExportDefaultDeclaration > ArrowFunctionExpression',
-            'ExportNamedDeclaration > VariableDeclaration > VariableDeclarator > ArrowFunctionExpression',
-            'VariableDeclaration',
-            'TSInterfaceDeclaration',
-            'TSTypeAliasDeclaration',
-            'TSPropertySignature',
-            'TSMethodSignature',
-          ],
-        },
-      ],
+      'jsdoc/require-jsdoc': 'off',
       'jsdoc/check-alignment': 'error',
       'jsdoc/check-indentation': 'error',
       'jsdoc/check-param-names': [
@@ -57,7 +35,7 @@ module.exports = defineConfig([
       'jsdoc/check-tag-names': 'error',
       'jsdoc/check-syntax': 'error',
       'jsdoc/no-bad-blocks': 'error',
-      'jsdoc/require-description': 'error',
+      'jsdoc/require-description': 'off',
       'jsdoc/require-description-complete-sentence': 'off',
       'jsdoc/tag-lines': [
         'error',

@@ -13,7 +13,7 @@ interface TemplatePanelProps {
 interface CompactTemplatePayload {
   name: string;
   version: number;
-  frames: Array<[number, number, number, number, number?]>;
+  frames: [number, number, number, number, number?][];
   animations?: Record<string, number[]>;
 }
 
@@ -95,7 +95,9 @@ export const TemplatePanel = ({ editor, template, onTemplateChange }: TemplatePa
               style={[styles.templateCard, isActive && styles.templateCardActive]}
             >
               <Text style={styles.templateName}>{entry.label}</Text>
-              <Text style={styles.templateMeta}>name={entry.template.name} v{entry.template.version}</Text>
+              <Text style={styles.templateMeta}>
+                name={entry.template.name} v{entry.template.version}
+              </Text>
               <Text style={styles.templateDescription}>{entry.description}</Text>
             </Pressable>
           );

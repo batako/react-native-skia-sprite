@@ -19,6 +19,7 @@ npm run start
 ```
 
 The example links to the library source through `link:../../`, so any local edits in the repository instantly show up inside the editor.
+
 > **Important:** Metro watches the whole workspace. Before starting the example, keep `react-native-skia-sprite-animator/node_modules` removed so React/Skia dependencies are not duplicated. Reinstall there only when building the library, then delete the folder again before running the Expo app.
 
 ## Directory Layout

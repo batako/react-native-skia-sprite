@@ -108,8 +108,18 @@ export const StoragePanel = ({ editor, imageUri, onImageUriChange }: StoragePane
     <View style={styles.container}>
       <Text style={styles.heading}>Storage</Text>
       <View style={styles.buttonRow}>
-        <IconButton name="save" onPress={handleSave} disabled={isBusy} accessibilityLabel="Save sprite" />
-        <IconButton name="refresh-ccw" onPress={refresh} disabled={isBusy} accessibilityLabel="Refresh list" />
+        <IconButton
+          name="save"
+          onPress={handleSave}
+          disabled={isBusy}
+          accessibilityLabel="Save sprite"
+        />
+        <IconButton
+          name="refresh-ccw"
+          onPress={refresh}
+          disabled={isBusy}
+          accessibilityLabel="Refresh list"
+        />
       </View>
       <Text style={styles.meta}>Image URI: {imageUri ?? 'not set'}</Text>
       <View style={styles.list}>

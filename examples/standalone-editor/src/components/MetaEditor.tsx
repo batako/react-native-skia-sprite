@@ -51,29 +51,54 @@ export const MetaEditor = ({ editor }: MetaEditorProps) => {
       <View style={styles.row}>
         <View style={styles.field}>
           <Text style={styles.label}>Display Name</Text>
-          <TextInput value={displayName} onChangeText={setDisplayName} style={styles.input} placeholder="Sprite name" />
+          <TextInput
+            value={displayName}
+            onChangeText={setDisplayName}
+            style={styles.input}
+            placeholder="Sprite name"
+          />
         </View>
         <View style={styles.field}>
           <Text style={styles.label}>Version</Text>
-          <TextInput value={version} onChangeText={setVersion} style={styles.input} keyboardType="numeric" />
+          <TextInput
+            value={version}
+            onChangeText={setVersion}
+            style={styles.input}
+            keyboardType="numeric"
+          />
         </View>
       </View>
       <View style={styles.row}>
         <View style={styles.field}>
           <Text style={styles.label}>Origin X</Text>
-          <TextInput value={originX} onChangeText={setOriginX} style={styles.input} keyboardType="numeric" />
+          <TextInput
+            value={originX}
+            onChangeText={setOriginX}
+            style={styles.input}
+            keyboardType="numeric"
+          />
         </View>
         <View style={styles.field}>
           <Text style={styles.label}>Origin Y</Text>
-          <TextInput value={originY} onChangeText={setOriginY} style={styles.input} keyboardType="numeric" />
+          <TextInput
+            value={originY}
+            onChangeText={setOriginY}
+            style={styles.input}
+            keyboardType="numeric"
+          />
         </View>
       </View>
       <View style={styles.buttonRow}>
         <IconButton name="check" onPress={handleApply} accessibilityLabel="Apply metadata" />
-        <IconButton name="plus-circle" onPress={incrementVersion} accessibilityLabel="Increment version" />
+        <IconButton
+          name="plus-circle"
+          onPress={incrementVersion}
+          accessibilityLabel="Increment version"
+        />
       </View>
       <Text style={styles.metaSummary}>
-        Active template exports this metadata via `editor.exportJSON` and persists through spriteStorage.
+        Active template exports this metadata via `editor.exportJSON` and persists through
+        spriteStorage.
       </Text>
     </View>
   );

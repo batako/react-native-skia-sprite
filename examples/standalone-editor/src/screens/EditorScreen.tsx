@@ -78,19 +78,16 @@ export const EditorScreen = () => {
     };
   }, []);
 
-  const handleImageUriChange = React.useCallback(
-    (uri: string | null) => {
-      setImageUri(uri);
-      if (uri) {
-        setImageSource(uri);
-        editorRef.current.updateMeta({ imageUri: uri });
-      } else {
-        setImageSource(SAMPLE_SPRITE);
-        editorRef.current.updateMeta({ imageUri: undefined });
-      }
-    },
-    [],
-  );
+  const handleImageUriChange = React.useCallback((uri: string | null) => {
+    setImageUri(uri);
+    if (uri) {
+      setImageSource(uri);
+      editorRef.current.updateMeta({ imageUri: uri });
+    } else {
+      setImageSource(SAMPLE_SPRITE);
+      editorRef.current.updateMeta({ imageUri: undefined });
+    }
+  }, []);
 
   const handleGridAddFrames = React.useCallback(
     (cells: FrameGridCell[]) => {
@@ -107,7 +104,8 @@ export const EditorScreen = () => {
       <ScrollView contentContainerStyle={styles.scroll}>
         <Text style={styles.title}>Sprite Editor v0.4 Preview</Text>
         <Text style={styles.subtitle}>
-          Edit frames, play animations, switch templates, and persist sprites to disk with a single screen.
+          Edit frames, play animations, switch templates, and persist sprites to disk with a single
+          screen.
         </Text>
         <FrameGridSelector image={{ source: imageSource }} onAddFrames={handleGridAddFrames} />
         <View style={styles.canvasSection}>

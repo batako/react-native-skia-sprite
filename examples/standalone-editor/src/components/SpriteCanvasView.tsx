@@ -93,12 +93,35 @@ export const SpriteCanvasView = ({ editor, image, gridSize = 16 }: SpriteCanvasV
       )}
       <View style={{ width: canvasWidth, height: canvasHeight }}>
         <Canvas style={{ width: canvasWidth, height: canvasHeight }}>
-          {skiaImage && <Image image={skiaImage} x={0} y={0} width={canvasWidth} height={canvasHeight} fit="contain" />}
+          {skiaImage && (
+            <Image
+              image={skiaImage}
+              x={0}
+              y={0}
+              width={canvasWidth}
+              height={canvasHeight}
+              fit="contain"
+            />
+          )}
           {gridLines.vertical.map((x) => (
-            <Rect key={`v-${x}`} x={x} y={0} width={1} height={canvasHeight} color="rgba(255,255,255,0.15)" />
+            <Rect
+              key={`v-${x}`}
+              x={x}
+              y={0}
+              width={1}
+              height={canvasHeight}
+              color="rgba(255,255,255,0.15)"
+            />
           ))}
           {gridLines.horizontal.map((y) => (
-            <Rect key={`h-${y}`} x={0} y={y} width={canvasWidth} height={1} color="rgba(255,255,255,0.15)" />
+            <Rect
+              key={`h-${y}`}
+              x={0}
+              y={y}
+              width={canvasWidth}
+              height={1}
+              color="rgba(255,255,255,0.15)"
+            />
           ))}
           {frames.map((frame) => (
             <Rect
@@ -107,11 +130,18 @@ export const SpriteCanvasView = ({ editor, image, gridSize = 16 }: SpriteCanvasV
               y={frame.y}
               width={frame.w}
               height={frame.h}
-              color={selectedIds.includes(frame.id) ? 'rgba(80,141,255,0.25)' : 'rgba(255,255,255,0.08)'}
+              color={
+                selectedIds.includes(frame.id) ? 'rgba(80,141,255,0.25)' : 'rgba(255,255,255,0.08)'
+              }
             />
           ))}
           {selectionPath && (
-            <Path path={selectionPath} color="rgba(80,141,255,0.9)" style="stroke" strokeWidth={2} />
+            <Path
+              path={selectionPath}
+              color="rgba(80,141,255,0.9)"
+              style="stroke"
+              strokeWidth={2}
+            />
           )}
         </Canvas>
         <View style={StyleSheet.absoluteFill} pointerEvents="box-only" {...responder.panHandlers} />

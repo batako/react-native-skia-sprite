@@ -72,7 +72,11 @@ export const PlaybackControls = ({ integration, image }: PlaybackControlsProps) 
         />
       </View>
       <View style={styles.buttonRow}>
-        <IconButton name="minus" onPress={() => adjustSpeed(-0.25)} accessibilityLabel="Slow down" />
+        <IconButton
+          name="minus"
+          onPress={() => adjustSpeed(-0.25)}
+          accessibilityLabel="Slow down"
+        />
         <IconButton name="plus" onPress={() => adjustSpeed(0.25)} accessibilityLabel="Speed up" />
         <Text style={styles.speedLabel}>Speed ×{speedScale.toFixed(2)}</Text>
       </View>
