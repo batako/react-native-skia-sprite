@@ -19,7 +19,6 @@ export const PlaybackControls = ({ integration, image }: PlaybackControlsProps) 
     setActiveAnimation,
     play,
     pause,
-    resume,
     stop,
     seekFrame,
     speedScale,
@@ -64,7 +63,6 @@ export const PlaybackControls = ({ integration, image }: PlaybackControlsProps) 
           onPress={() => (isPlaying ? pause() : play(activeAnimation))}
           accessibilityLabel={isPlaying ? 'Pause' : 'Play'}
         />
-        <IconButton name="refresh-cw" onPress={resume} accessibilityLabel="Resume" />
         <IconButton name="square" onPress={stop} accessibilityLabel="Stop" />
         <IconButton
           name="target"
