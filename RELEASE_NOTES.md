@@ -32,10 +32,6 @@
 ## 🔧 Refactors
 
 - [`c93dcf0`](https://github.com/batako/react-native-skia-sprite-animator/commit/c93dcf0d107ef4abd0fe0bbb551de122e5c7b505) Documented all editor-facing types/helpers and tightened lint coverage.
-- [`9911789`](https://github.com/batako/react-native-skia-sprite-animator/commit/99117892d7091825492a9f21ef8181d494d2b3f1) Added the initial GitHub release workflow with automated tests.
-- [`b295d2a`](https://github.com/batako/react-native-skia-sprite-animator/commit/b295d2a53caf806d0ffa6582b0b87bb12ec6120c) Switched the workflow to source release notes from `RELEASE_NOTES.md`.
-- [`d8ab1c2`](https://github.com/batako/react-native-skia-sprite-animator/commit/d8ab1c2ec5d7ca9098c5f1710a462ba80243df90) Templatized the release notes file for repeatable output.
-- [`ed5987c`](https://github.com/batako/react-native-skia-sprite-animator/commit/ed5987cab969a518290b4201d0f1d927addff8c9) Commented out template content so the file always reflects the current release only.
 
 <!-- Section: Full Changelog -->
 
