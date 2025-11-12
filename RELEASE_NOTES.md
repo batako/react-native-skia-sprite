@@ -10,15 +10,14 @@
 
 ## 🌟 Highlights
 
-- Headless editor toolkit: `useSpriteEditor`, `SpriteEditUtils`, and a template system make it easy to build fully custom sprite editors without shipping UI opinions.
-- Documentation overhaul: English/Japanese editor API guides plus README updates explain how to adopt the new tooling end-to-end.
+- Expo 製スタンドアロンエディタを追加し、`react-native-skia-sprite-animator` の全 API（編集 / 再生 / テンプレート / 永続化）を 1 画面で体験できるようにしました。
+- README + 日本語 README を更新し、サンプルの導入手順・機能一覧を最新版の構成に合わせて整理しました。
 
 <!-- Section: Features -->
 
 ## ✨ Features
 
-- [`f8bc978`](https://github.com/batako/react-native-skia-sprite-animator/commit/f8bc978850beaf53df8dc9600d772d9786f1857f) Added editor modules (`useSpriteEditor`, `SpriteEditUtils`, template exports), README updates, and comprehensive tests.
-- [`443a8cf`](https://github.com/batako/react-native-skia-sprite-animator/commit/443a8cfdd0c9c3b9c46461578329c8009c4961da) Shipped the Japanese editor API reference to keep docs bilingual.
+- [`18d02f0`](https://github.com/BatakoStudio/codigrowa/commit/18d02f0) Added `examples/standalone-editor/` (Expo app with canvas editor, playback controls, storage/template panels, metadata editor, and documentation).
 
 <!-- Section: Bug Fixes -->
 
@@ -30,10 +29,10 @@
 
 ## 🔧 Refactors
 
-- [`c93dcf0`](https://github.com/batako/react-native-skia-sprite-animator/commit/c93dcf0d107ef4abd0fe0bbb551de122e5c7b505) Documented all editor-facing types/helpers and tightened lint coverage.
+- _No refactors were logged for this release._
 
 <!-- Section: Full Changelog -->
 
 ## 📜 Full Changelog
 
-- https://github.com/batako/react-native-skia-sprite-animator/compare/v0.2.0...v0.3.0
+- https://github.com/batako/react-native-skia-sprite-animator/compare/v0.3.0...v0.4.0

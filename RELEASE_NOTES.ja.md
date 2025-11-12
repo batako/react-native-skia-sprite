@@ -1,12 +1,11 @@
 ## 🌟 ハイライト
 
-- `useSpriteEditor` / `SpriteEditUtils` / テンプレート API を追加し、UI を持たないスプライトエディターを構築できるようになりました。
-- README・Editor API ドキュメントを英語/日本語で整備し、セットアップから運用までの流れを明文化しました。
+- Expo 製スタンドアロンエディタを追加し、`react-native-skia-sprite-animator` の全 API（編集 / 再生 / テンプレート / 永続化）を 1 画面で試せるようになりました。
+- README（英語 / 日本語）をアップデートし、サンプルの導入手順や機能一覧を最新構成に合わせて整理しました。
 
 ## ✨ 機能追加
 
-- [`f8bc978`](https://github.com/batako/react-native-skia-sprite-animator/commit/f8bc978850beaf53df8dc9600d772d9786f1857f) `useSpriteEditor` Hook、`SpriteEditUtils`、テンプレート API、README 更新、Jest テストをまとめて実装。
-- [`443a8cf`](https://github.com/batako/react-native-skia-sprite-animator/commit/443a8cfdd0c9c3b9c46461578329c8009c4961da) Editor API ドキュメントの日本語版を追加。
+- [`18d02f0`](https://github.com/BatakoStudio/codigrowa/commit/18d02f0) `examples/standalone-editor/` を追加（キャンバス編集、再生コントロール、テンプレート/ストレージ/メタデータ各パネル、Hook 連携、README などを含む Expo アプリ）。
 
 ## 🐞 バグ修正
 
@@ -14,8 +13,8 @@
 
 ## 🔧 リファクタリング
 
-- [`c93dcf0`](https://github.com/batako/react-native-skia-sprite-animator/commit/c93dcf0d107ef4abd0fe0bbb551de122e5c7b505) Editor API で公開する型やヘルパーに JSDoc/ESLint を適用し、品質を向上。
+- 今回のリリースでは該当なし。
 
 ## 📜 変更履歴全文
 
-- https://github.com/batako/react-native-skia-sprite-animator/compare/v0.2.0...v0.3.0
+- https://github.com/batako/react-native-skia-sprite-animator/compare/v0.3.0...v0.4.0
