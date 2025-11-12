@@ -636,7 +636,7 @@ const styles = StyleSheet.create({
   imageFrameContainer: {
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: '#1c2130',
     width: '100%',
     height: '100%',
   },
@@ -657,16 +657,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
     height: '100%',
-    backgroundColor: '#fff',
+    backgroundColor: '#1c2130',
   },
   emptyStateTitle: {
-    color: '#11141c',
+    color: '#e5ebff',
     fontWeight: '600',
     marginBottom: 6,
     fontSize: 14,
   },
   emptyStateText: {
-    color: '#555c70',
+    color: '#b8c1db',
     fontSize: 12,
     textAlign: 'center',
     lineHeight: 18,
