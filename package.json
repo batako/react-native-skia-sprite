@@ -42,7 +42,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint . --ext .ts,.tsx,.js",
-    "test": "jest --config jest.config.cjs"
+    "test": "jest --config jest.config.cjs",
+    "release": "npm ci && npm run build && npm publish --access public"
   },
   "devDependencies": {
     "@shopify/react-native-skia": "^2.3.10",
