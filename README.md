@@ -184,6 +184,16 @@ await deleteSprite(saved.id);
 - `getSpriteStoragePaths()`: Inspect the internal directories and registry file path.
 - `clearSpriteStorage()`: Remove the generated folders/registry (helpful for tests or resets).
 
+## Editor APIs
+
+Editor primitives live under `src/editor/` so you can build custom sprite tooling without bundling any UI opinions.
+
+- `useSpriteEditor`: React hook that manages frames, selection, clipboard, undo/redo history, and template-based export/import. It’s UI-agnostic—wire it into your own panels, gestures, or devtools.
+- `SpriteEditUtils`: Geometry helpers (`snapToGrid`, `normalizeRect`, `pointInFrame`, `mergeFrames`) for snap-lines, hit-tests, and bounding boxes.
+- `SpriteTemplate` + `DefaultSpriteTemplate`: Serialize editor state to the same JSON shape expected by `spriteStorage`, or provide your own template for custom pipelines.
+
+See [docs/editor_api.md](docs/editor_api.md) for usage examples and option tables.
+
 ## Development
 
 ```bash
@@ -193,7 +203,7 @@ npm run build
 npm pack
 ```
 
-Build artifacts land in `dist/` (ESM + type declarations). Hooks/UI components are intentionally out of scope so each app can design its own editor. Editor APIs arrive in the next roadmap milestone.
+Build artifacts land in `dist/` (ESM + type declarations). Hooks/UI components are intentionally out of scope so each app can design its own editor, and the editor APIs stay UI-agnostic for the same reason.
 
 ## License
 

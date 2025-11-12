@@ -185,14 +185,26 @@ await deleteSprite(saved.id);
 - `getSpriteStoragePaths()`: ライブラリが使用中のパスを返します。
 - `clearSpriteStorage()`: 生成したフォルダとレジストリを削除します (テストやリセット用)。
 
+## エディター API
+
+UI を持たないエディター用ツール群も `src/editor/` で提供しています。これらを組み合わせれば、各プロダクトに最適なエディター UI を自由に構築できます。
+
+- `useSpriteEditor`: フレーム一覧、選択状態、クリップボード、Undo/Redo、テンプレートベースの import/export を一括で管理する React Hook。UI には一切依存しないため、ボタンやジェスチャー、ショートカットに自由に接続できます。
+- `SpriteEditUtils`: `snapToGrid`、`normalizeRect`、`pointInFrame`、`mergeFrames` など、エディターで使い回せるジオメトリ系のヘルパー群。
+- `SpriteTemplate` / `DefaultSpriteTemplate`: エディター状態を `spriteStorage` と同じ JSON へ変換するためのインターフェースと標準テンプレート。独自テンプレートの実装も可能です。
+
+詳しいサンプルやオプションの一覧は [docs/editor_api.md](docs/editor_api.md) を参照してください。
+
 ## 開発
 
 ```bash
 npm install
 npm run build
+# npm publish と同じ tarball を生成したい場合
+npm pack
 ```
 
-`dist/` 以下に ESM/CommonJS 互換の出力を生成します。hook や UI はアプリ側で実装してください。次バージョンでは editor API を追加予定です。
+ビルド成果物は `dist/` (ESM + 型定義) に出力されます。レンダリング用コンポーネントとストレージヘルパーに加えて、エディター API は完全に UI 非依存なのでアプリ側で自在に組み立てられます。
 
 ## ライセンス
 
