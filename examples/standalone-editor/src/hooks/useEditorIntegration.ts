@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
+  SpriteAnimatorDirection,
   SpriteAnimatorFrameChangeEvent,
   SpriteAnimatorHandle,
   SpriteData,
@@ -15,12 +16,18 @@ interface SeekFrameOptions {
   animationName?: string | null;
 }
 
+interface PlayOptions {
+  fromFrame?: number;
+  direction?: SpriteAnimatorDirection;
+}
+
 export const useEditorIntegration = ({ editor }: UseEditorIntegrationOptions) => {
   const animatorRef = useRef<SpriteAnimatorHandle>(null);
   const [speedScale, setSpeedScale] = useState(1);
   const [activeAnimation, setActiveAnimation] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [frameCursor, setFrameCursor] = useState(0);
+  const [playDirection, setPlayDirection] = useState<SpriteAnimatorDirection>('forward');
   const endedAnimationRef = useRef<string | null>(null);
 
   const runtimeData = useMemo<SpriteData>(() => {
@@ -43,7 +50,7 @@ export const useEditorIntegration = ({ editor }: UseEditorIntegrationOptions) =>
   }, [runtimeData.frames, runtimeData.animations]);
 
   const play = useCallback(
-    (name?: string | null, opts?: { fromFrame?: number }) => {
+    (name?: string | null, opts?: PlayOptions) => {
       if (!animatorRef.current) {
         return;
       }
@@ -62,25 +69,40 @@ export const useEditorIntegration = ({ editor }: UseEditorIntegrationOptions) =>
         requestedFrame !== undefined
           ? true
           : (!isPlaying && targetName && sequence.length > 0 && isAtEnd) || hasEnded;
+      const resolvedDirection: SpriteAnimatorDirection =
+        opts?.direction === 'reverse' || opts?.direction === 'forward'
+          ? opts.direction
+          : playDirection;
       const options =
         requestedFrame !== undefined
-          ? { speedScale, fromFrame: requestedFrame }
+          ? { speedScale, fromFrame: requestedFrame, direction: resolvedDirection }
           : shouldRestart && sequence.length > 0
-            ? { speedScale, fromFrame: 0 }
-            : { speedScale };
+            ? { speedScale, fromFrame: resolvedDirection === 'reverse' ? sequence.length - 1 : 0, direction: resolvedDirection }
+            : { speedScale, direction: resolvedDirection };
       animatorRef.current.play(targetName ?? undefined, options);
       setActiveAnimation(targetName);
       setIsPlaying(true);
+      setPlayDirection(resolvedDirection);
       if (requestedFrame !== undefined) {
         setFrameCursor(requestedFrame);
       } else if (shouldRestart && sequence.length > 0) {
-        setFrameCursor(sequence[0]);
+        const restartFrame =
+          resolvedDirection === 'reverse' ? sequence[sequence.length - 1] : sequence[0];
+        setFrameCursor(restartFrame);
       }
       if (hasEnded || requestedFrame !== undefined) {
         endedAnimationRef.current = null;
       }
     },
-    [activeAnimation, editor.state.frames.length, frameCursor, getSequence, isPlaying, speedScale],
+    [
+      activeAnimation,
+      editor.state.frames.length,
+      frameCursor,
+      getSequence,
+      isPlaying,
+      playDirection,
+      speedScale,
+    ],
   );
 
   const stop = useCallback(() => {
@@ -108,6 +130,20 @@ export const useEditorIntegration = ({ editor }: UseEditorIntegrationOptions) =>
       play(name);
     },
     [isPlaying, pause, play],
+  );
+
+  const playForward = useCallback(
+    (name?: string | null, opts?: Omit<PlayOptions, 'direction'>) => {
+      play(name, { ...opts, direction: 'forward' });
+    },
+    [play],
+  );
+
+  const playReverse = useCallback(
+    (name?: string | null, opts?: Omit<PlayOptions, 'direction'>) => {
+      play(name, { ...opts, direction: 'reverse' });
+    },
+    [play],
   );
 
   const seekFrame = useCallback(
@@ -218,10 +254,14 @@ export const useEditorIntegration = ({ editor }: UseEditorIntegrationOptions) =>
     animationsMeta: editor.state.animationsMeta,
     speedScale,
     setSpeedScale,
+    playDirection,
+    setPlayDirection,
     activeAnimation,
     setActiveAnimation,
     availableAnimations,
     play,
+    playForward,
+    playReverse,
     stop,
     pause,
     resume,
