@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Image,
@@ -99,6 +99,19 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
     setSpeedScale,
     frameCursor,
   } = integration;
+  const multiplierFieldRef = useRef<MultiplierFieldHandle>(null);
+  const commitPendingMultiplier = useCallback(() => {
+    multiplierFieldRef.current?.commit();
+  }, []);
+  const setTimelineSelection = useCallback<
+    React.Dispatch<React.SetStateAction<number | null>>
+  >(
+    (value) => {
+      commitPendingMultiplier();
+      setSelectedTimelineIndex(value);
+    },
+    [commitPendingMultiplier],
+  );
 
   const renderResumeForwardIcon = useCallback(
     ({ color, size }: IconButtonRenderIconProps) => (
@@ -153,8 +166,8 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
   const currentBaseDuration = fpsToDuration(currentAnimationFps);
 
   useEffect(() => {
-    setSelectedTimelineIndex(null);
-  }, [currentAnimationName]);
+    setTimelineSelection(null);
+  }, [currentAnimationName, setTimelineSelection]);
 
   const imageInfo = useImageDimensions(image);
   const timelineImageSource = useMemo(() => resolveReactNativeImageSource(image), [image]);
@@ -385,7 +398,7 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
     const next = [...currentSequence];
     next.splice(insertIndex, 0, ...timelineClipboard);
     updateSequence(next);
-    setSelectedTimelineIndex(insertIndex);
+    setTimelineSelection(insertIndex);
   };
 
   const handleRemoveTimelineFrame = () => {
@@ -395,7 +408,7 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
     const next = [...currentSequence];
     next.splice(selectedTimelineIndex, 1);
     updateSequence(next);
-    setSelectedTimelineIndex((prev) => {
+    setTimelineSelection((prev) => {
       if (prev === null) {
         return prev;
       }
@@ -415,7 +428,7 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
     const [item] = next.splice(selectedTimelineIndex, 1);
     next.splice(targetIndex, 0, item);
     updateSequence(next);
-    setSelectedTimelineIndex(targetIndex);
+    setTimelineSelection(targetIndex);
   };
 
   const handleDuplicateTimelineFrame = () => {
@@ -425,7 +438,7 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
     const next = [...currentSequence];
     next.splice(selectedTimelineIndex + 1, 0, currentSequence[selectedTimelineIndex]);
     updateSequence(next);
-    setSelectedTimelineIndex(selectedTimelineIndex + 1);
+    setTimelineSelection(selectedTimelineIndex + 1);
   };
 
   const sequenceCards = currentSequence.map((frameIndex, idx) => {
@@ -755,7 +768,12 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
               />
             </View>
             <View style={styles.timelineDivider} />
-            <MultiplierField value={selectedMultiplier} disabled={!selectedFrame} onSubmit={handleMultiplierSubmit} />
+            <MultiplierField
+              ref={multiplierFieldRef}
+              value={selectedMultiplier}
+              disabled={!selectedFrame}
+              onSubmit={handleMultiplierSubmit}
+            />
           </View>
           <ScrollView
             horizontal
@@ -794,7 +812,7 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
                   key={`${frameIndex}-${timelineIndex}`}
                   style={[styles.timelineCard, isSelected && styles.timelineCardSelected]}
                   onPress={() => {
-                    setSelectedTimelineIndex(timelineIndex);
+                    setTimelineSelection(timelineIndex);
                     seekFrame(frameIndex, {
                       cursor: timelineIndex,
                       animationName: currentAnimationName ?? null,
@@ -889,38 +907,52 @@ interface MultiplierFieldProps {
   disabled?: boolean;
 }
 
-const MultiplierField = ({ value, onSubmit, disabled }: MultiplierFieldProps) => {
-  const [text, setText] = useState(value.toFixed(2));
+interface MultiplierFieldHandle {
+  commit: () => void;
+}
 
-  useEffect(() => {
-    setText(value.toFixed(2));
-  }, [value, disabled]);
+const MultiplierField = React.forwardRef<MultiplierFieldHandle, MultiplierFieldProps>(
+  ({ value, onSubmit, disabled }, ref) => {
+    const [text, setText] = useState(value.toFixed(2));
 
-  const commit = () => {
-    const parsed = Number(text);
-    if (!Number.isNaN(parsed)) {
-      onSubmit(parsed);
-    } else {
+    const commit = useCallback(() => {
+      if (disabled) {
+        return;
+      }
+      const parsed = Number(text);
+      if (!Number.isNaN(parsed)) {
+        onSubmit(parsed);
+      } else {
+        setText(value.toFixed(2));
+      }
+    }, [disabled, onSubmit, text, value]);
+
+    useImperativeHandle(ref, () => ({
+      commit,
+    }));
+
+    useEffect(() => {
       setText(value.toFixed(2));
-    }
-  };
+    }, [value, disabled]);
 
-  return (
-    <View style={styles.multiplierRow}>
-      <Text style={styles.multiplierLabel}>倍率</Text>
-      <TextInput
-        style={[styles.multiplierInput, disabled && styles.multiplierInputDisabled]}
-        keyboardType="numeric"
-        value={text}
-        onChangeText={setText}
-        onBlur={commit}
-        onSubmitEditing={commit}
-        editable={!disabled}
-      />
-      <Text style={styles.multiplierUnit}>×</Text>
-    </View>
-  );
-};
+    return (
+      <View style={styles.multiplierRow}>
+        <Text style={styles.multiplierLabel}>倍率</Text>
+        <TextInput
+          style={[styles.multiplierInput, disabled && styles.multiplierInputDisabled]}
+          keyboardType="numeric"
+          value={text}
+          onChangeText={setText}
+          onBlur={commit}
+          onSubmitEditing={commit}
+          editable={!disabled}
+        />
+        <Text style={styles.multiplierUnit}>×</Text>
+      </View>
+    );
+  },
+);
+MultiplierField.displayName = 'MultiplierField';
 
 interface AnimationFpsFieldProps {
   value: number;
