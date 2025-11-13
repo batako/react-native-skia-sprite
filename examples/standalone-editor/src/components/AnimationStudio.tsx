@@ -486,16 +486,6 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
     setTimelineSelection(targetIndex);
   };
 
-  const handleDuplicateTimelineFrame = () => {
-    if (selectedTimelineIndex === null) {
-      return;
-    }
-    const next = [...currentSequence];
-    next.splice(selectedTimelineIndex + 1, 0, currentSequence[selectedTimelineIndex]);
-    updateSequence(next);
-    setTimelineSelection(selectedTimelineIndex + 1);
-  };
-
   const sequenceCards = currentSequence.map((frameIndex, idx) => {
     const frame = frames[frameIndex];
     return {
@@ -814,12 +804,6 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
                   currentSequence.length === 0
                 }
                 accessibilityLabel="Move frame right"
-              />
-              <IconButton
-                name="add"
-                onPress={handleDuplicateTimelineFrame}
-                disabled={selectedTimelineIndex === null}
-                accessibilityLabel="Duplicate frame"
               />
             </View>
             <View style={styles.timelineDivider} />
