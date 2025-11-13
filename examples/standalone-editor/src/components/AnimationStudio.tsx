@@ -784,12 +784,6 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
               />
               <View style={styles.timelineDivider} />
               <IconButton
-                name="delete-forever"
-                onPress={handleRemoveTimelineFrame}
-                disabled={selectedTimelineIndex === null}
-                accessibilityLabel="Remove timeline frame"
-              />
-              <IconButton
                 name="skip-previous"
                 onPress={() => handleMoveTimelineFrame(-1)}
                 disabled={selectedTimelineIndex === null || selectedTimelineIndex === 0}
@@ -804,6 +798,12 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
                   currentSequence.length === 0
                 }
                 accessibilityLabel="Move frame right"
+              />
+              <IconButton
+                name="delete-forever"
+                onPress={handleRemoveTimelineFrame}
+                disabled={selectedTimelineIndex === null}
+                accessibilityLabel="Remove timeline frame"
               />
             </View>
             <View style={styles.timelineDivider} />
