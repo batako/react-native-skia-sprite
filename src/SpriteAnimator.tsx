@@ -89,11 +89,16 @@ export interface SpriteData {
 /**
  * Options for the `play` method exposed via the imperative handle.
  */
+/** Allowed playback directions. */
+export type SpriteAnimatorDirection = 'forward' | 'reverse';
+
 export interface SpriteAnimatorPlayOptions {
   /** Frame index to start playback from. */
   fromFrame?: number;
   /** Local speed override that multiplies the component speedScale. */
   speedScale?: number;
+  /** Direction the animation should play in. */
+  direction?: SpriteAnimatorDirection;
 }
 
 /**
@@ -184,10 +189,12 @@ interface AnimationState {
   playing: boolean;
   frameCursor: number;
   speed: number;
+  direction: SpriteAnimatorDirection;
 }
 
 const DEFAULT_FPS = 12;
 const MIN_SPEED = 0.001;
+const DEFAULT_DIRECTION: SpriteAnimatorDirection = 'forward';
 
 const clamp = (value: number, min: number, max: number) => {
   if (value < min) return min;
@@ -328,6 +335,7 @@ const SpriteAnimatorComponent = (
     playing: autoplay && initialSequence.length > 1,
     frameCursor: 0,
     speed: 1,
+    direction: DEFAULT_DIRECTION,
   }));
   const animStateRef = useRef(animState);
   animStateRef.current = animState;
@@ -452,15 +460,18 @@ const SpriteAnimatorComponent = (
         }
         return prev;
       }
-      const nextCursor = prev.frameCursor + 1;
-      if (nextCursor < sequence.length) {
+      const step = prev.direction === 'reverse' ? -1 : 1;
+      const nextCursor = prev.frameCursor + step;
+      const withinBounds = nextCursor >= 0 && nextCursor < sequence.length;
+      if (withinBounds) {
         return { ...prev, frameCursor: nextCursor };
       }
       if (!shouldLoopFor(prev.name)) {
         markAnimationEnded(prev.name ?? null);
         return { ...prev, playing: false };
       }
-      return { ...prev, frameCursor: 0 };
+      const wrappedCursor = prev.direction === 'reverse' ? sequence.length - 1 : 0;
+      return { ...prev, frameCursor: wrappedCursor };
     });
   }, [markAnimationEnded, resolveSequence, shouldLoopFor]);
 
@@ -503,12 +514,18 @@ const SpriteAnimatorComponent = (
         if (!sequence.length) {
           return prev;
         }
+        const requestedDirection =
+          opts?.direction === 'reverse' || opts?.direction === 'forward'
+            ? opts.direction
+            : prev.direction ?? DEFAULT_DIRECTION;
         const fromFrame =
           typeof opts?.fromFrame === 'number'
             ? clamp(Math.floor(opts.fromFrame), 0, sequence.length - 1)
-            : targetName === prev.name
+            : targetName === prev.name && requestedDirection === prev.direction
               ? prev.frameCursor
-              : 0;
+              : requestedDirection === 'reverse'
+                ? sequence.length - 1
+                : 0;
         const nextSpeed =
           typeof opts?.speedScale === 'number' &&
           Number.isFinite(opts.speedScale) &&
@@ -521,6 +538,7 @@ const SpriteAnimatorComponent = (
           frameCursor: fromFrame,
           playing: sequence.length > 1,
           speed: nextSpeed,
+          direction: requestedDirection,
         };
       });
     },
