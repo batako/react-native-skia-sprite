@@ -138,6 +138,34 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
     [],
   );
 
+  const handleSelectAnimationItem = useCallback(
+    (name: string) => {
+      if (!name || name === currentAnimationName) {
+        return;
+      }
+      if (isPlaying) {
+        stop();
+      }
+      setActiveAnimation(name);
+      const nextSequence = animations[name] ?? [];
+      if (nextSequence.length) {
+        setTimelineSelection(0);
+        seekFrame(nextSequence[0], { cursor: 0, animationName: name });
+      } else {
+        setTimelineSelection(null);
+      }
+    },
+    [
+      animations,
+      currentAnimationName,
+      isPlaying,
+      seekFrame,
+      setActiveAnimation,
+      setTimelineSelection,
+      stop,
+    ],
+  );
+
   const animationNames = useMemo(() => Object.keys(animations), [animations]);
   const animationsMeta = editor.state.animationsMeta;
 
@@ -165,9 +193,36 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
     : true;
   const currentBaseDuration = fpsToDuration(currentAnimationFps);
 
+  const lastAnimationRef = useRef<string | null>(null);
   useEffect(() => {
-    setTimelineSelection(null);
-  }, [currentAnimationName, setTimelineSelection]);
+    const nextName = currentAnimationName ?? null;
+    const nextSequence = nextName ? animations[nextName] ?? [] : [];
+    const animationChanged = lastAnimationRef.current !== nextName;
+    lastAnimationRef.current = nextName;
+
+    if (!nextSequence.length) {
+      setTimelineSelection(null);
+      return;
+    }
+
+    if (animationChanged) {
+      setTimelineSelection(() => 0);
+      seekFrame(nextSequence[0], { cursor: 0, animationName: nextName });
+      return;
+    }
+
+    setTimelineSelection((prev) => {
+      if (prev === null || prev >= nextSequence.length) {
+        return 0;
+      }
+      return prev;
+    });
+  }, [
+    animations,
+    currentAnimationName,
+    seekFrame,
+    setTimelineSelection,
+  ]);
 
   const imageInfo = useImageDimensions(image);
   const timelineImageSource = useMemo(() => resolveReactNativeImageSource(image), [image]);
@@ -652,7 +707,7 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
                   styles.animationListItem,
                   currentAnimationName === name && styles.animationListItemActive,
                 ]}
-                onPress={() => setActiveAnimation(name)}
+                onPress={() => handleSelectAnimationItem(name)}
               >
                 <Text style={styles.animationListItemText}>{name}</Text>
               </TouchableOpacity>
