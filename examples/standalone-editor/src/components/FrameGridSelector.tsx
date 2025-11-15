@@ -1,5 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import type { DataSourceParam } from '@shopify/react-native-skia';
 import type { ImageSourcePropType } from 'react-native';
 import { IconButton } from './IconButton';
@@ -362,12 +370,14 @@ export const FrameGridSelector = ({
                   accessibilityLabel="Zoom out"
                   style={styles.zoomButton}
                 />
-                <IconButton
-                  name="fullscreen"
+                <Pressable
                   onPress={resetScale}
-                  accessibilityLabel="Actual size"
-                  style={styles.zoomButton}
-                />
+                  accessibilityRole="button"
+                  accessibilityLabel="Reset zoom to 100%"
+                  style={styles.zoomTextButton}
+                >
+                  <Text style={styles.zoomLabel}>{Math.round(scale * 100)}%</Text>
+                </Pressable>
                 <IconButton
                   name="zoom-in"
                   onPress={() => changeScale(0.25)}
@@ -569,6 +579,16 @@ const styles = StyleSheet.create({
   zoomButton: {
     marginRight: 4,
     marginBottom: 0,
+  },
+  zoomTextButton: {
+    marginRight: 4,
+  },
+  zoomLabel: {
+    color: '#dfe7ff',
+    fontWeight: '600',
+    fontSize: 12,
+    minWidth: 50,
+    textAlign: 'center',
   },
   orderRow: {
     flexDirection: 'row',

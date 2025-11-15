@@ -172,10 +172,7 @@ export const PreviewPlayer = ({
               onPress={resetZoom}
               accessibilityRole="button"
               accessibilityLabel="Reset zoom to 100%"
-              style={({ pressed }) => [
-                styles.zoomTextButton,
-                pressed && styles.zoomTextButtonPressed,
-              ]}
+              style={styles.zoomTextButton}
             >
               <Text style={styles.zoomLabel}>{Math.round(zoom * 100)}%</Text>
             </Pressable>
@@ -244,16 +241,7 @@ const styles = StyleSheet.create({
     marginBottom: 0,
   },
   zoomTextButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#2a3147',
-    backgroundColor: '#1c2233',
     marginRight: 4,
-  },
-  zoomTextButtonPressed: {
-    backgroundColor: '#28304b',
   },
   zoomLabel: {
     color: '#dfe7ff',
