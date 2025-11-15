@@ -13,8 +13,7 @@ type SpriteDataLike<TFrame extends SpriteFrame> = Pick<
   [key: string]: unknown;
 };
 
-export interface CleanSpriteDataResult<TFrame extends SpriteFrame>
-  extends SpriteDataLike<TFrame> {
+export interface CleanSpriteDataResult<TFrame extends SpriteFrame> extends SpriteDataLike<TFrame> {
   frameIndexMap: number[];
   removedFrameIndexes: number[];
   animations: SpriteAnimations;
@@ -92,7 +91,7 @@ export const cleanSpriteData = <TFrame extends SpriteFrame>(
       return;
     }
     const remapped = sequence
-      .map((index) => (typeof index === 'number' ? frameIndexMap[index] ?? -1 : -1))
+      .map((index) => (typeof index === 'number' ? (frameIndexMap[index] ?? -1) : -1))
       .filter((index) => index >= 0);
     cleanedAnimations[name] = remapped;
   });

@@ -195,7 +195,9 @@ export const FileBrowserModal = ({
         return;
       }
       await ensureDirectory();
-      const extension = assetName.includes('.') ? assetName.substring(assetName.lastIndexOf('.')) : '';
+      const extension = assetName.includes('.')
+        ? assetName.substring(assetName.lastIndexOf('.'))
+        : '';
       const targetName = assetName.length ? assetName : `file-${Date.now()}${extension ?? ''}`;
       const targetUri = `${APP_FILES_DIR}/${targetName}`;
       await FileSystem.copyAsync({ from: sourceUri, to: targetUri });

@@ -11,9 +11,7 @@
       "resizeMode": "contain",
       "backgroundColor": "#1f1f1f"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.batako.standalone-editor"

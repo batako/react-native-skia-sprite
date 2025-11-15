@@ -6,10 +6,7 @@ export interface SelectableTextInputProps extends TextInputProps {
 }
 
 export const SelectableTextInput = React.forwardRef<TextInput, SelectableTextInputProps>(
-  (
-    { selectTextOnFocus = true, autoSelect = true, onFocus, value, ...rest },
-    forwardedRef,
-  ) => {
+  ({ selectTextOnFocus = true, autoSelect = true, onFocus, value, ...rest }, forwardedRef) => {
     const innerRef = useRef<TextInput>(null);
 
     const assignRef = useCallback(

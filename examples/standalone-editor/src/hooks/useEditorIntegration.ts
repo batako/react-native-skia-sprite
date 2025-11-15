@@ -32,7 +32,7 @@ export const useEditorIntegration = ({ editor }: UseEditorIntegrationOptions) =>
   const [playDirection, setPlayDirection] = useState<SpriteAnimatorDirection>('forward');
   const endedAnimationRef = useRef<string | null>(null);
 
-  const animationsState = editor.state.animations ?? {};
+  const animationsState = useMemo(() => editor.state.animations ?? {}, [editor.state.animations]);
   const animationsMetaState = useMemo(
     () => editor.state.animationsMeta ?? {},
     [editor.state.animationsMeta],
@@ -73,7 +73,7 @@ export const useEditorIntegration = ({ editor }: UseEditorIntegrationOptions) =>
     setTimelineCursor((prev) => {
       const activeName = animator?.getCurrentAnimation?.() ?? null;
       const sequence =
-        activeName && runtimeData.animations ? runtimeData.animations[activeName] ?? [] : [];
+        activeName && runtimeData.animations ? (runtimeData.animations[activeName] ?? []) : [];
       if (!sequence.length) {
         return null;
       }
@@ -116,7 +116,11 @@ export const useEditorIntegration = ({ editor }: UseEditorIntegrationOptions) =>
         requestedFrame !== undefined
           ? { speedScale, fromFrame: requestedFrame, direction: resolvedDirection }
           : shouldRestart && sequence.length > 0
-            ? { speedScale, fromFrame: resolvedDirection === 'reverse' ? sequence.length - 1 : 0, direction: resolvedDirection }
+            ? {
+                speedScale,
+                fromFrame: resolvedDirection === 'reverse' ? sequence.length - 1 : 0,
+                direction: resolvedDirection,
+              }
             : { speedScale, direction: resolvedDirection };
       animatorRef.current.play(targetName ?? undefined, options);
       setActiveAnimation(targetName);
@@ -188,15 +192,12 @@ export const useEditorIntegration = ({ editor }: UseEditorIntegrationOptions) =>
   const seekFrame = useCallback(
     (frameIndex: number, opts?: SeekFrameOptions) => {
       const animator = animatorRef.current;
-      const fallbackFrameIndex = Number.isFinite(frameIndex) ? Math.max(0, Math.floor(frameIndex)) : 0;
+      const fallbackFrameIndex = Number.isFinite(frameIndex)
+        ? Math.max(0, Math.floor(frameIndex))
+        : 0;
       const targetAnimation =
-        opts?.animationName ??
-        animator?.getCurrentAnimation?.() ??
-        activeAnimation ??
-        null;
-      const sequenceOverride = Array.isArray(opts?.sequenceOverride)
-        ? opts.sequenceOverride
-        : null;
+        opts?.animationName ?? animator?.getCurrentAnimation?.() ?? activeAnimation ?? null;
+      const sequenceOverride = Array.isArray(opts?.sequenceOverride) ? opts.sequenceOverride : null;
       const sequence = sequenceOverride ?? getSequence(targetAnimation);
       const clampCursor = (value: number) => {
         if (!sequence.length) {
@@ -267,8 +268,7 @@ export const useEditorIntegration = ({ editor }: UseEditorIntegrationOptions) =>
       if (!sequence.length) {
         return;
       }
-      const cursor =
-        playDirection === 'reverse' ? 0 : Math.max(0, sequence.length - 1);
+      const cursor = playDirection === 'reverse' ? 0 : Math.max(0, sequence.length - 1);
       const frameIndex = sequence[cursor];
       setFrameCursor(frameIndex);
       setTimelineCursor(cursor);

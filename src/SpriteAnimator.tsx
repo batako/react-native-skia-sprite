@@ -519,7 +519,7 @@ const SpriteAnimatorComponent = (
         const requestedDirection =
           opts?.direction === 'reverse' || opts?.direction === 'forward'
             ? opts.direction
-            : prev.direction ?? DEFAULT_DIRECTION;
+            : (prev.direction ?? DEFAULT_DIRECTION);
         const fromFrame =
           typeof opts?.fromFrame === 'number'
             ? clamp(Math.floor(opts.fromFrame), 0, sequence.length - 1)

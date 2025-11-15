@@ -30,7 +30,10 @@ export const MetaEditor = ({ editor }: MetaEditorProps) => {
     const primitiveEntries = Object.entries(meta)
       .filter(([, value]) => {
         const valueType = typeof value;
-        return value !== null && (valueType === 'string' || valueType === 'number' || valueType === 'boolean');
+        return (
+          value !== null &&
+          (valueType === 'string' || valueType === 'number' || valueType === 'boolean')
+        );
       })
       .map(([key, value]) => createEntry(key, String(value)));
     setEntries(primitiveEntries);
@@ -106,7 +109,11 @@ export const MetaEditor = ({ editor }: MetaEditorProps) => {
               placeholder="value"
             />
           </View>
-          <IconButton name="delete" onPress={() => handleRemove(entry.id)} accessibilityLabel="Remove entry" />
+          <IconButton
+            name="delete"
+            onPress={() => handleRemove(entry.id)}
+            accessibilityLabel="Remove entry"
+          />
         </View>
       ))}
       <View style={styles.buttonRow}>

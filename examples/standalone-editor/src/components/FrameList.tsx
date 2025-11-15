@@ -82,11 +82,7 @@ export const FrameList = ({ editor }: FrameListProps) => {
           disabled={!editor.canRedo}
           accessibilityLabel="Redo"
         />
-        <IconButton
-          name="check-box"
-          onPress={editor.selectAll}
-          accessibilityLabel="Select all"
-        />
+        <IconButton name="check-box" onPress={editor.selectAll} accessibilityLabel="Select all" />
         <IconButton
           name="close"
           onPress={editor.clearSelection}

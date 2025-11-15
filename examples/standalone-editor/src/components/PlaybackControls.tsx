@@ -65,12 +65,7 @@ export const PlaybackControls = ({ integration, image }: PlaybackControlsProps) 
           onPress={() => (isPlaying ? pause() : playForward(activeAnimation))}
           accessibilityLabel={isPlaying ? 'Pause' : 'Play'}
         />
-        <IconButton
-          iconFamily="material"
-          name="stop"
-          onPress={stop}
-          accessibilityLabel="Stop"
-        />
+        <IconButton iconFamily="material" name="stop" onPress={stop} accessibilityLabel="Stop" />
         <IconButton
           name="gps-fixed"
           onPress={() => selectedFrameIndex !== null && seekFrame(selectedFrameIndex)}

@@ -1,4 +1,11 @@
-import React, { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   Alert,
   Image,
@@ -28,7 +35,6 @@ interface AnimationStudioProps {
   onSelectImage?: () => void;
 }
 
-const DEFAULT_DURATION = 80;
 const DEFAULT_ANIMATION_FPS = 5;
 const MIN_ANIMATION_FPS = 1;
 const MAX_ANIMATION_FPS = 60;
@@ -45,10 +51,7 @@ const getAnimationSettings = (meta: Record<string, unknown> | undefined): Animat
   return settings ?? {};
 };
 
-const getAnimationFps = (
-  settings: AnimationSettingsMeta,
-  name: string | undefined,
-): number => {
+const getAnimationFps = (settings: AnimationSettingsMeta, name: string | undefined): number => {
   if (!name) {
     return DEFAULT_ANIMATION_FPS;
   }
@@ -99,10 +102,19 @@ const renameRecordKey = <T,>(
   return renamed ? next : { ...record };
 };
 
-export const AnimationStudio = ({ editor, integration, image, onSelectImage }: AnimationStudioProps) => {
+export const AnimationStudio = ({
+  editor,
+  integration,
+  image,
+  onSelectImage,
+}: AnimationStudioProps) => {
   const frames = editor.state.frames;
-  const animations = editor.state.animations ?? {};
-  const [thumbnailScale, setThumbnailScale] = useState(1);
+  const editorMeta = editor.state.meta;
+  const animations = useMemo(() => editor.state.animations ?? {}, [editor.state.animations]);
+  const animationsMeta = useMemo(
+    () => editor.state.animationsMeta ?? {},
+    [editor.state.animationsMeta],
+  );
   const [timelineClipboard, setTimelineClipboard] = useState<number[] | null>(null);
   const [selectedTimelineIndex, setSelectedTimelineIndex] = useState<number | null>(null);
   const [renamingAnimation, setRenamingAnimation] = useState<string | null>(null);
@@ -121,8 +133,6 @@ export const AnimationStudio = ({ editor, integration, image, onSelectImage }: A
     stop,
     seekFrame,
     isPlaying,
-    speedScale,
-    setSpeedScale,
     frameCursor,
     timelineCursor,
   } = integration;
@@ -130,9 +140,7 @@ export const AnimationStudio = ({ editor, integration, image, onSelectImage }: A
   const commitPendingMultiplier = useCallback(() => {
     multiplierFieldRef.current?.commit();
   }, []);
-  const setTimelineSelection = useCallback<
-    React.Dispatch<React.SetStateAction<number | null>>
-  >(
+  const setTimelineSelection = useCallback<React.Dispatch<React.SetStateAction<number | null>>>(
     (value) => {
       commitPendingMultiplier();
       setSelectedTimelineIndex(value);
@@ -154,12 +162,7 @@ export const AnimationStudio = ({ editor, integration, image, onSelectImage }: A
     ({ color, size }: IconButtonRenderIconProps) => (
       <View style={[styles.resumeIcon, styles.resumeIconReverse]}>
         <View style={[styles.resumeIconBar, { backgroundColor: color, height: size }]} />
-        <MaterialIcons
-          name="play-arrow"
-          size={size}
-          color={color}
-          style={styles.reverseIcon}
-        />
+        <MaterialIcons name="play-arrow" size={size} color={color} style={styles.reverseIcon} />
       </View>
     ),
     [],
@@ -192,7 +195,7 @@ export const AnimationStudio = ({ editor, integration, image, onSelectImage }: A
       }
       editor.setAnimations(nextAnimations);
 
-      const settings = getAnimationSettings(editor.state.meta);
+      const settings = getAnimationSettings(editorMeta);
       const nextFps = renameRecordKey(settings.fps, renamingAnimation, nextName);
       const nextMultipliers = renameRecordKey(settings.multipliers, renamingAnimation, nextName);
       editor.updateMeta({
@@ -212,6 +215,7 @@ export const AnimationStudio = ({ editor, integration, image, onSelectImage }: A
     animationsMeta,
     cancelRename,
     editor,
+    editorMeta,
     renamingAnimation,
     renameDraft,
     setActiveAnimation,
@@ -278,7 +282,6 @@ export const AnimationStudio = ({ editor, integration, image, onSelectImage }: A
   );
 
   const animationNames = useMemo(() => Object.keys(animations), [animations]);
-  const animationsMeta = editor.state.animationsMeta ?? {};
 
   useEffect(() => {
     if (renamingAnimation && renamingAnimation !== currentAnimationName) {
@@ -305,20 +308,17 @@ export const AnimationStudio = ({ editor, integration, image, onSelectImage }: A
     () => (currentAnimationName ? (animations[currentAnimationName] ?? []) : []),
     [animations, currentAnimationName],
   );
-  const animationSettings = useMemo(
-    () => getAnimationSettings(editor.state.meta),
-    [editor.state.meta],
-  );
+  const animationSettings = useMemo(() => getAnimationSettings(editorMeta), [editorMeta]);
   const currentAnimationFps = getAnimationFps(animationSettings, currentAnimationName);
   const currentAnimationLoop = currentAnimationName
-    ? animationsMeta[currentAnimationName]?.loop ?? true
+    ? (animationsMeta[currentAnimationName]?.loop ?? true)
     : true;
   const currentBaseDuration = fpsToDuration(currentAnimationFps);
 
   const lastAnimationRef = useRef<string | null>(null);
   useEffect(() => {
     const nextName = currentAnimationName ?? null;
-    const nextSequence = nextName ? animations[nextName] ?? [] : [];
+    const nextSequence = nextName ? (animations[nextName] ?? []) : [];
     const animationChanged = lastAnimationRef.current !== nextName;
     lastAnimationRef.current = nextName;
 
@@ -338,11 +338,7 @@ export const AnimationStudio = ({ editor, integration, image, onSelectImage }: A
       }
       return prev;
     });
-  }, [
-    animations,
-    currentAnimationName,
-    setTimelineSelection,
-  ]);
+  }, [animations, currentAnimationName, setTimelineSelection]);
 
   useEffect(() => {
     if (timelineCursor === null) {
@@ -366,15 +362,15 @@ export const AnimationStudio = ({ editor, integration, image, onSelectImage }: A
       }
       const lastCursor = currentSequence.length - 1;
       let start =
-      selectedTimelineIndex !== null &&
-      selectedTimelineIndex >= 0 &&
-      selectedTimelineIndex < currentSequence.length
-        ? selectedTimelineIndex
-        : timelineCursor !== null &&
-            timelineCursor >= 0 &&
-            timelineCursor < currentSequence.length
-          ? timelineCursor
-          : 0;
+        selectedTimelineIndex !== null &&
+        selectedTimelineIndex >= 0 &&
+        selectedTimelineIndex < currentSequence.length
+          ? selectedTimelineIndex
+          : timelineCursor !== null &&
+              timelineCursor >= 0 &&
+              timelineCursor < currentSequence.length
+            ? timelineCursor
+            : 0;
       if (!currentAnimationLoop) {
         if (direction === 'forward' && start === lastCursor) {
           start = 0;
@@ -396,12 +392,7 @@ export const AnimationStudio = ({ editor, integration, image, onSelectImage }: A
       return;
     }
     playForward(currentAnimationName, { fromFrame: startCursor });
-  }, [
-    currentAnimationName,
-    currentSequence.length,
-    playForward,
-    resolvePlaybackStartCursor,
-  ]);
+  }, [currentAnimationName, currentSequence.length, playForward, resolvePlaybackStartCursor]);
 
   const handleReverseFromSelection = useCallback(() => {
     if (!currentAnimationName || !currentSequence.length) {
@@ -412,12 +403,7 @@ export const AnimationStudio = ({ editor, integration, image, onSelectImage }: A
       return;
     }
     playReverse(currentAnimationName, { fromFrame: startCursor });
-  }, [
-    currentAnimationName,
-    currentSequence.length,
-    playReverse,
-    resolvePlaybackStartCursor,
-  ]);
+  }, [currentAnimationName, currentSequence.length, playReverse, resolvePlaybackStartCursor]);
 
   const imageInfo = useImageDimensions(image);
   const timelineImageSource = useMemo(() => resolveReactNativeImageSource(image), [image]);
@@ -443,7 +429,7 @@ export const AnimationStudio = ({ editor, integration, image, onSelectImage }: A
 
   const updateAnimationFpsMeta = useCallback(
     (name: string, fps: number) => {
-      const settings = getAnimationSettings(editor.state.meta);
+      const settings = getAnimationSettings(editorMeta);
       const nextSettings: AnimationSettingsMeta = {
         ...settings,
         fps: { ...(settings.fps ?? {}), [name]: fps },
@@ -452,7 +438,7 @@ export const AnimationStudio = ({ editor, integration, image, onSelectImage }: A
         animationSettings: nextSettings,
       });
     },
-    [editor],
+    [editor, editorMeta],
   );
   const handleAnimationFpsChange = useCallback(
     (nextFps: number) => {
@@ -499,7 +485,7 @@ export const AnimationStudio = ({ editor, integration, image, onSelectImage }: A
       const startIndex = editor.state.frames.length;
       const newIndexes: number[] = [];
       cells.forEach((cell, idx) => {
-        const frame = editor.addFrame({
+        editor.addFrame({
           x: cell.x,
           y: cell.y,
           w: cell.width,
@@ -518,9 +504,7 @@ export const AnimationStudio = ({ editor, integration, image, onSelectImage }: A
     [
       currentAnimationName,
       currentBaseDuration,
-      currentSequence,
       editor,
-      seekFrame,
       setTimelineSelection,
       updateAnimationMultiplierMeta,
       updateSequence,
@@ -546,7 +530,7 @@ export const AnimationStudio = ({ editor, integration, image, onSelectImage }: A
       const next = { ...animations };
       delete next[name];
       editor.setAnimations(next);
-      const settings = getAnimationSettings(editor.state.meta);
+      const settings = getAnimationSettings(editorMeta);
       const nextFps = { ...(settings.fps ?? {}) };
       const nextMultipliers = { ...(settings.multipliers ?? {}) };
       delete nextFps[name];
@@ -566,14 +550,7 @@ export const AnimationStudio = ({ editor, integration, image, onSelectImage }: A
         setActiveAnimation(remaining.length ? remaining[0] : null);
       }
     },
-    [
-      activeAnimation,
-      animations,
-      animationsMeta,
-      editor,
-      editor.state.meta,
-      setActiveAnimation,
-    ],
+    [activeAnimation, animations, animationsMeta, editor, editorMeta, setActiveAnimation],
   );
 
   const handleToggleAnimationLoop = useCallback(() => {
@@ -711,8 +688,7 @@ export const AnimationStudio = ({ editor, integration, image, onSelectImage }: A
 
   const selectedMultiplier = useMemo(() => {
     if (currentAnimationName && selectedTimelineIndex !== null) {
-      const stored =
-        animationSettings.multipliers?.[currentAnimationName]?.[selectedTimelineIndex];
+      const stored = animationSettings.multipliers?.[currentAnimationName]?.[selectedTimelineIndex];
       if (typeof stored === 'number') {
         return stored;
       }
@@ -790,7 +766,7 @@ export const AnimationStudio = ({ editor, integration, image, onSelectImage }: A
 
   const updateAnimationMultiplierMeta = useCallback(
     (name: string, index: number, multiplier: number) => {
-      const settings = getAnimationSettings(editor.state.meta);
+      const settings = getAnimationSettings(editorMeta);
       const nextMultipliers = {
         ...(settings.multipliers ?? {}),
         [name]: {
@@ -805,7 +781,7 @@ export const AnimationStudio = ({ editor, integration, image, onSelectImage }: A
         },
       });
     },
-    [editor],
+    [editor, editorMeta],
   );
   const handleMultiplierSubmit = useCallback(
     (multiplier: number) => {
@@ -855,75 +831,78 @@ export const AnimationStudio = ({ editor, integration, image, onSelectImage }: A
       </View>
       <View style={styles.body}>
         <View style={styles.sequenceGroup}>
-          <View style={[animationColumnStyle, animationColumnMaxHeight ? { maxHeight: animationColumnMaxHeight } : null]}>
+          <View
+            style={[
+              animationColumnStyle,
+              animationColumnMaxHeight ? { maxHeight: animationColumnMaxHeight } : null,
+            ]}
+          >
             <Text style={styles.sectionTitle}>Animations</Text>
             <View style={styles.animationToolbar}>
-              <IconButton name="add" onPress={handleAddAnimation} accessibilityLabel="Add animation" />
-            <IconButton
-              name="delete"
-              onPress={() => currentAnimationName && confirmDeleteAnimation(currentAnimationName)}
-              disabled={
-                !currentAnimationName
-              }
-              accessibilityLabel="Delete animation"
-            />
-            <View style={styles.timelineDivider} />
-            <IconButton
-              name="repeat"
-              onPress={handleToggleAnimationLoop}
-              disabled={!currentAnimationName}
+              <IconButton
+                name="add"
+                onPress={handleAddAnimation}
+                accessibilityLabel="Add animation"
+              />
+              <IconButton
+                name="delete"
+                onPress={() => currentAnimationName && confirmDeleteAnimation(currentAnimationName)}
+                disabled={!currentAnimationName}
+                accessibilityLabel="Delete animation"
+              />
+              <View style={styles.timelineDivider} />
+              <IconButton
+                name="repeat"
+                onPress={handleToggleAnimationLoop}
+                disabled={!currentAnimationName}
+                style={[currentAnimationLoop ? styles.loopButtonActive : styles.loopButtonInactive]}
+                accessibilityLabel={
+                  currentAnimationLoop ? 'Disable loop for animation' : 'Enable loop for animation'
+                }
+              />
+            </View>
+            {currentAnimationName && (
+              <AnimationFpsField value={currentAnimationFps} onSubmit={handleAnimationFpsChange} />
+            )}
+            <ScrollView
               style={[
-                currentAnimationLoop ? styles.loopButtonActive : styles.loopButtonInactive,
+                styles.animationList,
+                animationColumnMaxHeight
+                  ? { maxHeight: Math.max(160, animationColumnMaxHeight - 80) }
+                  : null,
               ]}
-              accessibilityLabel={
-                currentAnimationLoop ? 'Disable loop for animation' : 'Enable loop for animation'
-              }
-            />
+              contentContainerStyle={styles.animationListContent}
+            >
+              {animationNames.map((name) => (
+                <TouchableOpacity
+                  key={name}
+                  style={[
+                    styles.animationListItem,
+                    currentAnimationName === name && styles.animationListItemActive,
+                  ]}
+                  onPress={() => handleAnimationListPress(name)}
+                >
+                  <View style={styles.animationListItemInner}>
+                    {renamingAnimation === name ? (
+                      <>
+                        <TextInput
+                          style={styles.animationRenameInput}
+                          value={renameDraft}
+                          onChangeText={setRenameDraft}
+                          autoFocus
+                          onBlur={handleRenameSubmit}
+                          onSubmitEditing={handleRenameSubmit}
+                        />
+                        {renameError && <Text style={styles.renameErrorInline}>{renameError}</Text>}
+                      </>
+                    ) : (
+                      <Text style={styles.animationListItemText}>{name}</Text>
+                    )}
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
           </View>
-          {currentAnimationName && (
-            <AnimationFpsField value={currentAnimationFps} onSubmit={handleAnimationFpsChange} />
-          )}
-          <ScrollView
-            style={[
-              styles.animationList,
-              animationColumnMaxHeight
-                ? { maxHeight: Math.max(160, animationColumnMaxHeight - 80) }
-                : null,
-            ]}
-            contentContainerStyle={styles.animationListContent}
-          >
-            {animationNames.map((name) => (
-              <TouchableOpacity
-                key={name}
-                style={[
-                  styles.animationListItem,
-                  currentAnimationName === name && styles.animationListItemActive,
-                ]}
-                onPress={() => handleAnimationListPress(name)}
-              >
-                <View style={styles.animationListItemInner}>
-                  {renamingAnimation === name ? (
-                    <>
-                      <TextInput
-                        style={styles.animationRenameInput}
-                        value={renameDraft}
-                        onChangeText={setRenameDraft}
-                        autoFocus
-                        onBlur={handleRenameSubmit}
-                        onSubmitEditing={handleRenameSubmit}
-                      />
-                      {renameError && (
-                        <Text style={styles.renameErrorInline}>{renameError}</Text>
-                      )}
-                    </>
-                  ) : (
-                    <Text style={styles.animationListItemText}>{name}</Text>
-                  )}
-                </View>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
           <View
             style={styles.timelineColumn}
             onLayout={(event) => {
@@ -946,37 +925,39 @@ export const AnimationStudio = ({ editor, integration, image, onSelectImage }: A
                   accessibilityLabel="Play animation in reverse"
                   iconStyle={styles.reverseIcon}
                 />
-              <IconButton
-                renderIcon={renderResumeReverseIcon}
-                onPress={() => {
-                  if (!currentSequence.length) {
-                    return;
+                <IconButton
+                  renderIcon={renderResumeReverseIcon}
+                  onPress={() => {
+                    if (!currentSequence.length) {
+                      return;
+                    }
+                    stop();
+                    playReverse(currentAnimationName, { fromFrame: currentSequence.length - 1 });
+                  }}
+                  disabled={currentSequence.length === 0}
+                  accessibilityLabel="Restart animation in reverse from beginning"
+                />
+                <IconButton
+                  iconFamily="material"
+                  name={isPlaying ? 'pause' : 'stop'}
+                  onPress={() => (isPlaying ? pause() : stop())}
+                  disabled={!hasActiveAnimation || !currentSequence.length}
+                  accessibilityLabel={
+                    isPlaying ? 'Pause animation preview' : 'Stop animation preview'
                   }
-                  stop();
-                  playReverse(currentAnimationName, { fromFrame: currentSequence.length - 1 });
-                }}
-                disabled={currentSequence.length === 0}
-                accessibilityLabel="Restart animation in reverse from beginning"
-              />
-              <IconButton
-                iconFamily="material"
-                name={isPlaying ? 'pause' : 'stop'}
-                onPress={() => (isPlaying ? pause() : stop())}
-                disabled={!hasActiveAnimation || !currentSequence.length}
-                accessibilityLabel={isPlaying ? 'Pause animation preview' : 'Stop animation preview'}
-              />
-              <IconButton
-                renderIcon={renderResumeForwardIcon}
-                onPress={() => {
-                  if (!currentSequence.length) {
-                    return;
-                  }
-                  stop();
-                  playForward(currentAnimationName, { fromFrame: 0 });
-                }}
-                disabled={currentSequence.length === 0}
-                accessibilityLabel="Restart animation from beginning"
-              />
+                />
+                <IconButton
+                  renderIcon={renderResumeForwardIcon}
+                  onPress={() => {
+                    if (!currentSequence.length) {
+                      return;
+                    }
+                    stop();
+                    playForward(currentAnimationName, { fromFrame: 0 });
+                  }}
+                  disabled={currentSequence.length === 0}
+                  accessibilityLabel="Restart animation from beginning"
+                />
                 <IconButton
                   iconFamily="material"
                   name="play-arrow"
@@ -984,54 +965,52 @@ export const AnimationStudio = ({ editor, integration, image, onSelectImage }: A
                   disabled={isPlaying || currentSequence.length === 0}
                   accessibilityLabel="Play animation preview"
                 />
-              <View style={styles.timelineDivider} />
-              <IconButton
-                name="grid-on"
-                onPress={() => setFramePickerVisible(true)}
-                disabled={!hasActiveAnimation || isPlaying}
-                accessibilityLabel="Open frame picker modal"
-              />
-              <View style={styles.timelineDivider} />
-              <IconButton
-                name="content-copy"
-                onPress={handleCopyTimelineFrame}
-                disabled={isPlaying || selectedTimelineIndex === null}
-                accessibilityLabel="Copy timeline frame"
-              />
-              <IconButton
-                name="content-paste"
-                onPress={handlePasteTimelineFrame}
-                disabled={isPlaying || !timelineClipboard?.length}
-                accessibilityLabel="Paste timeline frame"
-              />
-              <View style={styles.timelineDivider} />
-              <IconButton
-                name="skip-previous"
-                onPress={() => handleMoveTimelineFrame(-1)}
-                disabled={
-                  isPlaying ||
-                  selectedTimelineIndex === null ||
-                  selectedTimelineIndex === 0
-                }
-                accessibilityLabel="Move frame left"
-              />
-              <IconButton
-                name="skip-next"
-                onPress={() => handleMoveTimelineFrame(1)}
-                disabled={
-                  isPlaying ||
-                  selectedTimelineIndex === null ||
-                  selectedTimelineIndex === currentSequence.length - 1 ||
-                  currentSequence.length === 0
-                }
-                accessibilityLabel="Move frame right"
-              />
-              <IconButton
-                name="delete-forever"
-                onPress={handleRemoveTimelineFrame}
-                disabled={isPlaying || selectedTimelineIndex === null}
-                accessibilityLabel="Remove timeline frame"
-              />
+                <View style={styles.timelineDivider} />
+                <IconButton
+                  name="grid-on"
+                  onPress={() => setFramePickerVisible(true)}
+                  disabled={!hasActiveAnimation || isPlaying}
+                  accessibilityLabel="Open frame picker modal"
+                />
+                <View style={styles.timelineDivider} />
+                <IconButton
+                  name="content-copy"
+                  onPress={handleCopyTimelineFrame}
+                  disabled={isPlaying || selectedTimelineIndex === null}
+                  accessibilityLabel="Copy timeline frame"
+                />
+                <IconButton
+                  name="content-paste"
+                  onPress={handlePasteTimelineFrame}
+                  disabled={isPlaying || !timelineClipboard?.length}
+                  accessibilityLabel="Paste timeline frame"
+                />
+                <View style={styles.timelineDivider} />
+                <IconButton
+                  name="skip-previous"
+                  onPress={() => handleMoveTimelineFrame(-1)}
+                  disabled={
+                    isPlaying || selectedTimelineIndex === null || selectedTimelineIndex === 0
+                  }
+                  accessibilityLabel="Move frame left"
+                />
+                <IconButton
+                  name="skip-next"
+                  onPress={() => handleMoveTimelineFrame(1)}
+                  disabled={
+                    isPlaying ||
+                    selectedTimelineIndex === null ||
+                    selectedTimelineIndex === currentSequence.length - 1 ||
+                    currentSequence.length === 0
+                  }
+                  accessibilityLabel="Move frame right"
+                />
+                <IconButton
+                  name="delete-forever"
+                  onPress={handleRemoveTimelineFrame}
+                  disabled={isPlaying || selectedTimelineIndex === null}
+                  accessibilityLabel="Remove timeline frame"
+                />
               </View>
               <View style={styles.timelineDivider} />
               <MultiplierField
@@ -1041,97 +1020,97 @@ export const AnimationStudio = ({ editor, integration, image, onSelectImage }: A
                 onSubmit={handleMultiplierSubmit}
               />
             </View>
-        <View style={styles.timelineTrack}>
-          {sequenceCards.length === 0 ? (
-            <View style={styles.emptyTimelineWrapper} />
-          ) : (
-            <ScrollView
-              horizontal
-              style={styles.timelineScroll}
-              contentContainerStyle={styles.timelineContent}
-              showsHorizontalScrollIndicator={false}
-            >
-              {sequenceCards.map(({ frame, frameIndex, timelineIndex, isSelected }) => {
-                const viewportSize =
-                  TIMELINE_CARD_SIZE - TIMELINE_FOOTER_HEIGHT - TIMELINE_CARD_PADDING * 2;
-                const frameScale = frame ? viewportSize / Math.max(frame.w, frame.h) : 1;
-                const storedMultiplier =
-                  currentAnimationName !== null && currentAnimationName !== undefined
-                    ? animationSettings.multipliers?.[currentAnimationName]?.[timelineIndex]
-                    : undefined;
-                const computedMultiplier =
-                  typeof storedMultiplier === 'number'
-                    ? storedMultiplier
-                    : frame && currentBaseDuration
-                      ? (frame.duration ?? currentBaseDuration) / currentBaseDuration
-                      : 1;
-                const multiplierLabel =
-                  Math.abs(computedMultiplier - 1) < 0.01
-                    ? ''
-                    : ` [×${computedMultiplier.toFixed(2)}]`;
-                return (
-                  <TouchableOpacity
-                    key={`${frameIndex}-${timelineIndex}`}
-                    style={[styles.timelineCard, isSelected && styles.timelineCardSelected]}
-                    onPress={() => selectTimelineFrame(timelineIndex)}
-                  >
-                    <View style={styles.timelineCardBody}>
-                      {frame && imageInfo.ready && timelineImageSource ? (
-                        <View
-                          style={[
-                            styles.thumb,
-                            {
-                              width: viewportSize,
-                              height: viewportSize,
-                            },
-                          ]}
-                        >
-                          <View
-                            style={{
-                              width: frame.w * frameScale,
-                              height: frame.h * frameScale,
-                              overflow: 'hidden',
-                            }}
-                          >
-                            <Image
-                              source={timelineImageSource}
-                              resizeMode="cover"
-                              style={{
-                                width: imageInfo.width * frameScale,
-                                height: imageInfo.height * frameScale,
-                                transform: [
-                                  { translateX: -frame.x * frameScale },
-                                  { translateY: -frame.y * frameScale },
-                                ],
-                              }}
-                            />
-                          </View>
+            <View style={styles.timelineTrack}>
+              {sequenceCards.length === 0 ? (
+                <View style={styles.emptyTimelineWrapper} />
+              ) : (
+                <ScrollView
+                  horizontal
+                  style={styles.timelineScroll}
+                  contentContainerStyle={styles.timelineContent}
+                  showsHorizontalScrollIndicator={false}
+                >
+                  {sequenceCards.map(({ frame, frameIndex, timelineIndex, isSelected }) => {
+                    const viewportSize =
+                      TIMELINE_CARD_SIZE - TIMELINE_FOOTER_HEIGHT - TIMELINE_CARD_PADDING * 2;
+                    const frameScale = frame ? viewportSize / Math.max(frame.w, frame.h) : 1;
+                    const storedMultiplier =
+                      currentAnimationName !== null && currentAnimationName !== undefined
+                        ? animationSettings.multipliers?.[currentAnimationName]?.[timelineIndex]
+                        : undefined;
+                    const computedMultiplier =
+                      typeof storedMultiplier === 'number'
+                        ? storedMultiplier
+                        : frame && currentBaseDuration
+                          ? (frame.duration ?? currentBaseDuration) / currentBaseDuration
+                          : 1;
+                    const multiplierLabel =
+                      Math.abs(computedMultiplier - 1) < 0.01
+                        ? ''
+                        : ` [×${computedMultiplier.toFixed(2)}]`;
+                    return (
+                      <TouchableOpacity
+                        key={`${frameIndex}-${timelineIndex}`}
+                        style={[styles.timelineCard, isSelected && styles.timelineCardSelected]}
+                        onPress={() => selectTimelineFrame(timelineIndex)}
+                      >
+                        <View style={styles.timelineCardBody}>
+                          {frame && imageInfo.ready && timelineImageSource ? (
+                            <View
+                              style={[
+                                styles.thumb,
+                                {
+                                  width: viewportSize,
+                                  height: viewportSize,
+                                },
+                              ]}
+                            >
+                              <View
+                                style={{
+                                  width: frame.w * frameScale,
+                                  height: frame.h * frameScale,
+                                  overflow: 'hidden',
+                                }}
+                              >
+                                <Image
+                                  source={timelineImageSource}
+                                  resizeMode="cover"
+                                  style={{
+                                    width: imageInfo.width * frameScale,
+                                    height: imageInfo.height * frameScale,
+                                    transform: [
+                                      { translateX: -frame.x * frameScale },
+                                      { translateY: -frame.y * frameScale },
+                                    ],
+                                  }}
+                                />
+                              </View>
+                            </View>
+                          ) : (
+                            <View
+                              style={[
+                                styles.thumb,
+                                styles.thumbPlaceholder,
+                                { width: viewportSize, height: viewportSize },
+                              ]}
+                            >
+                              <Text style={styles.thumbPlaceholderText}>No Image</Text>
+                            </View>
+                          )}
                         </View>
-                      ) : (
-                        <View
-                          style={[
-                            styles.thumb,
-                            styles.thumbPlaceholder,
-                            { width: viewportSize, height: viewportSize },
-                          ]}
-                        >
-                          <Text style={styles.thumbPlaceholderText}>No Image</Text>
+                        <View style={styles.timelineCardFooter}>
+                          <Text style={styles.timelineCardMeta}>
+                            {timelineIndex}
+                            {multiplierLabel}
+                            {typeof frameIndex === 'number' ? ` f${frameIndex}` : ''}
+                          </Text>
                         </View>
-                      )}
-                    </View>
-                    <View style={styles.timelineCardFooter}>
-                      <Text style={styles.timelineCardMeta}>
-                        {timelineIndex}
-                        {multiplierLabel}
-                        {typeof frameIndex === 'number' ? ` f${frameIndex}` : ''}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-          )}
-        </View>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              )}
+            </View>
           </View>
         </View>
       </View>
@@ -1317,7 +1296,10 @@ const resolveReactNativeImageSource = (
     return value as ImageSourcePropType;
   }
   if (typeof value === 'object') {
-    if ('uri' in (value as Record<string, unknown>) && typeof (value as { uri?: string }).uri === 'string') {
+    if (
+      'uri' in (value as Record<string, unknown>) &&
+      typeof (value as { uri?: string }).uri === 'string'
+    ) {
       return value as ImageSourcePropType;
     }
     if ('source' in (value as Record<string, unknown>)) {

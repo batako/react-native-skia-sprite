@@ -46,9 +46,19 @@ export const IconButton: React.FC<IconButtonProps> = ({
   const icon =
     renderIcon?.({ color: iconColor, size, disabled: Boolean(disabled) }) ??
     (iconFamily === 'material' ? (
-      <MaterialIcons name={(name as MaterialIconName) ?? 'circle'} size={size} color={iconColor} style={iconStyle} />
+      <MaterialIcons
+        name={(name as MaterialIconName) ?? 'circle'}
+        size={size}
+        color={iconColor}
+        style={iconStyle}
+      />
     ) : (
-      <Feather name={(name as FeatherName) ?? 'circle'} size={size} color={iconColor} style={iconStyle} />
+      <Feather
+        name={(name as FeatherName) ?? 'circle'}
+        size={size}
+        color={iconColor}
+        style={iconStyle}
+      />
     ));
   return (
     <TouchableOpacity

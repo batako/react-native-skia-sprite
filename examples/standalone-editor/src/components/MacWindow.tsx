@@ -46,7 +46,9 @@ export const MacWindow = ({
   enableCompact = true,
 }: MacWindowProps) => {
   const lastHeaderTapRef = useRef(0);
-  const [internalVariant, setInternalVariant] = useState<MacWindowVariant>(variant ?? defaultVariant);
+  const [internalVariant, setInternalVariant] = useState<MacWindowVariant>(
+    variant ?? defaultVariant,
+  );
   const resolvedVariant = variant ?? internalVariant;
   const setVariant = useCallback(
     (next: MacWindowVariant) => {
@@ -104,7 +106,6 @@ export const MacWindow = ({
       lastHeaderTapRef.current = now;
     }
   }, [onHeaderDoubleTap, resolvedVariant, setVariant]);
-
 
   return (
     <View

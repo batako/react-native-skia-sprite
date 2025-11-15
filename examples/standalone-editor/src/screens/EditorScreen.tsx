@@ -1,14 +1,6 @@
 import React from 'react';
 import { Asset } from 'expo-asset';
-import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import {
   DefaultSpriteTemplate,
   type SpriteEditorFrame,

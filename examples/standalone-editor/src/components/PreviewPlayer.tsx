@@ -61,11 +61,10 @@ export const PreviewPlayer = ({
   const MIN_PREVIEW_HEIGHT = 420;
   const baseWidth = frameBounds.width || 64;
   const baseHeight = frameBounds.height || 64;
-  const aspectRatio = baseHeight > 0 ? baseWidth / baseHeight : 1;
   const maxWidth = viewportWidth ? Math.max(200, viewportWidth - 16) : null;
   const activeSequenceLength =
     activeAnimation && runtimeData.animations
-      ? runtimeData.animations[activeAnimation]?.length ?? 0
+      ? (runtimeData.animations[activeAnimation]?.length ?? 0)
       : null;
   const hasFramesToRender = activeAnimation
     ? (activeSequenceLength ?? 0) > 0
@@ -89,11 +88,14 @@ export const PreviewPlayer = ({
   const zoomedHeight = targetHeight * zoom;
   const displayHeight = previewHeight;
 
-  const clampZoom = (value: number) => {
-    const rounded = parseFloat(value.toFixed(2));
-    const upperBound = maxZoomAllowed > 0 ? maxZoomAllowed : Number.POSITIVE_INFINITY;
-    return Math.max(0.25, Math.min(rounded, upperBound));
-  };
+  const clampZoom = React.useCallback(
+    (value: number) => {
+      const rounded = parseFloat(value.toFixed(2));
+      const upperBound = maxZoomAllowed > 0 ? maxZoomAllowed : Number.POSITIVE_INFINITY;
+      return Math.max(0.25, Math.min(rounded, upperBound));
+    },
+    [maxZoomAllowed],
+  );
 
   const adjustZoom = (delta: number) => {
     setZoom((prev) => clampZoom(prev + delta));
@@ -119,7 +121,17 @@ export const PreviewPlayer = ({
       setZoom(desiredZoom);
     }
     setAutoZoomed(true);
-  }, [autoZoomed, height, maxWidth, maxZoomAllowed, previewHeight, targetHeight, targetWidth, zoom]);
+  }, [
+    autoZoomed,
+    clampZoom,
+    height,
+    maxWidth,
+    maxZoomAllowed,
+    previewHeight,
+    targetHeight,
+    targetWidth,
+    zoom,
+  ]);
 
   React.useEffect(() => {
     const prev = autoZoomDepsRef.current;
@@ -173,7 +185,9 @@ export const PreviewPlayer = ({
         <View style={styles.canvasFrame}>
           <View style={[styles.canvasInner, { height: displayHeight }]}>
             <View style={[styles.canvasViewport, { width: zoomedWidth, height: zoomedHeight }]}>
-              <View style={{ width: targetWidth, height: targetHeight, transform: [{ scale: zoom }] }}>
+              <View
+                style={{ width: targetWidth, height: targetHeight, transform: [{ scale: zoom }] }}
+              >
                 {hasFramesToRender ? (
                   <SpriteAnimator
                     ref={animatorRef}

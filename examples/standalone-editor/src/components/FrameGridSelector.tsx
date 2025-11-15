@@ -1,12 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import {
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import type { DataSourceParam } from '@shopify/react-native-skia';
 import type { ImageSourcePropType } from 'react-native';
 import { IconButton } from './IconButton';
@@ -450,7 +443,7 @@ export const FrameGridSelector = ({
                     </View>
                   ) : (
                     <View style={styles.emptyState}>
-                    <Text style={styles.emptyStateTitle}>Image not selected</Text>
+                      <Text style={styles.emptyStateTitle}>Image not selected</Text>
                       <Text style={styles.emptyStateText}>{emptyMessage}</Text>
                     </View>
                   )}
@@ -531,9 +524,11 @@ export const FrameGridSelector = ({
         disabled={!selectedCount}
         onPress={handleAddFrames}
       >
-      <Text style={styles.addButtonText}>
-        {selectedCount ? `Add ${selectedCount} frame${selectedCount > 1 ? 's' : ''}` : 'No frames selected'}
-      </Text>
+        <Text style={styles.addButtonText}>
+          {selectedCount
+            ? `Add ${selectedCount} frame${selectedCount > 1 ? 's' : ''}`
+            : 'No frames selected'}
+        </Text>
       </TouchableOpacity>
     </View>
   );
