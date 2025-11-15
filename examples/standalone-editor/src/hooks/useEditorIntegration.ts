@@ -45,13 +45,6 @@ export const useEditorIntegration = ({ editor }: UseEditorIntegrationOptions) =>
     } satisfies SpriteData;
   }, [animationsState, editor.state.frames, editor.state.meta]);
 
-  const autoPlayActiveAnimation = useMemo(() => {
-    if (!activeAnimation) {
-      return false;
-    }
-    return animationsMetaState[activeAnimation]?.autoPlay === true;
-  }, [activeAnimation, animationsMetaState]);
-
   useEffect(() => {
     const animator = animatorRef.current;
     animator?.pause();
@@ -280,17 +273,6 @@ export const useEditorIntegration = ({ editor }: UseEditorIntegrationOptions) =>
     () => Object.keys(editor.state.animations ?? {}),
     [editor.state.animations],
   );
-
-  useEffect(() => {
-    if (!autoPlayActiveAnimation || !activeAnimation) {
-      return;
-    }
-    const sequence = getSequence(activeAnimation);
-    if (!sequence.length) {
-      return;
-    }
-    playForward(activeAnimation);
-  }, [activeAnimation, autoPlayActiveAnimation, getSequence, playForward]);
 
   useEffect(() => {
     if (activeAnimation && !availableAnimations.includes(activeAnimation)) {

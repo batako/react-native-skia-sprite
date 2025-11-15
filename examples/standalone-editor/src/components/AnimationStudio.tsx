@@ -313,6 +313,9 @@ export const AnimationStudio = ({
   const currentAnimationLoop = currentAnimationName
     ? (animationsMeta[currentAnimationName]?.loop ?? true)
     : true;
+  const currentAnimationAutoPlay = currentAnimationName
+    ? Boolean(animationsMeta[currentAnimationName]?.autoPlay)
+    : false;
   const currentBaseDuration = fpsToDuration(currentAnimationFps);
 
   const lastAnimationRef = useRef<string | null>(null);
@@ -571,6 +574,21 @@ export const AnimationStudio = ({
       requestAnimationFrame(() => seekFrame(currentFrame));
     }
   }, [animationsMeta, currentAnimationName, editor, frameCursor, isPlaying, seekFrame]);
+
+  const handleToggleAnimationAutoPlay = useCallback(() => {
+    if (!currentAnimationName) {
+      return;
+    }
+    const prevAuto = Boolean(animationsMeta[currentAnimationName]?.autoPlay);
+    const nextAnimationsMeta = {
+      ...animationsMeta,
+      [currentAnimationName]: {
+        ...(animationsMeta[currentAnimationName] ?? {}),
+        autoPlay: !prevAuto,
+      },
+    };
+    editor.setAnimationsMeta(nextAnimationsMeta);
+  }, [animationsMeta, currentAnimationName, editor]);
 
   const confirmDeleteAnimation = useCallback(
     (name: string) => {
@@ -852,10 +870,28 @@ export const AnimationStudio = ({
               />
               <View style={styles.timelineDivider} />
               <IconButton
+                name="play-circle-outline"
+                onPress={handleToggleAnimationAutoPlay}
+                disabled={!currentAnimationName}
+                style={[
+                  currentAnimationAutoPlay
+                    ? styles.autoPlayButtonActive
+                    : styles.autoPlayButtonInactive,
+                ]}
+                accessibilityLabel={
+                  currentAnimationAutoPlay
+                    ? 'Disable autoplay metadata for animation'
+                    : 'Enable autoplay metadata for animation'
+                }
+              />
+              <View style={styles.timelineDivider} />
+              <IconButton
                 name="repeat"
                 onPress={handleToggleAnimationLoop}
                 disabled={!currentAnimationName}
-                style={[currentAnimationLoop ? styles.loopButtonActive : styles.loopButtonInactive]}
+                style={[
+                  currentAnimationLoop ? styles.loopButtonActive : styles.loopButtonInactive,
+                ]}
                 accessibilityLabel={
                   currentAnimationLoop ? 'Disable loop for animation' : 'Enable loop for animation'
                 }
@@ -1419,6 +1455,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#28a745',
   },
   loopButtonInactive: {
+    backgroundColor: '#1f2430',
+  },
+  autoPlayButtonActive: {
+    backgroundColor: '#28a745',
+  },
+  autoPlayButtonInactive: {
     backgroundColor: '#1f2430',
   },
   animationFpsRow: {
