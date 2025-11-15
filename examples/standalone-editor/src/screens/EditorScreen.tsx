@@ -1,6 +1,14 @@
 import React from 'react';
 import { Asset } from 'expo-asset';
-import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text } from 'react-native';
+import {
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import {
   DefaultSpriteTemplate,
   type SpriteEditorFrame,
@@ -12,6 +20,7 @@ import type { DataSourceParam } from '@shopify/react-native-skia';
 import { AnimationStudio } from '../components/AnimationStudio';
 import { TemplatePanel } from '../components/TemplatePanel';
 import { StoragePanel } from '../components/StoragePanel';
+import { FileBrowserModal } from '../components/FileBrowserModal';
 import { MetaEditor } from '../components/MetaEditor';
 import { useEditorIntegration } from '../hooks/useEditorIntegration';
 
@@ -51,6 +60,7 @@ export const EditorScreen = () => {
   const [imageSource, setImageSource] = React.useState<DataSourceParam>(SAMPLE_SPRITE);
   const [imageUri, setImageUri] = React.useState<string | null>(null);
   const editorRef = React.useRef(editor);
+  const [isFileBrowserVisible, setFileBrowserVisible] = React.useState(false);
 
   React.useEffect(() => {
     editorRef.current = editor;
@@ -86,20 +96,55 @@ export const EditorScreen = () => {
     }
   }, []);
 
+  const resetEditorState = React.useCallback(() => {
+    editorRef.current.reset({
+      frames: [],
+      animations: {},
+      animationsMeta: {},
+      selected: [],
+    });
+  }, []);
+
+  const handleOpenFile = React.useCallback(
+    (uri: string) => {
+      resetEditorState();
+      handleImageUriChange(uri);
+    },
+    [handleImageUriChange, resetEditorState],
+  );
+
+  const handleChangeImageRequest = React.useCallback(() => {
+    integration.stop();
+    setFileBrowserVisible(true);
+  }, [integration]);
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" />
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.title}>Sprite Editor</Text>
+        <View style={styles.headerRow}>
+          <Text style={styles.title}>Sprite Editor</Text>
+        </View>
         <Text style={styles.subtitle}>
           Edit frames, play animations, switch templates, and persist sprites to disk with a single
           screen.
         </Text>
-        <AnimationStudio editor={editor} integration={integration} image={imageSource} />
+        <AnimationStudio
+          editor={editor}
+          integration={integration}
+          image={imageSource}
+          onSelectImage={handleChangeImageRequest}
+        />
         <MetaEditor editor={editor} />
         <TemplatePanel editor={editor} template={template} onTemplateChange={setTemplate} />
         <StoragePanel editor={editor} imageUri={imageUri} onImageUriChange={handleImageUriChange} />
       </ScrollView>
+      <FileBrowserModal
+        visible={isFileBrowserVisible}
+        onClose={() => setFileBrowserVisible(false)}
+        onOpenFile={handleOpenFile}
+        allowedMimeTypes={['image/*']}
+      />
     </SafeAreaView>
   );
 };
@@ -112,6 +157,12 @@ const styles = StyleSheet.create({
   scroll: {
     padding: 16,
     paddingBottom: 80,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
   },
   title: {
     color: 'white',

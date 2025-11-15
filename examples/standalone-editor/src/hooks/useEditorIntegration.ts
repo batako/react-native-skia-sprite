@@ -14,6 +14,7 @@ export interface UseEditorIntegrationOptions {
 interface SeekFrameOptions {
   cursor?: number;
   animationName?: string | null;
+  sequenceOverride?: number[] | null;
 }
 
 interface PlayOptions {
@@ -30,17 +31,14 @@ export const useEditorIntegration = ({ editor }: UseEditorIntegrationOptions) =>
   const [playDirection, setPlayDirection] = useState<SpriteAnimatorDirection>('forward');
   const endedAnimationRef = useRef<string | null>(null);
 
+  const animationsState = editor.state.animations ?? {};
   const runtimeData = useMemo<SpriteData>(() => {
     return {
       frames: editor.state.frames.map(({ id: _id, ...frame }) => ({ ...frame })),
-      animations: editor.state.animations,
-      meta: editor.state.meta,
+      animations: animationsState,
+      meta: editor.state.meta ?? {},
     } satisfies SpriteData;
-  }, [
-    editor.state.animations,
-    editor.state.frames,
-    editor.state.meta,
-  ]);
+  }, [animationsState, editor.state.frames, editor.state.meta]);
 
   useEffect(() => {
     animatorRef.current?.stop();
@@ -155,7 +153,10 @@ export const useEditorIntegration = ({ editor }: UseEditorIntegrationOptions) =>
         animator?.getCurrentAnimation?.() ??
         activeAnimation ??
         null;
-      const sequence = getSequence(targetAnimation);
+      const sequenceOverride = Array.isArray(opts?.sequenceOverride)
+        ? opts.sequenceOverride
+        : null;
+      const sequence = sequenceOverride ?? getSequence(targetAnimation);
       const clampCursor = (value: number) => {
         if (!sequence.length) {
           return 0;
@@ -208,7 +209,8 @@ export const useEditorIntegration = ({ editor }: UseEditorIntegrationOptions) =>
       if (!name) {
         return [];
       }
-      return editor.state.animations[name] ?? runtimeData.animations?.[name] ?? [];
+      const animationsMap = editor.state.animations ?? {};
+      return animationsMap[name] ?? runtimeData.animations?.[name] ?? [];
     },
     [editor.state.animations, runtimeData.animations],
   );
@@ -229,7 +231,7 @@ export const useEditorIntegration = ({ editor }: UseEditorIntegrationOptions) =>
   );
 
   const availableAnimations = useMemo(
-    () => Object.keys(editor.state.animations),
+    () => Object.keys(editor.state.animations ?? {}),
     [editor.state.animations],
   );
 

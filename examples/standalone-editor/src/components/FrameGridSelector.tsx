@@ -4,13 +4,13 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
 import type { DataSourceParam } from '@shopify/react-native-skia';
 import type { ImageSourcePropType } from 'react-native';
 import { IconButton } from './IconButton';
+import { SelectableTextInput } from './SelectableTextInput';
 
 export interface FrameGridCell {
   id: string;
@@ -61,7 +61,7 @@ export const FrameGridSelector = ({
   onAddFrames,
   defaultCellWidth = 32,
   defaultCellHeight = 32,
-  emptyMessage = 'スプライト画像を選択すると、ここにプレビューが表示されます。',
+  emptyMessage = 'Select a sprite image to preview it here.',
 }: FrameGridSelectorProps) => {
   const normalizedImage = useMemo(() => {
     const primary = normalizeImage(image);
@@ -280,7 +280,7 @@ export const FrameGridSelector = ({
         <View style={styles.previewColumn}>
           <View style={styles.orderRow}>
             <View style={styles.orderField}>
-              <Text style={styles.orderLabel}>優先軸</Text>
+              <Text style={styles.orderLabel}>Primary axis</Text>
               <View style={styles.orderButtons}>
                 <TouchableOpacity
                   style={[
@@ -289,7 +289,7 @@ export const FrameGridSelector = ({
                   ]}
                   onPress={() => setPrimaryAxis('horizontal')}
                 >
-                  <Text style={styles.orderButtonText}>水平優先</Text>
+                  <Text style={styles.orderButtonText}>Horizontal first</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[
@@ -298,12 +298,12 @@ export const FrameGridSelector = ({
                   ]}
                   onPress={() => setPrimaryAxis('vertical')}
                 >
-                  <Text style={styles.orderButtonText}>垂直優先</Text>
+                  <Text style={styles.orderButtonText}>Vertical first</Text>
                 </TouchableOpacity>
               </View>
             </View>
             <View style={styles.orderField}>
-              <Text style={styles.orderLabel}>水平</Text>
+              <Text style={styles.orderLabel}>Horizontal</Text>
               <View style={styles.orderButtons}>
                 <TouchableOpacity
                   style={[
@@ -312,7 +312,7 @@ export const FrameGridSelector = ({
                   ]}
                   onPress={() => setHorizontalOrder('ltr')}
                 >
-                  <Text style={styles.orderButtonText}>左→右</Text>
+                  <Text style={styles.orderButtonText}>Left → Right</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[
@@ -321,36 +321,36 @@ export const FrameGridSelector = ({
                   ]}
                   onPress={() => setHorizontalOrder('rtl')}
                 >
-                  <Text style={styles.orderButtonText}>右→左</Text>
+                  <Text style={styles.orderButtonText}>Right → Left</Text>
                 </TouchableOpacity>
               </View>
             </View>
             <View style={styles.orderField}>
-              <Text style={styles.orderLabel}>垂直</Text>
+              <Text style={styles.orderLabel}>Vertical</Text>
               <View style={styles.orderButtons}>
                 <TouchableOpacity
                   style={[styles.orderButton, verticalOrder === 'ttb' && styles.orderButtonActive]}
                   onPress={() => setVerticalOrder('ttb')}
                 >
-                  <Text style={styles.orderButtonText}>上→下</Text>
+                  <Text style={styles.orderButtonText}>Top → Bottom</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.orderButton, verticalOrder === 'btt' && styles.orderButtonActive]}
                   onPress={() => setVerticalOrder('btt')}
                 >
-                  <Text style={styles.orderButtonText}>下→上</Text>
+                  <Text style={styles.orderButtonText}>Bottom → Top</Text>
                 </TouchableOpacity>
               </View>
             </View>
             <View style={styles.orderActions}>
               <TouchableOpacity style={styles.autoSelectButton} onPress={selectAllCells}>
-                <Text style={styles.autoSelectText}>全て選択</Text>
+                <Text style={styles.autoSelectText}>Select all</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.autoSelectButton, styles.clearButton]}
                 onPress={() => setSelectedIds([])}
               >
-                <Text style={styles.autoSelectText}>選択解除</Text>
+                <Text style={styles.autoSelectText}>Clear selection</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -450,7 +450,7 @@ export const FrameGridSelector = ({
                     </View>
                   ) : (
                     <View style={styles.emptyState}>
-                      <Text style={styles.emptyStateTitle}>画像が未選択です</Text>
+                    <Text style={styles.emptyStateTitle}>Image not selected</Text>
                       <Text style={styles.emptyStateText}>{emptyMessage}</Text>
                     </View>
                   )}
@@ -461,52 +461,68 @@ export const FrameGridSelector = ({
         </View>
         <View style={styles.controlsColumn}>
           <NumericInputField
-            label="水平（分割数）"
+            label="Horizontal (cells)"
             value={horizontal}
             onCommit={setHorizontal}
             sanitize={(val) => Math.max(1, Math.floor(val))}
+            showStepControls
+            step={1}
           />
           <NumericInputField
-            label="垂直（分割数）"
+            label="Vertical (cells)"
             value={vertical}
             onCommit={setVertical}
             sanitize={(val) => Math.max(1, Math.floor(val))}
+            showStepControls
+            step={1}
           />
           <NumericInputField
-            label="サイズ x (px)"
+            label="Size X (px)"
             value={cellWidth}
             onCommit={setCellWidth}
             sanitize={(val) => Math.max(1, val)}
+            showStepControls
+            step={1}
           />
           <NumericInputField
-            label="サイズ y (px)"
+            label="Size Y (px)"
             value={cellHeight}
             onCommit={setCellHeight}
             sanitize={(val) => Math.max(1, val)}
+            showStepControls
+            step={1}
           />
           <NumericInputField
-            label="分離 x (px)"
+            label="Spacing X (px)"
             value={separationX}
             onCommit={setSeparationX}
             sanitize={(val) => Math.max(0, val)}
+            showStepControls
+            step={1}
           />
           <NumericInputField
-            label="分離 y (px)"
+            label="Spacing Y (px)"
             value={separationY}
             onCommit={setSeparationY}
             sanitize={(val) => Math.max(0, val)}
+            showStepControls
+            step={1}
           />
           <NumericInputField
-            label="オフセット x (px)"
+            label="Offset X (px)"
             value={offsetX}
             onCommit={setOffsetX}
             allowNegative
+            showStepControls
+            step={1}
           />
           <NumericInputField
-            label="オフセット y (px)"
+            label="Offset Y (px)"
             value={offsetY}
             onCommit={setOffsetY}
             allowNegative
+            showStepControls
+            step={1}
           />
         </View>
       </View>
@@ -516,7 +532,7 @@ export const FrameGridSelector = ({
         onPress={handleAddFrames}
       >
       <Text style={styles.addButtonText}>
-        {selectedCount ? `${selectedCount}フレームを追加` : 'フレームが選択されていません'}
+        {selectedCount ? `Add ${selectedCount} frame${selectedCount > 1 ? 's' : ''}` : 'No frames selected'}
       </Text>
       </TouchableOpacity>
     </View>
@@ -610,7 +626,7 @@ const styles = StyleSheet.create({
     height: 420,
     marginBottom: 12,
     position: 'relative',
-    backgroundColor: '#1c2130',
+    backgroundColor: '#444444',
   },
   imageScroll: {
     flex: 1,
@@ -631,6 +647,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
     height: '100%',
+    backgroundColor: '#444444',
   },
   imageFrame: {
     borderWidth: 1,
@@ -681,6 +698,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginBottom: 4,
   },
+  fieldInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   fieldInput: {
     backgroundColor: '#1c2130',
     borderRadius: 8,
@@ -689,6 +710,32 @@ const styles = StyleSheet.create({
     color: '#fff',
     paddingHorizontal: 10,
     paddingVertical: 6,
+    flex: 1,
+  },
+  fieldInputWithButtons: {
+    marginHorizontal: 4,
+  },
+  stepButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#2a3142',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#191f2f',
+  },
+  stepButtonLeft: {
+    marginRight: 4,
+  },
+  stepButtonRight: {
+    marginLeft: 4,
+  },
+  stepButtonText: {
+    color: '#dfe3ff',
+    fontSize: 18,
+    fontWeight: '600',
+    lineHeight: 24,
   },
   addButton: {
     marginTop: 8,
@@ -714,6 +761,8 @@ interface NumericInputFieldProps {
   onCommit: (value: number) => void;
   sanitize?: (value: number) => number;
   allowNegative?: boolean;
+  step?: number;
+  showStepControls?: boolean;
 }
 
 const NumericInputField: React.FC<NumericInputFieldProps> = ({
@@ -722,6 +771,8 @@ const NumericInputField: React.FC<NumericInputFieldProps> = ({
   onCommit,
   sanitize,
   allowNegative = false,
+  step = 1,
+  showStepControls = false,
 }) => {
   const [text, setText] = useState(String(value));
   const [isFocused, setIsFocused] = useState(false);
@@ -772,14 +823,35 @@ const NumericInputField: React.FC<NumericInputFieldProps> = ({
   return (
     <View style={styles.fieldRow}>
       <Text style={styles.fieldLabel}>{label}</Text>
-      <TextInput
-        value={text}
-        onChangeText={handleChangeText}
-        onFocus={() => setIsFocused(true)}
-        onBlur={handleBlur}
-        style={styles.fieldInput}
-        keyboardType="numeric"
-      />
+      <View style={styles.fieldInputRow}>
+        {showStepControls && (
+          <TouchableOpacity
+            style={[styles.stepButton, styles.stepButtonLeft]}
+            onPress={() => commitValue(value - step)}
+            accessibilityLabel={`Decrease ${label}`}
+          >
+            <Text style={styles.stepButtonText}>-</Text>
+          </TouchableOpacity>
+        )}
+        <SelectableTextInput
+          value={text}
+          onChangeText={handleChangeText}
+          onFocus={() => setIsFocused(true)}
+          onBlur={handleBlur}
+          style={[styles.fieldInput, showStepControls && styles.fieldInputWithButtons]}
+          keyboardType="numeric"
+          inputMode="numeric"
+        />
+        {showStepControls && (
+          <TouchableOpacity
+            style={[styles.stepButton, styles.stepButtonRight]}
+            onPress={() => commitValue(value + step)}
+            accessibilityLabel={`Increase ${label}`}
+          >
+            <Text style={styles.stepButtonText}>+</Text>
+          </TouchableOpacity>
+        )}
+      </View>
     </View>
   );
 };

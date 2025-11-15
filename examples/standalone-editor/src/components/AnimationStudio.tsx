@@ -15,14 +15,17 @@ import type { SpriteEditorApi, SpriteEditorFrame } from 'react-native-skia-sprit
 import type { DataSourceParam } from '@shopify/react-native-skia';
 import { MaterialIcons } from '@expo/vector-icons';
 import { IconButton, type IconButtonRenderIconProps } from './IconButton';
+import { MacWindow, type MacWindowVariant } from './MacWindow';
 import { PreviewPlayer } from './PreviewPlayer';
 import { FrameGridSelector, type FrameGridCell } from './FrameGridSelector';
+import { SelectableTextInput } from './SelectableTextInput';
 import type { EditorIntegration } from '../hooks/useEditorIntegration';
 
 interface AnimationStudioProps {
   editor: SpriteEditorApi;
   integration: EditorIntegration;
   image: DataSourceParam;
+  onSelectImage?: () => void;
 }
 
 const DEFAULT_DURATION = 80;
@@ -96,7 +99,7 @@ const renameRecordKey = <T,>(
   return renamed ? next : { ...record };
 };
 
-export const AnimationStudio = ({ editor, integration, image }: AnimationStudioProps) => {
+export const AnimationStudio = ({ editor, integration, image, onSelectImage }: AnimationStudioProps) => {
   const frames = editor.state.frames;
   const animations = editor.state.animations ?? {};
   const [thumbnailScale, setThumbnailScale] = useState(1);
@@ -108,6 +111,7 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
   const [timelineMeasuredHeight, setTimelineMeasuredHeight] = useState(0);
   const [timelineFilledHeight, setTimelineFilledHeight] = useState(0);
   const [isFramePickerVisible, setFramePickerVisible] = useState(false);
+  const [framePickerVariant, setFramePickerVariant] = useState<MacWindowVariant>('default');
   const {
     activeAnimation,
     setActiveAnimation,
@@ -172,11 +176,11 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
     }
     const nextName = renameDraft.trim();
     if (!nextName.length) {
-      setRenameError('名前を入力してください');
+      setRenameError('Please enter a name');
       return;
     }
     if (nextName !== renamingAnimation && animations[nextName]) {
-      setRenameError('同名のアニメーションが存在します');
+      setRenameError('An animation with the same name already exists');
       return;
     }
     if (nextName !== renamingAnimation) {
@@ -224,7 +228,11 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
       const nextSequence = animations[name] ?? [];
       if (nextSequence.length) {
         setTimelineSelection(0);
-        seekFrame(nextSequence[0], { cursor: 0, animationName: name });
+        seekFrame(nextSequence[0], {
+          cursor: 0,
+          animationName: name,
+          sequenceOverride: nextSequence,
+        });
       } else {
         setTimelineSelection(null);
       }
@@ -269,7 +277,7 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
   );
 
   const animationNames = useMemo(() => Object.keys(animations), [animations]);
-  const animationsMeta = editor.state.animationsMeta;
+  const animationsMeta = editor.state.animationsMeta ?? {};
 
   useEffect(() => {
     if (renamingAnimation && renamingAnimation !== currentAnimationName) {
@@ -291,6 +299,7 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
   ]);
 
   const currentAnimationName = activeAnimation ?? animationNames[0];
+  const hasActiveAnimation = Boolean(currentAnimationName);
   const currentSequence = useMemo(
     () => (currentAnimationName ? (animations[currentAnimationName] ?? []) : []),
     [animations, currentAnimationName],
@@ -319,7 +328,6 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
 
     if (animationChanged) {
       setTimelineSelection(() => 0);
-      seekFrame(nextSequence[0], { cursor: 0, animationName: nextName });
       return;
     }
 
@@ -332,7 +340,6 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
   }, [
     animations,
     currentAnimationName,
-    seekFrame,
     setTimelineSelection,
   ]);
 
@@ -393,14 +400,17 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
   );
 
   const updateSequence = useCallback(
-    (next: number[]) => {
+    (next: number[] | ((prev: number[]) => number[])): number[] => {
       if (!currentAnimationName) {
-        return;
+        return [];
       }
+      const prevSequence = animations[currentAnimationName] ?? [];
+      const nextSequence = typeof next === 'function' ? next(prevSequence) : next;
       editor.setAnimations({
         ...animations,
-        [currentAnimationName]: next,
+        [currentAnimationName]: nextSequence,
       });
+      return nextSequence;
     },
     [animations, currentAnimationName, editor],
   );
@@ -423,13 +433,19 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
         newIndexes.push(startIndex + idx);
         updateAnimationMultiplierMeta(currentAnimationName ?? '', startIndex + idx, 1);
       });
-      updateSequence([...currentSequence, ...newIndexes]);
+      const nextSequence = updateSequence((prevSequence) => [...prevSequence, ...newIndexes]);
+      if (newIndexes.length && nextSequence.length) {
+        const timelineIndex = nextSequence.length - newIndexes.length;
+        setTimelineSelection(timelineIndex);
+      }
     },
     [
       currentAnimationName,
       currentBaseDuration,
       currentSequence,
       editor,
+      seekFrame,
+      setTimelineSelection,
       updateAnimationMultiplierMeta,
       updateSequence,
     ],
@@ -474,7 +490,14 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
         setActiveAnimation(remaining.length ? remaining[0] : null);
       }
     },
-    [activeAnimation, animations, animationsMeta, editor, editor.state.meta, setActiveAnimation],
+    [
+      activeAnimation,
+      animations,
+      animationsMeta,
+      editor,
+      editor.state.meta,
+      setActiveAnimation,
+    ],
   );
 
   const handleToggleAnimationLoop = useCallback(() => {
@@ -498,9 +521,9 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
 
   const confirmDeleteAnimation = useCallback(
     (name: string) => {
-      Alert.alert('確認', 'アニメーションを削除しますか？', [
-        { text: 'キャンセル', style: 'cancel' },
-        { text: '削除', style: 'destructive', onPress: () => handleDeleteAnimation(name) },
+      Alert.alert('Delete animation?', 'Are you sure you want to remove this animation?', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: () => handleDeleteAnimation(name) },
       ]);
     },
     [handleDeleteAnimation],
@@ -579,6 +602,21 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
     return frames[frameIndex] ?? null;
   }, [currentSequence, frames, selectedTimelineIndex]);
 
+  useEffect(() => {
+    if (selectedTimelineIndex === null) {
+      return;
+    }
+    const frameIndex = currentSequence[selectedTimelineIndex];
+    if (typeof frameIndex !== 'number') {
+      return;
+    }
+    seekFrame(frameIndex, {
+      cursor: selectedTimelineIndex,
+      animationName: currentAnimationName ?? null,
+      sequenceOverride: currentSequence,
+    });
+  }, [currentAnimationName, currentSequence, seekFrame, selectedTimelineIndex]);
+
   const selectedMultiplier = useMemo(() => {
     if (currentAnimationName && selectedTimelineIndex !== null) {
       const stored =
@@ -617,6 +655,9 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
     }
     return stylesArray;
   }, [currentSequence.length, timelineFilledHeight, timelineMeasuredHeight]);
+  const animationColumnMaxHeight = useMemo(() => {
+    return Math.max(timelineFilledHeight, timelineMeasuredHeight, 0);
+  }, [timelineFilledHeight, timelineMeasuredHeight]);
 
   const ensureUniqueFrameForSelection = useCallback(() => {
     if (selectedTimelineIndex === null) {
@@ -684,6 +725,9 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
         return;
       }
       const safeMultiplier = Number.isFinite(multiplier) ? Math.max(0.1, multiplier) : 1;
+      if (Math.abs(safeMultiplier - selectedMultiplier) < 0.0001) {
+        return;
+      }
       const nextDuration = Math.max(1, currentBaseDuration * safeMultiplier);
       // TODO: Replace this conversion once SpriteAnimator natively supports per-animation fps.
       editor.updateFrame(frame.id, { duration: nextDuration });
@@ -694,6 +738,7 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
       currentBaseDuration,
       editor,
       ensureUniqueFrameForSelection,
+      selectedMultiplier,
       selectedTimelineIndex,
       updateAnimationMultiplierMeta,
     ],
@@ -703,15 +748,25 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Animation Studio</Text>
+        {onSelectImage && (
+          <TouchableOpacity style={styles.imagePickerButton} onPress={onSelectImage}>
+            <MaterialIcons name="image" size={18} color="#bdc9ff" />
+            <Text style={styles.imagePickerText}>Change Image</Text>
+          </TouchableOpacity>
+        )}
       </View>
       <View style={styles.previewSection}>
-        <PreviewPlayer integration={integration} image={image} />
+        <View style={styles.previewHeaderRow}>
+          <Text style={styles.sectionTitle}>Animation Preview</Text>
+        </View>
+        <PreviewPlayer integration={integration} image={image} title="" />
       </View>
       <View style={styles.body}>
-        <View style={animationColumnStyle}>
-          <Text style={styles.sectionTitle}>Animations</Text>
-          <View style={styles.animationToolbar}>
-            <IconButton name="add" onPress={handleAddAnimation} accessibilityLabel="Add animation" />
+        <View style={styles.sequenceGroup}>
+          <View style={[animationColumnStyle, animationColumnMaxHeight ? { maxHeight: animationColumnMaxHeight } : null]}>
+            <Text style={styles.sectionTitle}>Animations</Text>
+            <View style={styles.animationToolbar}>
+              <IconButton name="add" onPress={handleAddAnimation} accessibilityLabel="Add animation" />
             <IconButton
               name="delete"
               onPress={() => currentAnimationName && confirmDeleteAnimation(currentAnimationName)}
@@ -736,7 +791,15 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
           {currentAnimationName && (
             <AnimationFpsField value={currentAnimationFps} onSubmit={handleAnimationFpsChange} />
           )}
-          <ScrollView style={styles.animationList} contentContainerStyle={styles.animationListContent}>
+          <ScrollView
+            style={[
+              styles.animationList,
+              animationColumnMaxHeight
+                ? { maxHeight: Math.max(160, animationColumnMaxHeight - 80) }
+                : null,
+            ]}
+            contentContainerStyle={styles.animationListContent}
+          >
             {animationNames.map((name) => (
               <TouchableOpacity
                 key={name}
@@ -769,23 +832,23 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
             ))}
           </ScrollView>
         </View>
-        <View
-          style={styles.timelineColumn}
-          onLayout={(event) => {
-            const { height } = event.nativeEvent.layout;
-            if (height > 0 && Math.abs(height - timelineMeasuredHeight) > 1) {
-              setTimelineMeasuredHeight(height);
-            }
-          }}
-        >
-          <View style={styles.timelineHeader}>
-            <Text style={styles.sectionTitle}>Animation Frames</Text>
-          </View>
-          <View style={styles.timelineToolbar}>
-            <View style={styles.timelineButtons}>
-              <IconButton
-                iconFamily="material"
-                name="play-arrow"
+          <View
+            style={styles.timelineColumn}
+            onLayout={(event) => {
+              const { height } = event.nativeEvent.layout;
+              if (height > 0 && Math.abs(height - timelineMeasuredHeight) > 1) {
+                setTimelineMeasuredHeight(height);
+              }
+            }}
+          >
+            <View style={styles.timelineHeader}>
+              <Text style={styles.sectionTitle}>Animation Frames</Text>
+            </View>
+            <View style={styles.timelineToolbar}>
+              <View style={styles.timelineButtons}>
+                <IconButton
+                  iconFamily="material"
+                  name="play-arrow"
                 onPress={() => playReverse(currentAnimationName)}
                 disabled={isPlaying || currentSequence.length === 0}
                 accessibilityLabel="Play animation in reverse"
@@ -807,6 +870,7 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
                 iconFamily="material"
                 name={isPlaying ? 'pause' : 'stop'}
                 onPress={() => (isPlaying ? pause() : stop())}
+                disabled={!hasActiveAnimation || !currentSequence.length}
                 accessibilityLabel={isPlaying ? 'Pause animation preview' : 'Stop animation preview'}
               />
               <IconButton
@@ -832,6 +896,7 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
               <IconButton
                 name="grid-on"
                 onPress={() => setFramePickerVisible(true)}
+                disabled={!hasActiveAnimation}
                 accessibilityLabel="Open frame picker modal"
               />
               <View style={styles.timelineDivider} />
@@ -870,127 +935,140 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
                 disabled={selectedTimelineIndex === null}
                 accessibilityLabel="Remove timeline frame"
               />
-            </View>
-            <View style={styles.timelineDivider} />
-            <MultiplierField
-              ref={multiplierFieldRef}
-              value={selectedMultiplier}
-              disabled={!selectedFrame}
-              onSubmit={handleMultiplierSubmit}
-            />
-          </View>
-          <ScrollView
-            horizontal
-            style={styles.timelineScroll}
-            contentContainerStyle={styles.timelineContent}
-            showsHorizontalScrollIndicator={false}
-          >
-            {!sequenceCards.length && (
-              <View style={styles.emptyTimeline}>
-                <Text style={styles.emptyTimelineText}>タイムラインにフレームがありません。</Text>
-                <Text style={styles.emptyTimelineSubText}>
-                  下部のフレームピッカーからマスをタップして追加してください。
-                </Text>
               </View>
-            )}
-            {sequenceCards.map(({ frame, frameIndex, timelineIndex, isSelected }) => {
-              const viewportSize =
-                TIMELINE_CARD_SIZE - TIMELINE_FOOTER_HEIGHT - TIMELINE_CARD_PADDING * 2;
-              const frameScale = frame ? viewportSize / Math.max(frame.w, frame.h) : 1;
-              const storedMultiplier =
-                currentAnimationName !== null && currentAnimationName !== undefined
-                  ? animationSettings.multipliers?.[currentAnimationName]?.[timelineIndex]
-                  : undefined;
-              const computedMultiplier =
-                typeof storedMultiplier === 'number'
-                  ? storedMultiplier
-                  : frame && currentBaseDuration
-                    ? (frame.duration ?? currentBaseDuration) / currentBaseDuration
-                    : 1;
-              const multiplierLabel =
-                Math.abs(computedMultiplier - 1) < 0.01
-                  ? ''
-                  : ` [×${computedMultiplier.toFixed(2)}]`;
-              return (
-                <TouchableOpacity
-                  key={`${frameIndex}-${timelineIndex}`}
-                  style={[styles.timelineCard, isSelected && styles.timelineCardSelected]}
-                  onPress={() => {
-                    setTimelineSelection(timelineIndex);
-                    seekFrame(frameIndex, {
-                      cursor: timelineIndex,
-                      animationName: currentAnimationName ?? null,
-                    });
-                  }}
-                >
-                  <View style={styles.timelineCardBody}>
-                    {frame && imageInfo.ready && timelineImageSource ? (
-                      <View
-                        style={[
-                          styles.thumb,
-                          {
-                            width: viewportSize,
-                            height: viewportSize,
-                          },
-                        ]}
-                      >
+              <View style={styles.timelineDivider} />
+              <MultiplierField
+                ref={multiplierFieldRef}
+                value={selectedMultiplier}
+                disabled={!selectedFrame}
+                onSubmit={handleMultiplierSubmit}
+              />
+            </View>
+        <View style={styles.timelineTrack}>
+          {sequenceCards.length === 0 ? (
+            <View style={styles.emptyTimelineWrapper} />
+          ) : (
+            <ScrollView
+              horizontal
+              style={styles.timelineScroll}
+              contentContainerStyle={styles.timelineContent}
+              showsHorizontalScrollIndicator={false}
+            >
+              {sequenceCards.map(({ frame, frameIndex, timelineIndex, isSelected }) => {
+                const viewportSize =
+                  TIMELINE_CARD_SIZE - TIMELINE_FOOTER_HEIGHT - TIMELINE_CARD_PADDING * 2;
+                const frameScale = frame ? viewportSize / Math.max(frame.w, frame.h) : 1;
+                const storedMultiplier =
+                  currentAnimationName !== null && currentAnimationName !== undefined
+                    ? animationSettings.multipliers?.[currentAnimationName]?.[timelineIndex]
+                    : undefined;
+                const computedMultiplier =
+                  typeof storedMultiplier === 'number'
+                    ? storedMultiplier
+                    : frame && currentBaseDuration
+                      ? (frame.duration ?? currentBaseDuration) / currentBaseDuration
+                      : 1;
+                const multiplierLabel =
+                  Math.abs(computedMultiplier - 1) < 0.01
+                    ? ''
+                    : ` [×${computedMultiplier.toFixed(2)}]`;
+                return (
+                  <TouchableOpacity
+                    key={`${frameIndex}-${timelineIndex}`}
+                    style={[styles.timelineCard, isSelected && styles.timelineCardSelected]}
+                    onPress={() => {
+                      if (typeof frameIndex !== 'number') {
+                        return;
+                      }
+                      setTimelineSelection(timelineIndex);
+                      seekFrame(frameIndex, {
+                        cursor: timelineIndex,
+                        animationName: currentAnimationName ?? null,
+                        sequenceOverride: currentSequence,
+                      });
+                    }}
+                  >
+                    <View style={styles.timelineCardBody}>
+                      {frame && imageInfo.ready && timelineImageSource ? (
                         <View
-                          style={{
-                            width: frame.w * frameScale,
-                            height: frame.h * frameScale,
-                            overflow: 'hidden',
-                          }}
+                          style={[
+                            styles.thumb,
+                            {
+                              width: viewportSize,
+                              height: viewportSize,
+                            },
+                          ]}
                         >
-                          <Image
-                            source={timelineImageSource}
-                            resizeMode="cover"
+                          <View
                             style={{
-                              width: imageInfo.width * frameScale,
-                              height: imageInfo.height * frameScale,
-                              transform: [
-                                { translateX: -frame.x * frameScale },
-                                { translateY: -frame.y * frameScale },
-                              ],
+                              width: frame.w * frameScale,
+                              height: frame.h * frameScale,
+                              overflow: 'hidden',
                             }}
-                          />
+                          >
+                            <Image
+                              source={timelineImageSource}
+                              resizeMode="cover"
+                              style={{
+                                width: imageInfo.width * frameScale,
+                                height: imageInfo.height * frameScale,
+                                transform: [
+                                  { translateX: -frame.x * frameScale },
+                                  { translateY: -frame.y * frameScale },
+                                ],
+                              }}
+                            />
+                          </View>
                         </View>
-                      </View>
-                    ) : (
-                      <View
-                        style={[
-                          styles.thumb,
-                          styles.thumbPlaceholder,
-                          { width: viewportSize, height: viewportSize },
-                        ]}
-                      >
-                        <Text style={styles.thumbPlaceholderText}>No Image</Text>
-                      </View>
-                    )}
-                  </View>
-                  <View style={styles.timelineCardFooter}>
-                    <Text style={styles.timelineCardMeta}>
-                      {timelineIndex}
-                      {multiplierLabel}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
+                      ) : (
+                        <View
+                          style={[
+                            styles.thumb,
+                            styles.thumbPlaceholder,
+                            { width: viewportSize, height: viewportSize },
+                          ]}
+                        >
+                          <Text style={styles.thumbPlaceholderText}>No Image</Text>
+                        </View>
+                      )}
+                    </View>
+                    <View style={styles.timelineCardFooter}>
+                      <Text style={styles.timelineCardMeta}>
+                        {timelineIndex}
+                        {multiplierLabel}
+                        {typeof frameIndex === 'number' ? ` f${frameIndex}` : ''}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          )}
+        </View>
+          </View>
         </View>
       </View>
       <Modal
         animationType="slide"
         transparent
         visible={isFramePickerVisible}
-        onRequestClose={() => setFramePickerVisible(false)}
+        onRequestClose={() => {
+          setFramePickerVariant('default');
+          setFramePickerVisible(false);
+        }}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Frame Picker</Text>
-              <IconButton name="close" onPress={() => setFramePickerVisible(false)} accessibilityLabel="Close frame picker" />
-            </View>
+          <MacWindow
+            title="Frame Picker"
+            onVariantChange={setFramePickerVariant}
+            onClose={() => {
+              setFramePickerVariant('default');
+              setFramePickerVisible(false);
+            }}
+            enableCompact={false}
+            style={framePickerVariant === 'default' ? styles.framePickerWindow : undefined}
+            contentStyle={styles.framePickerContent}
+          >
             <FrameGridSelector
               image={{ source: image }}
               onAddFrames={(cells) => {
@@ -998,7 +1076,7 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
                 setFramePickerVisible(false);
               }}
             />
-          </View>
+          </MacWindow>
         </View>
       </Modal>
     </View>
@@ -1024,11 +1102,15 @@ const MultiplierField = React.forwardRef<MultiplierFieldHandle, MultiplierFieldP
         return;
       }
       const parsed = Number(text);
-      if (!Number.isNaN(parsed)) {
-        onSubmit(parsed);
-      } else {
+      if (Number.isNaN(parsed)) {
         setText(value.toFixed(2));
+        return;
       }
+      if (Math.abs(parsed - value) < 0.0001) {
+        setText(value.toFixed(2));
+        return;
+      }
+      onSubmit(parsed);
     }, [disabled, onSubmit, text, value]);
 
     useImperativeHandle(ref, () => ({
@@ -1041,8 +1123,8 @@ const MultiplierField = React.forwardRef<MultiplierFieldHandle, MultiplierFieldP
 
     return (
       <View style={styles.multiplierRow}>
-        <Text style={styles.multiplierLabel}>倍率</Text>
-        <TextInput
+        <Text style={styles.multiplierLabel}>Multiplier</Text>
+        <SelectableTextInput
           style={[styles.multiplierInput, disabled && styles.multiplierInputDisabled]}
           keyboardType="numeric"
           value={text}
@@ -1082,7 +1164,7 @@ const AnimationFpsField = ({ value, onSubmit }: AnimationFpsFieldProps) => {
   return (
     <View style={styles.animationFpsRow}>
       <Text style={styles.animationFpsLabel}>FPS</Text>
-      <TextInput
+      <SelectableTextInput
         style={styles.animationFpsInput}
         keyboardType="numeric"
         value={text}
@@ -1172,6 +1254,10 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
   },
   title: {
     color: '#f1f5ff',
@@ -1211,11 +1297,40 @@ const styles = StyleSheet.create({
     padding: 16,
     alignItems: 'center',
   },
+  previewHeaderRow: {
+    width: '100%',
+    marginBottom: 8,
+  },
+  imagePickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#2a3147',
+    backgroundColor: '#1c2233',
+  },
+  imagePickerText: {
+    color: '#dfe7ff',
+    marginLeft: 6,
+    fontSize: 12,
+    fontWeight: '600',
+  },
   body: {
     marginTop: 16,
+    width: '100%',
+  },
+  sequenceGroup: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 16,
+    width: '100%',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#1f2436',
+    backgroundColor: '#151b2a',
+    padding: 16,
   },
   animationListColumn: {
     width: 200,
@@ -1334,7 +1449,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   timelineScroll: {
-    marginTop: 12,
+    flexGrow: 1,
   },
   timelineContent: {
     flexDirection: 'row',
@@ -1407,45 +1522,38 @@ const styles = StyleSheet.create({
     color: '#8a92ae',
     fontSize: 11,
   },
-  emptyTimeline: {
-    padding: 24,
+  emptyTimelineWrapper: {
+    flex: 1,
+    width: '100%',
+    minHeight: TIMELINE_CARD_SIZE + TIMELINE_CARD_PADDING * 2,
+  },
+  timelineTrack: {
+    width: '100%',
+    marginTop: 12,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#22293a',
-    backgroundColor: '#141925',
-  },
-  emptyTimelineText: {
-    color: '#d7def5',
-    fontWeight: '600',
-  },
-  emptyTimelineSubText: {
-    color: '#a0aac5',
-    marginTop: 4,
-    fontSize: 12,
+    backgroundColor: '#0f1321',
+    padding: 12,
+    minHeight: TIMELINE_CARD_SIZE + TIMELINE_CARD_PADDING * 2 + 24,
   },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.65)',
     justifyContent: 'center',
-    padding: 16,
-  },
-  modalCard: {
-    backgroundColor: '#0f1421',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#1f2436',
-    padding: 16,
-    maxHeight: '90%',
-  },
-  modalHeader: {
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
+    padding: 16,
   },
-  modalTitle: {
-    color: '#f2f6ff',
-    fontSize: 16,
-    fontWeight: '600',
+  framePickerWindow: {
+    width: 980,
+    height: 590,
+    maxWidth: 1080,
+    maxHeight: '96%',
+    minWidth: 590,
+    minHeight: 600,
+  },
+  framePickerContent: {
+    flex: 1,
+    minHeight: 780,
   },
 });

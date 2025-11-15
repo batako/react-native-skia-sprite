@@ -84,7 +84,7 @@ export const MetaEditor = ({ editor }: MetaEditorProps) => {
       <Text style={styles.heading}>Metadata</Text>
       <View style={styles.addRow}>
         <IconButton name="add" onPress={handleAddEntry} accessibilityLabel="Add metadata entry" />
-        <Text style={styles.addHint}>項目を追加</Text>
+        <Text style={styles.addHint}>Add entry</Text>
       </View>
       {entries.map((entry) => (
         <View key={entry.id} style={styles.row}>

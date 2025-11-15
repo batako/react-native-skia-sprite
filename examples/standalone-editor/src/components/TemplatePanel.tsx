@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { SpriteEditorApi, SpriteTemplate } from 'react-native-skia-sprite-animator';
-import { DefaultSpriteTemplate } from 'react-native-skia-sprite-animator';
+import { DefaultSpriteTemplate, cleanSpriteData } from 'react-native-skia-sprite-animator';
 import { IconButton } from './IconButton';
 
 interface TemplatePanelProps {
@@ -67,7 +67,7 @@ export const TemplatePanel = ({ editor, template, onTemplateChange }: TemplatePa
   const [status, setStatus] = React.useState<string | null>(null);
 
   const handleExport = () => {
-    const payload = editor.exportJSON(template);
+    const payload = cleanSpriteData(editor.exportJSON(template));
     setExportPreview(JSON.stringify(payload, null, 2));
     setStatus(`Exported using template "${template.name}".`);
   };
@@ -75,7 +75,7 @@ export const TemplatePanel = ({ editor, template, onTemplateChange }: TemplatePa
   const handleImport = () => {
     try {
       const parsed = JSON.parse(importText);
-      editor.importJSON(parsed, template);
+      editor.importJSON(cleanSpriteData(parsed), template);
       setStatus('Import succeeded and editor history was reset.');
     } catch (error) {
       setStatus((error as Error).message);

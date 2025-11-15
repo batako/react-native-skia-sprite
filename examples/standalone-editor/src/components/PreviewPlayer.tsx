@@ -1,8 +1,9 @@
 import React from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image, LayoutChangeEvent, StyleSheet, Text, View } from 'react-native';
 import { SpriteAnimator } from 'react-native-skia-sprite-animator';
 import type { DataSourceParam } from '@shopify/react-native-skia';
 import type { EditorIntegration } from '../hooks/useEditorIntegration';
+import { IconButton } from './IconButton';
 
 export interface PreviewPlayerProps {
   integration: EditorIntegration;
@@ -22,40 +23,158 @@ export const PreviewPlayer = ({
   const { animatorRef, runtimeData, animationsMeta, speedScale, onFrameChange, onAnimationEnd } =
     integration;
   const { width: imageWidth, height: imageHeight } = useImageDimensions(image);
+  const [viewportWidth, setViewportWidth] = React.useState<number | null>(null);
+  const [zoom, setZoom] = React.useState(1);
+  const [autoZoomed, setAutoZoomed] = React.useState(false);
+  const autoZoomDepsRef = React.useRef<{
+    height?: number;
+    targetWidth: number;
+    maxWidth: number | null;
+    previewHeight: number;
+  }>({
+    height,
+    targetWidth: 0,
+    maxWidth: null,
+    previewHeight: 0,
+  });
+  const frameBounds = React.useMemo(() => {
+    const frames = runtimeData.frames ?? [];
+    if (!frames.length) {
+      return { width: imageWidth ?? 64, height: imageHeight ?? 64 };
+    }
+    return frames.reduce(
+      (acc, frame) => ({
+        width: Math.max(acc.width, frame.w),
+        height: Math.max(acc.height, frame.h),
+      }),
+      { width: 1, height: 1 },
+    );
+  }, [runtimeData.frames, imageWidth, imageHeight]);
 
-  let canvasWidth = width ?? imageWidth ?? undefined;
-  let canvasHeight = height ?? imageHeight ?? undefined;
+  const MIN_PREVIEW_HEIGHT = 420;
+  const baseWidth = frameBounds.width || 64;
+  const baseHeight = frameBounds.height || 64;
+  const aspectRatio = baseHeight > 0 ? baseWidth / baseHeight : 1;
+  const maxWidth = viewportWidth ? Math.max(200, viewportWidth - 16) : null;
 
-  if (canvasWidth && imageWidth && imageHeight && !height) {
-    canvasHeight = (imageHeight / imageWidth) * canvasWidth;
-  } else if (canvasHeight && imageWidth && imageHeight && !width) {
-    canvasWidth = (imageWidth / imageHeight) * canvasHeight;
+  let targetWidth = width ?? baseWidth;
+  let targetHeight = height ?? baseHeight;
+  if (!height && maxWidth && targetWidth > maxWidth) {
+    const scale = maxWidth / targetWidth;
+    targetWidth = maxWidth;
+    targetHeight = targetHeight * scale;
   }
+  const previewHeight = height ?? MIN_PREVIEW_HEIGHT;
+  const widthLimit = maxWidth ? maxWidth / targetWidth : Number.POSITIVE_INFINITY;
+  const heightLimit = previewHeight > 0 ? previewHeight / targetHeight : Number.POSITIVE_INFINITY;
+  const maxZoomAllowed =
+    height || !Number.isFinite(Math.min(widthLimit, heightLimit))
+      ? Number.POSITIVE_INFINITY
+      : Math.min(widthLimit, heightLimit);
+  const zoomedWidth = targetWidth * zoom;
+  const zoomedHeight = targetHeight * zoom;
+  const displayHeight = previewHeight;
 
-  if (!canvasWidth) {
-    canvasWidth = imageWidth || 320;
-  }
-  if (!canvasHeight) {
-    canvasHeight = imageHeight || 320;
-  }
+  const clampZoom = (value: number) => {
+    const rounded = parseFloat(value.toFixed(2));
+    const upperBound = maxZoomAllowed > 0 ? maxZoomAllowed : Number.POSITIVE_INFINITY;
+    return Math.max(0.25, Math.min(rounded, upperBound));
+  };
+
+  const adjustZoom = (delta: number) => {
+    setZoom((prev) => clampZoom(prev + delta));
+  };
+
+  const resetZoom = () => setZoom(1);
+
+  React.useEffect(() => {
+    if (height || targetWidth <= 0 || autoZoomed) {
+      return;
+    }
+    const safeMaxZoom = maxZoomAllowed;
+    if (!Number.isFinite(safeMaxZoom) || safeMaxZoom <= 0) {
+      setAutoZoomed(true);
+      return;
+    }
+    let desiredZoom = safeMaxZoom * 0.8;
+    if (safeMaxZoom >= 1) {
+      desiredZoom = Math.max(1, desiredZoom);
+    }
+    desiredZoom = clampZoom(desiredZoom);
+    if (Math.abs(desiredZoom - zoom) > 0.01) {
+      setZoom(desiredZoom);
+    }
+    setAutoZoomed(true);
+  }, [autoZoomed, height, maxWidth, maxZoomAllowed, previewHeight, targetHeight, targetWidth, zoom]);
+
+  React.useEffect(() => {
+    const prev = autoZoomDepsRef.current;
+    if (
+      prev.height !== height ||
+      prev.targetWidth !== targetWidth ||
+      prev.maxWidth !== maxWidth ||
+      prev.previewHeight !== previewHeight
+    ) {
+      autoZoomDepsRef.current = { height, targetWidth, maxWidth, previewHeight };
+      setAutoZoomed(false);
+    }
+  }, [height, targetWidth, maxWidth, previewHeight]);
+
+  const showTitle = Boolean(title);
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{title}</Text>
-      <View style={styles.canvasCard}>
-        <View style={[styles.canvasFrame, { width: canvasWidth, height: canvasHeight }]}>
-          <SpriteAnimator
-            ref={animatorRef}
-            image={image}
-            data={runtimeData}
-            fps={12}
-            loop
-            animationsMeta={animationsMeta}
-            speedScale={speedScale}
-            onFrameChange={onFrameChange}
-            onAnimationEnd={onAnimationEnd}
-            style={[styles.canvas, { width: canvasWidth, height: canvasHeight }]}
-          />
+      {showTitle && <Text style={styles.title}>{title}</Text>}
+      <View
+        style={styles.canvasCard}
+        onLayout={(event: LayoutChangeEvent) => {
+          const nextWidth = event.nativeEvent.layout.width;
+          if (nextWidth > 0) {
+            setViewportWidth((prev) => (prev === nextWidth ? prev : nextWidth));
+          }
+        }}
+      >
+        <View pointerEvents="box-none" style={styles.zoomOverlay}>
+          <View style={styles.zoomControls}>
+            <IconButton
+              name="zoom-out"
+              onPress={() => adjustZoom(-0.25)}
+              accessibilityLabel="Zoom out"
+              style={styles.zoomButton}
+            />
+            <IconButton
+              name="fullscreen"
+              onPress={resetZoom}
+              accessibilityLabel="Actual size"
+              style={styles.zoomButton}
+            />
+            <IconButton
+              name="zoom-in"
+              onPress={() => adjustZoom(0.25)}
+              accessibilityLabel="Zoom in"
+              style={styles.zoomButton}
+            />
+          </View>
+        </View>
+        <View style={styles.canvasFrame}>
+          <View style={[styles.canvasInner, { height: displayHeight }]}>
+            <View style={[styles.canvasViewport, { width: zoomedWidth, height: zoomedHeight }]}>
+              <View style={{ width: targetWidth, height: targetHeight, transform: [{ scale: zoom }] }}>
+                <SpriteAnimator
+                  ref={animatorRef}
+                  image={image}
+                  data={runtimeData}
+                  fps={12}
+                  loop
+                  animationsMeta={animationsMeta}
+                  speedScale={speedScale}
+                  onFrameChange={onFrameChange}
+                  onAnimationEnd={onAnimationEnd}
+                  style={[styles.canvas, { width: targetWidth, height: targetHeight }]}
+                />
+              </View>
+            </View>
+          </View>
         </View>
       </View>
     </View>
@@ -65,16 +184,29 @@ export const PreviewPlayer = ({
 const styles = StyleSheet.create({
   container: {
     width: '100%',
-    padding: 12,
   },
   title: {
     color: '#dfe7ff',
     fontWeight: '600',
     marginBottom: 8,
   },
+  zoomOverlay: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    zIndex: 2,
+    pointerEvents: 'box-none',
+  },
+  zoomControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  zoomButton: {
+    marginRight: 4,
+    marginBottom: 0,
+  },
   canvasCard: {
-    backgroundColor: '#0c0f15',
-    padding: 8,
+    backgroundColor: 'transparent',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -82,9 +214,27 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     alignItems: 'center',
     justifyContent: 'center',
+    width: '100%',
+    minHeight: 420,
+  },
+  canvasInner: {
+    alignSelf: 'center',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 420,
+    width: '100%',
+    backgroundColor: '#444444',
+    padding: 8,
+  },
+  canvasViewport: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    maxWidth: '100%',
+    alignSelf: 'center',
   },
   canvas: {
     overflow: 'hidden',
+    alignSelf: 'center',
   },
 });
 
