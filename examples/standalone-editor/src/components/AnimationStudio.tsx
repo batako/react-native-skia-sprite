@@ -889,9 +889,7 @@ export const AnimationStudio = ({
                 name="repeat"
                 onPress={handleToggleAnimationLoop}
                 disabled={!currentAnimationName}
-                style={[
-                  currentAnimationLoop ? styles.loopButtonActive : styles.loopButtonInactive,
-                ]}
+                style={[currentAnimationLoop ? styles.loopButtonActive : styles.loopButtonInactive]}
                 accessibilityLabel={
                   currentAnimationLoop ? 'Disable loop for animation' : 'Enable loop for animation'
                 }
