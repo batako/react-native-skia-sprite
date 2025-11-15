@@ -566,6 +566,22 @@ export const AnimationStudio = ({ editor, integration, image, onSelectImage }: A
     });
   };
 
+  const selectTimelineFrame = useCallback(
+    (timelineIndex: number, sequenceOverride?: number[]) => {
+      setTimelineSelection(timelineIndex);
+      const sequence = sequenceOverride ?? currentSequence;
+      const frameIndex = sequence[timelineIndex];
+      if (typeof frameIndex === 'number') {
+        seekFrame(frameIndex, {
+          cursor: timelineIndex,
+          animationName: currentAnimationName ?? null,
+          sequenceOverride: sequence,
+        });
+      }
+    },
+    [currentAnimationName, currentSequence, seekFrame, setTimelineSelection],
+  );
+
   const handleMoveTimelineFrame = (direction: -1 | 1) => {
     if (selectedTimelineIndex === null) {
       return;
@@ -578,7 +594,7 @@ export const AnimationStudio = ({ editor, integration, image, onSelectImage }: A
     const [item] = next.splice(selectedTimelineIndex, 1);
     next.splice(targetIndex, 0, item);
     updateSequence(next);
-    setTimelineSelection(targetIndex);
+    selectTimelineFrame(targetIndex, next);
   };
 
   const sequenceCards = currentSequence.map((frameIndex, idx) => {
@@ -976,17 +992,7 @@ export const AnimationStudio = ({ editor, integration, image, onSelectImage }: A
                   <TouchableOpacity
                     key={`${frameIndex}-${timelineIndex}`}
                     style={[styles.timelineCard, isSelected && styles.timelineCardSelected]}
-                    onPress={() => {
-                      if (typeof frameIndex !== 'number') {
-                        return;
-                      }
-                      setTimelineSelection(timelineIndex);
-                      seekFrame(frameIndex, {
-                        cursor: timelineIndex,
-                        animationName: currentAnimationName ?? null,
-                        sequenceOverride: currentSequence,
-                      });
-                    }}
+                    onPress={() => selectTimelineFrame(timelineIndex)}
                   >
                     <View style={styles.timelineCardBody}>
                       {frame && imageInfo.ready && timelineImageSource ? (

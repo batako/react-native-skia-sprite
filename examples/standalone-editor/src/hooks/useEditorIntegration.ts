@@ -41,11 +41,24 @@ export const useEditorIntegration = ({ editor }: UseEditorIntegrationOptions) =>
   }, [animationsState, editor.state.frames, editor.state.meta]);
 
   useEffect(() => {
-    animatorRef.current?.stop();
+    const animator = animatorRef.current;
+    animator?.pause();
     endedAnimationRef.current = null;
     setIsPlaying(false);
-    setFrameCursor(0);
-  }, [runtimeData.frames, runtimeData.animations]);
+    setFrameCursor((prev) => {
+      if (!editor.state.frames.length) {
+        return 0;
+      }
+      if (!Number.isFinite(prev) || prev < 0) {
+        return 0;
+      }
+      const maxFrame = editor.state.frames.length - 1;
+      if (prev > maxFrame) {
+        return maxFrame;
+      }
+      return prev;
+    });
+  }, [editor.state.frames.length, runtimeData.frames, runtimeData.animations]);
 
   const play = useCallback(
     (name?: string | null, opts?: PlayOptions) => {
