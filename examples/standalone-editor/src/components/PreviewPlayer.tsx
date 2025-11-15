@@ -1,5 +1,5 @@
 import React from 'react';
-import { Image, LayoutChangeEvent, StyleSheet, Text, View } from 'react-native';
+import { Image, LayoutChangeEvent, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SpriteAnimator } from 'react-native-skia-sprite-animator';
 import type { DataSourceParam } from '@shopify/react-native-skia';
 import type { EditorIntegration } from '../hooks/useEditorIntegration';
@@ -168,15 +168,17 @@ export const PreviewPlayer = ({
               accessibilityLabel="Zoom out"
               style={styles.zoomButton}
             />
-            <View style={styles.zoomLabelButton}>
-              <IconButton
-                name="fullscreen"
-                onPress={resetZoom}
-                accessibilityLabel="Reset zoom to 100%"
-                style={styles.zoomButton}
-              />
+            <Pressable
+              onPress={resetZoom}
+              accessibilityRole="button"
+              accessibilityLabel="Reset zoom to 100%"
+              style={({ pressed }) => [
+                styles.zoomTextButton,
+                pressed && styles.zoomTextButtonPressed,
+              ]}
+            >
               <Text style={styles.zoomLabel}>{Math.round(zoom * 100)}%</Text>
-            </View>
+            </Pressable>
             <IconButton
               name="zoom-in"
               onPress={() => adjustZoom(0.25)}
@@ -241,17 +243,23 @@ const styles = StyleSheet.create({
     marginRight: 4,
     marginBottom: 0,
   },
-  zoomLabelButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  zoomTextButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#2a3147',
+    backgroundColor: '#1c2233',
     marginRight: 4,
+  },
+  zoomTextButtonPressed: {
+    backgroundColor: '#28304b',
   },
   zoomLabel: {
     color: '#dfe7ff',
     fontWeight: '600',
     fontSize: 12,
-    marginLeft: 2,
-    minWidth: 40,
+    minWidth: 50,
     textAlign: 'center',
   },
   canvasCard: {
