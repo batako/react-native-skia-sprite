@@ -74,7 +74,12 @@ describe('SpriteAnimator', () => {
       { ...frames[1], duration: 50 },
     ];
     const renderer = renderComponent(
-      <SpriteAnimator image={mockSkImage()} data={{ frames: timedFrames }} loop={false} onEnd={onEnd} />,
+      <SpriteAnimator
+        image={mockSkImage()}
+        data={{ frames: timedFrames }}
+        loop={false}
+        onEnd={onEnd}
+      />,
     );
 
     await act(async () => {
@@ -132,9 +137,7 @@ describe('SpriteAnimator', () => {
 
   it('clears pending timers on unmount', () => {
     const clearSpy = jest.spyOn(global, 'clearTimeout');
-    const renderer = renderComponent(
-      <SpriteAnimator image={mockSkImage()} data={{ frames }} />,
-    );
+    const renderer = renderComponent(<SpriteAnimator image={mockSkImage()} data={{ frames }} />);
 
     act(() => {
       jest.advanceTimersByTime(50);

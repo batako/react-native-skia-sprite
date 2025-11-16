@@ -18,7 +18,12 @@ import {
   View,
 } from 'react-native';
 import type { ImageSourcePropType } from 'react-native';
-import type { SpriteEditorApi, SpriteEditorFrame } from 'react-native-skia-sprite-animator';
+import type {
+  SpriteAnimationMeta,
+  SpriteAnimationsMeta,
+  SpriteEditorApi,
+  SpriteEditorFrame,
+} from 'react-native-skia-sprite-animator';
 import type { DataSourceParam } from '@shopify/react-native-skia';
 import { MaterialIcons } from '@expo/vector-icons';
 import { IconButton, type IconButtonRenderIconProps } from './IconButton';
@@ -41,25 +46,13 @@ const MAX_ANIMATION_FPS = 60;
 const TIMELINE_CARD_SIZE = 150;
 const TIMELINE_CARD_PADDING = 10;
 const TIMELINE_FOOTER_HEIGHT = 28;
+const DEFAULT_FRAME_MULTIPLIER = 1;
+const MIN_FRAME_MULTIPLIER = 0.1;
+const MULTIPLIER_EPSILON = 0.0001;
 
-type AnimationSettingsMeta = {
+type LegacyAnimationSettingsMeta = {
   fps?: Record<string, number>;
-};
-
-const getAnimationSettings = (meta: Record<string, unknown> | undefined): AnimationSettingsMeta => {
-  const settings = (meta as { animationSettings?: AnimationSettingsMeta })?.animationSettings;
-  return settings ?? {};
-};
-
-const getAnimationFps = (settings: AnimationSettingsMeta, name: string | undefined): number => {
-  if (!name) {
-    return DEFAULT_ANIMATION_FPS;
-  }
-  const value = settings.fps?.[name];
-  if (typeof value === 'number' && Number.isFinite(value) && value >= MIN_ANIMATION_FPS) {
-    return value;
-  }
-  return DEFAULT_ANIMATION_FPS;
+  multipliers?: Record<string, Record<number, number>>;
 };
 
 const clampFps = (value: number) => {
@@ -73,11 +66,6 @@ const clampFps = (value: number) => {
     return MAX_ANIMATION_FPS;
   }
   return value;
-};
-
-const fpsToDuration = (fps: number) => {
-  const safeFps = Math.max(MIN_ANIMATION_FPS, fps);
-  return 1000 / safeFps;
 };
 
 const renameRecordKey = <T,>(
@@ -102,6 +90,87 @@ const renameRecordKey = <T,>(
   return renamed ? next : { ...record };
 };
 
+const clampMultiplier = (value: number) => {
+  if (!Number.isFinite(value)) {
+    return DEFAULT_FRAME_MULTIPLIER;
+  }
+  return Math.max(MIN_FRAME_MULTIPLIER, value);
+};
+
+const normalizeMultipliersArray = (values: number[], targetLength?: number): number[] => {
+  const length = targetLength ?? values.length;
+  const normalized = new Array(length);
+  for (let i = 0; i < length; i += 1) {
+    const raw = i < values.length ? values[i]! : DEFAULT_FRAME_MULTIPLIER;
+    normalized[i] = clampMultiplier(raw);
+  }
+  return normalized;
+};
+
+const multipliersEqual = (a: number[] | undefined, b: number[]) => {
+  if (!a) {
+    return b.every((value) => Math.abs(value - DEFAULT_FRAME_MULTIPLIER) < MULTIPLIER_EPSILON);
+  }
+  if (a.length !== b.length) {
+    return false;
+  }
+  for (let i = 0; i < a.length; i += 1) {
+    if (Math.abs(a[i]! - b[i]!) > MULTIPLIER_EPSILON) {
+      return false;
+    }
+  }
+  return true;
+};
+
+const animationMetaEquals = (a?: SpriteAnimationMeta, b?: SpriteAnimationMeta) => {
+  if (!a || !b) {
+    return false;
+  }
+  if (
+    a.loop !== b.loop ||
+    a.autoPlay !== b.autoPlay ||
+    clampFps(a.fps ?? DEFAULT_ANIMATION_FPS) !== clampFps(b.fps ?? DEFAULT_ANIMATION_FPS)
+  ) {
+    return false;
+  }
+  return multipliersEqual(a.multipliers, b.multipliers ?? []);
+};
+
+const normalizeAnimationMetaEntry = (
+  entry: SpriteAnimationMeta | undefined,
+  sequenceLength: number,
+): SpriteAnimationMeta => {
+  const normalized: SpriteAnimationMeta = {};
+  if (typeof entry?.loop === 'boolean') {
+    normalized.loop = entry.loop;
+  }
+  if (typeof entry?.autoPlay === 'boolean') {
+    normalized.autoPlay = entry.autoPlay;
+  }
+  normalized.fps = clampFps(entry?.fps ?? DEFAULT_ANIMATION_FPS);
+  normalized.multipliers = normalizeMultipliersArray(
+    Array.isArray(entry?.multipliers) ? entry.multipliers : [],
+    sequenceLength,
+  );
+  return normalized;
+};
+
+const createAnimationMetaDraft = (
+  entry: SpriteAnimationMeta | undefined,
+  sequenceLength: number,
+): SpriteAnimationMeta => {
+  const normalized = normalizeAnimationMetaEntry(entry, sequenceLength);
+  return {
+    ...normalized,
+    multipliers: normalized.multipliers ? normalized.multipliers.slice() : [],
+  };
+};
+
+const cleanupAnimationMetaEntry = (
+  entry: SpriteAnimationMeta,
+  sequenceLength: number,
+): SpriteAnimationMeta => normalizeAnimationMetaEntry(entry, sequenceLength);
+
 export const AnimationStudio = ({
   editor,
   integration,
@@ -109,12 +178,12 @@ export const AnimationStudio = ({
   onSelectImage,
 }: AnimationStudioProps) => {
   const frames = editor.state.frames;
-  const editorMeta = editor.state.meta;
   const animations = useMemo(() => editor.state.animations ?? {}, [editor.state.animations]);
   const animationsMeta = useMemo(
     () => editor.state.animationsMeta ?? {},
     [editor.state.animationsMeta],
   );
+  const legacySettingsMigratedRef = useRef(false);
   const [timelineClipboard, setTimelineClipboard] = useState<number[] | null>(null);
   const [selectedTimelineIndex, setSelectedTimelineIndex] = useState<number | null>(null);
   const [renamingAnimation, setRenamingAnimation] = useState<string | null>(null);
@@ -147,6 +216,119 @@ export const AnimationStudio = ({
     },
     [commitPendingMultiplier],
   );
+
+  const updateAnimationMetaEntry = useCallback(
+    (name: string, mutator: (draft: SpriteAnimationMeta) => void) => {
+      if (!name) {
+        return;
+      }
+      const sequenceLength = animations[name]?.length ?? 0;
+      const draft: SpriteAnimationMeta = createAnimationMetaDraft(
+        animationsMeta[name],
+        sequenceLength,
+      );
+      mutator(draft);
+      const cleaned = cleanupAnimationMetaEntry(draft, sequenceLength);
+      const prevEntry = animationsMeta[name];
+      if (prevEntry && animationMetaEquals(prevEntry, cleaned)) {
+        return;
+      }
+      editor.setAnimationsMeta({
+        ...animationsMeta,
+        [name]: cleaned,
+      });
+    },
+    [animations, animationsMeta, editor],
+  );
+
+  const setAnimationMultipliers = useCallback(
+    (name: string, values: number[]) => {
+      const sequenceLength = animations[name]?.length ?? values.length;
+      const normalized = normalizeMultipliersArray(values, sequenceLength);
+      updateAnimationMetaEntry(name, (draft) => {
+        if (multipliersEqual(draft.multipliers, normalized)) {
+          return;
+        }
+        draft.multipliers = normalized.slice();
+      });
+    },
+    [animations, updateAnimationMetaEntry],
+  );
+
+  useEffect(() => {
+    if (legacySettingsMigratedRef.current) {
+      return;
+    }
+    const legacySettings = (
+      editor.state.meta as { animationSettings?: LegacyAnimationSettingsMeta }
+    )?.animationSettings;
+    if (!legacySettings) {
+      legacySettingsMigratedRef.current = true;
+      return;
+    }
+    const hasLegacyFps = legacySettings.fps && Object.keys(legacySettings.fps).length > 0;
+    const hasLegacyMultipliers =
+      legacySettings.multipliers && Object.keys(legacySettings.multipliers).length > 0;
+    if (!hasLegacyFps && !hasLegacyMultipliers) {
+      editor.updateMeta((prevMeta) => {
+        if (!prevMeta?.animationSettings) {
+          return prevMeta;
+        }
+        const { animationSettings, ...rest } = prevMeta;
+        return rest;
+      });
+      legacySettingsMigratedRef.current = true;
+      return;
+    }
+    const nextMeta = { ...animationsMeta };
+    if (legacySettings.fps) {
+      Object.entries(legacySettings.fps).forEach(([name, value]) => {
+        if (!Number.isFinite(value)) {
+          return;
+        }
+        const clamped = clampFps(value);
+        if (!nextMeta[name]) {
+          nextMeta[name] = {};
+        }
+        if (clamped !== DEFAULT_ANIMATION_FPS) {
+          nextMeta[name]!.fps = clamped;
+        }
+      });
+    }
+    if (legacySettings.multipliers) {
+      Object.entries(legacySettings.multipliers).forEach(([name, record]) => {
+        if (!record) {
+          return;
+        }
+        const entries = Object.entries(record)
+          .map(([index, multiplier]) => ({ index: Number(index), multiplier }))
+          .filter(({ index }) => Number.isFinite(index) && index >= 0);
+        if (!entries.length) {
+          return;
+        }
+        const maxIndex = entries.reduce((max, { index }) => Math.max(max, index), -1);
+        const values = new Array(maxIndex + 1).fill(DEFAULT_FRAME_MULTIPLIER);
+        entries.forEach(({ index, multiplier }) => {
+          if (Number.isFinite(multiplier)) {
+            values[index] = clampMultiplier(multiplier);
+          }
+        });
+        if (!nextMeta[name]) {
+          nextMeta[name] = {};
+        }
+        nextMeta[name]!.multipliers = normalizeMultipliersArray(values);
+      });
+    }
+    editor.setAnimationsMeta(nextMeta);
+    editor.updateMeta((prevMeta) => {
+      if (!prevMeta?.animationSettings) {
+        return prevMeta;
+      }
+      const { animationSettings, ...rest } = prevMeta;
+      return rest;
+    });
+    legacySettingsMigratedRef.current = true;
+  }, [animationsMeta, editor, editor.state.meta]);
 
   const renderRestartForwardIcon = useCallback(
     ({ color, size }: IconButtonRenderIconProps) => (
@@ -194,17 +376,6 @@ export const AnimationStudio = ({
         nextAnimations[nextName] = sourceSequence;
       }
       editor.setAnimations(nextAnimations);
-
-      const settings = getAnimationSettings(editorMeta);
-      const nextFps = renameRecordKey(settings.fps, renamingAnimation, nextName);
-      const nextMultipliers = renameRecordKey(settings.multipliers, renamingAnimation, nextName);
-      editor.updateMeta({
-        animationSettings: {
-          ...settings,
-          fps: Object.keys(nextFps).length ? nextFps : undefined,
-          multipliers: Object.keys(nextMultipliers).length ? nextMultipliers : undefined,
-        },
-      });
       const nextAnimationsMeta = renameRecordKey(animationsMeta, renamingAnimation, nextName);
       editor.setAnimationsMeta(nextAnimationsMeta);
       setActiveAnimation(nextName);
@@ -215,7 +386,6 @@ export const AnimationStudio = ({
     animationsMeta,
     cancelRename,
     editor,
-    editorMeta,
     renamingAnimation,
     renameDraft,
     setActiveAnimation,
@@ -284,6 +454,29 @@ export const AnimationStudio = ({
   const animationNames = useMemo(() => Object.keys(animations), [animations]);
 
   useEffect(() => {
+    let changed = false;
+    const nextMeta: SpriteAnimationsMeta = { ...animationsMeta };
+    animationNames.forEach((name) => {
+      const sequenceLength = animations[name]?.length ?? 0;
+      const normalized = normalizeAnimationMetaEntry(animationsMeta[name], sequenceLength);
+      const prevEntry = animationsMeta[name];
+      if (!prevEntry || !animationMetaEquals(prevEntry, normalized)) {
+        nextMeta[name] = normalized;
+        changed = true;
+      }
+    });
+    Object.keys(nextMeta).forEach((name) => {
+      if (!animations[name]) {
+        delete nextMeta[name];
+        changed = true;
+      }
+    });
+    if (changed) {
+      editor.setAnimationsMeta(nextMeta);
+    }
+  }, [animationNames, animations, animationsMeta, editor]);
+
+  useEffect(() => {
     if (renamingAnimation && renamingAnimation !== currentAnimationName) {
       cancelRename();
     }
@@ -308,15 +501,15 @@ export const AnimationStudio = ({
     () => (currentAnimationName ? (animations[currentAnimationName] ?? []) : []),
     [animations, currentAnimationName],
   );
-  const animationSettings = useMemo(() => getAnimationSettings(editorMeta), [editorMeta]);
-  const currentAnimationFps = getAnimationFps(animationSettings, currentAnimationName);
+  const currentAnimationFps = currentAnimationName
+    ? clampFps(animationsMeta[currentAnimationName]?.fps ?? DEFAULT_ANIMATION_FPS)
+    : DEFAULT_ANIMATION_FPS;
   const currentAnimationLoop = currentAnimationName
     ? (animationsMeta[currentAnimationName]?.loop ?? true)
     : true;
   const currentAnimationAutoPlay = currentAnimationName
     ? Boolean(animationsMeta[currentAnimationName]?.autoPlay)
     : false;
-  const currentBaseDuration = fpsToDuration(currentAnimationFps);
 
   const lastAnimationRef = useRef<string | null>(null);
   useEffect(() => {
@@ -410,62 +603,24 @@ export const AnimationStudio = ({
 
   const imageInfo = useImageDimensions(image);
   const timelineImageSource = useMemo(() => resolveReactNativeImageSource(image), [image]);
-  const adjustFrameDurationsForAnimation = useCallback(
-    (name: string, prevFps: number, nextFps: number) => {
-      const prevBase = fpsToDuration(prevFps);
-      const nextBase = fpsToDuration(nextFps);
-      const sequence = animations[name] ?? [];
-      const uniqueIndexes = Array.from(new Set(sequence));
-      uniqueIndexes.forEach((frameIndex) => {
-        const frame = frames[frameIndex];
-        if (!frame) {
-          return;
-        }
-        const currentDuration = frame.duration ?? prevBase;
-        const multiplier = currentDuration / prevBase;
-        const nextDuration = Math.max(1, nextBase * multiplier);
-        editor.updateFrame(frame.id, { duration: nextDuration });
-      });
-    },
-    [animations, editor, frames],
-  );
-
-  const updateAnimationFpsMeta = useCallback(
-    (name: string, fps: number) => {
-      const settings = getAnimationSettings(editorMeta);
-      const nextSettings: AnimationSettingsMeta = {
-        ...settings,
-        fps: { ...(settings.fps ?? {}), [name]: fps },
-      };
-      editor.updateMeta({
-        animationSettings: nextSettings,
-      });
-    },
-    [editor, editorMeta],
-  );
   const handleAnimationFpsChange = useCallback(
     (nextFps: number) => {
       if (!currentAnimationName) {
         return;
       }
-      const prevFps = getAnimationFps(animationSettings, currentAnimationName);
       const clamped = clampFps(nextFps);
-      if (clamped === prevFps) {
-        return;
-      }
-      updateAnimationFpsMeta(currentAnimationName, clamped);
-      adjustFrameDurationsForAnimation(currentAnimationName, prevFps, clamped);
+      updateAnimationMetaEntry(currentAnimationName, (draft) => {
+        draft.fps = clamped;
+      });
     },
-    [
-      adjustFrameDurationsForAnimation,
-      animationSettings,
-      currentAnimationName,
-      updateAnimationFpsMeta,
-    ],
+    [currentAnimationName, updateAnimationMetaEntry],
   );
 
   const updateSequence = useCallback(
-    (next: number[] | ((prev: number[]) => number[])): number[] => {
+    (
+      next: number[] | ((prev: number[]) => number[]),
+      multipliersUpdater?: (prev: number[]) => number[],
+    ): number[] => {
       if (!currentAnimationName) {
         return [];
       }
@@ -475,9 +630,21 @@ export const AnimationStudio = ({
         ...animations,
         [currentAnimationName]: nextSequence,
       });
+      const prevMultipliers = animationsMeta[currentAnimationName]?.multipliers ?? [];
+      let nextMultipliersArray: number[] | null = null;
+      if (multipliersUpdater) {
+        nextMultipliersArray = multipliersUpdater(prevMultipliers);
+      } else if (prevMultipliers.length > nextSequence.length) {
+        nextMultipliersArray = prevMultipliers.slice(0, nextSequence.length);
+      }
+      if (multipliersUpdater) {
+        setAnimationMultipliers(currentAnimationName, nextMultipliersArray ?? prevMultipliers);
+      } else if (nextMultipliersArray) {
+        setAnimationMultipliers(currentAnimationName, nextMultipliersArray);
+      }
       return nextSequence;
     },
-    [animations, currentAnimationName, editor],
+    [animations, animationsMeta, currentAnimationName, editor, setAnimationMultipliers],
   );
 
   const handleGridAddFrames = useCallback(
@@ -493,25 +660,26 @@ export const AnimationStudio = ({
           y: cell.y,
           w: cell.width,
           h: cell.height,
-          duration: currentBaseDuration,
+          duration: undefined,
         });
         newIndexes.push(startIndex + idx);
-        updateAnimationMultiplierMeta(currentAnimationName ?? '', startIndex + idx, 1);
       });
-      const nextSequence = updateSequence((prevSequence) => [...prevSequence, ...newIndexes]);
+      const nextSequence = updateSequence(
+        (prevSequence) => [...prevSequence, ...newIndexes],
+        (prevMultipliers) => {
+          const result = prevMultipliers.slice();
+          for (let i = 0; i < newIndexes.length; i += 1) {
+            result.push(DEFAULT_FRAME_MULTIPLIER);
+          }
+          return result;
+        },
+      );
       if (newIndexes.length && nextSequence.length) {
         const timelineIndex = nextSequence.length - newIndexes.length;
         setTimelineSelection(timelineIndex);
       }
     },
-    [
-      currentAnimationName,
-      currentBaseDuration,
-      editor,
-      setTimelineSelection,
-      updateAnimationMultiplierMeta,
-      updateSequence,
-    ],
+    [editor, setTimelineSelection, updateSequence],
   );
 
   const handleAddAnimation = () => {
@@ -533,18 +701,6 @@ export const AnimationStudio = ({
       const next = { ...animations };
       delete next[name];
       editor.setAnimations(next);
-      const settings = getAnimationSettings(editorMeta);
-      const nextFps = { ...(settings.fps ?? {}) };
-      const nextMultipliers = { ...(settings.multipliers ?? {}) };
-      delete nextFps[name];
-      delete nextMultipliers[name];
-      editor.updateMeta({
-        animationSettings: {
-          ...settings,
-          fps: Object.keys(nextFps).length ? nextFps : undefined,
-          multipliers: Object.keys(nextMultipliers).length ? nextMultipliers : undefined,
-        },
-      });
       const nextAnimationsMeta = { ...animationsMeta };
       delete nextAnimationsMeta[name];
       editor.setAnimationsMeta(nextAnimationsMeta);
@@ -553,7 +709,7 @@ export const AnimationStudio = ({
         setActiveAnimation(remaining.length ? remaining[0] : null);
       }
     },
-    [activeAnimation, animations, animationsMeta, editor, editorMeta, setActiveAnimation],
+    [activeAnimation, animations, animationsMeta, editor, setActiveAnimation],
   );
 
   const handleToggleAnimationLoop = useCallback(() => {
@@ -561,34 +717,30 @@ export const AnimationStudio = ({
       return;
     }
     const currentFrame = frameCursor;
-    const prev = animationsMeta[currentAnimationName]?.loop ?? true;
-    const nextAnimationsMeta = {
-      ...animationsMeta,
-      [currentAnimationName]: {
-        ...(animationsMeta[currentAnimationName] ?? {}),
-        loop: !prev,
-      },
-    };
-    editor.setAnimationsMeta(nextAnimationsMeta);
+    updateAnimationMetaEntry(currentAnimationName, (draft) => {
+      draft.loop = !currentAnimationLoop;
+    });
     if (!isPlaying) {
       requestAnimationFrame(() => seekFrame(currentFrame));
     }
-  }, [animationsMeta, currentAnimationName, editor, frameCursor, isPlaying, seekFrame]);
+  }, [
+    currentAnimationLoop,
+    currentAnimationName,
+    frameCursor,
+    isPlaying,
+    seekFrame,
+    updateAnimationMetaEntry,
+  ]);
 
   const handleToggleAnimationAutoPlay = useCallback(() => {
     if (!currentAnimationName) {
       return;
     }
-    const prevAuto = Boolean(animationsMeta[currentAnimationName]?.autoPlay);
-    const nextAnimationsMeta = {
-      ...animationsMeta,
-      [currentAnimationName]: {
-        ...(animationsMeta[currentAnimationName] ?? {}),
-        autoPlay: !prevAuto,
-      },
-    };
-    editor.setAnimationsMeta(nextAnimationsMeta);
-  }, [animationsMeta, currentAnimationName, editor]);
+    updateAnimationMetaEntry(currentAnimationName, (draft) => {
+      const prevAuto = Boolean(draft.autoPlay);
+      draft.autoPlay = !prevAuto;
+    });
+  }, [currentAnimationName, updateAnimationMetaEntry]);
 
   const confirmDeleteAnimation = useCallback(
     (name: string) => {
@@ -618,7 +770,12 @@ export const AnimationStudio = ({
       selectedTimelineIndex !== null ? selectedTimelineIndex + 1 : currentSequence.length;
     const next = [...currentSequence];
     next.splice(insertIndex, 0, ...timelineClipboard);
-    updateSequence(next);
+    updateSequence(next, (prevMultipliers) => {
+      const result = prevMultipliers.slice();
+      const filler = new Array(timelineClipboard.length).fill(DEFAULT_FRAME_MULTIPLIER);
+      result.splice(insertIndex, 0, ...filler);
+      return result;
+    });
     setTimelineSelection(insertIndex);
   };
 
@@ -628,7 +785,11 @@ export const AnimationStudio = ({
     }
     const next = [...currentSequence];
     next.splice(selectedTimelineIndex, 1);
-    updateSequence(next);
+    updateSequence(next, (prevMultipliers) => {
+      const result = prevMultipliers.slice();
+      result.splice(selectedTimelineIndex, 1);
+      return result;
+    });
     setTimelineSelection((prev) => {
       if (prev === null) {
         return prev;
@@ -664,7 +825,13 @@ export const AnimationStudio = ({
     const next = [...currentSequence];
     const [item] = next.splice(selectedTimelineIndex, 1);
     next.splice(targetIndex, 0, item);
-    updateSequence(next);
+    updateSequence(next, (prevMultipliers) => {
+      const result = prevMultipliers.slice();
+      const value = result[selectedTimelineIndex] ?? DEFAULT_FRAME_MULTIPLIER;
+      result.splice(selectedTimelineIndex, 1);
+      result.splice(targetIndex, 0, value);
+      return result;
+    });
     selectTimelineFrame(targetIndex, next);
   };
 
@@ -706,23 +873,13 @@ export const AnimationStudio = ({
 
   const selectedMultiplier = useMemo(() => {
     if (currentAnimationName && selectedTimelineIndex !== null) {
-      const stored = animationSettings.multipliers?.[currentAnimationName]?.[selectedTimelineIndex];
+      const stored = animationsMeta[currentAnimationName]?.multipliers?.[selectedTimelineIndex];
       if (typeof stored === 'number') {
         return stored;
       }
     }
-    if (!selectedFrame) {
-      return 1;
-    }
-    const duration = selectedFrame.duration ?? currentBaseDuration;
-    return parseFloat((duration / currentBaseDuration).toFixed(2));
-  }, [
-    animationSettings.multipliers,
-    currentAnimationName,
-    currentBaseDuration,
-    selectedFrame,
-    selectedTimelineIndex,
-  ]);
+    return DEFAULT_FRAME_MULTIPLIER;
+  }, [animationsMeta, currentAnimationName, selectedTimelineIndex]);
 
   useEffect(() => {
     if (currentSequence.length > 0 && timelineMeasuredHeight > 0) {
@@ -745,88 +902,36 @@ export const AnimationStudio = ({
     return Math.max(timelineFilledHeight, timelineMeasuredHeight, 0);
   }, [timelineFilledHeight, timelineMeasuredHeight]);
 
-  const ensureUniqueFrameForSelection = useCallback(() => {
-    if (selectedTimelineIndex === null) {
-      return { frame: null, frameIndex: null };
-    }
-    const frameIndex = currentSequence[selectedTimelineIndex];
-    if (typeof frameIndex !== 'number') {
-      return { frame: null, frameIndex };
-    }
-    const frame = frames[frameIndex];
-    if (!frame) {
-      return { frame: null, frameIndex };
-    }
-    const totalOccurrences = Object.values(animations).reduce((count, sequence) => {
-      return (
-        count +
-        sequence.reduce((acc, value) => {
-          return acc + (value === frameIndex ? 1 : 0);
-        }, 0)
-      );
-    }, 0);
-    if (totalOccurrences <= 1) {
-      return { frame, frameIndex };
-    }
-    const clone = editor.addFrame({
-      x: frame.x,
-      y: frame.y,
-      w: frame.w,
-      h: frame.h,
-      duration: frame.duration,
-    });
-    const newIndex = frames.length;
-    const nextSequence = [...currentSequence];
-    nextSequence[selectedTimelineIndex] = newIndex;
-    updateSequence(nextSequence);
-    return { frame: clone, frameIndex: newIndex };
-  }, [animations, currentSequence, editor, frames, selectedTimelineIndex, updateSequence]);
-
-  const updateAnimationMultiplierMeta = useCallback(
-    (name: string, index: number, multiplier: number) => {
-      const settings = getAnimationSettings(editorMeta);
-      const nextMultipliers = {
-        ...(settings.multipliers ?? {}),
-        [name]: {
-          ...(settings.multipliers?.[name] ?? {}),
-          [index]: multiplier,
-        },
-      };
-      editor.updateMeta({
-        animationSettings: {
-          ...settings,
-          multipliers: nextMultipliers,
-        },
-      });
-    },
-    [editor, editorMeta],
-  );
   const handleMultiplierSubmit = useCallback(
     (multiplier: number) => {
       if (!currentAnimationName || selectedTimelineIndex === null) {
         return;
       }
-      const { frame } = ensureUniqueFrameForSelection();
-      if (!frame) {
+      const safeMultiplier = clampMultiplier(multiplier);
+      const existing = animationsMeta[currentAnimationName]?.multipliers ?? [];
+      const prevStored = existing[selectedTimelineIndex];
+      if (
+        typeof prevStored !== 'number' &&
+        Math.abs(safeMultiplier - DEFAULT_FRAME_MULTIPLIER) < MULTIPLIER_EPSILON
+      ) {
         return;
       }
-      const safeMultiplier = Number.isFinite(multiplier) ? Math.max(0.1, multiplier) : 1;
-      if (Math.abs(safeMultiplier - selectedMultiplier) < 0.0001) {
+      if (
+        typeof prevStored === 'number' &&
+        Math.abs(prevStored - safeMultiplier) < MULTIPLIER_EPSILON
+      ) {
         return;
       }
-      const nextDuration = Math.max(1, currentBaseDuration * safeMultiplier);
-      editor.updateFrame(frame.id, { duration: nextDuration });
-      updateAnimationMultiplierMeta(currentAnimationName, selectedTimelineIndex, safeMultiplier);
+      updateAnimationMetaEntry(currentAnimationName, (draft) => {
+        const next = [...(draft.multipliers ?? [])];
+        for (let i = next.length; i <= selectedTimelineIndex; i += 1) {
+          next[i] = DEFAULT_FRAME_MULTIPLIER;
+        }
+        next[selectedTimelineIndex] = safeMultiplier;
+        draft.multipliers = normalizeMultipliersArray(next);
+      });
     },
-    [
-      currentAnimationName,
-      currentBaseDuration,
-      editor,
-      ensureUniqueFrameForSelection,
-      selectedMultiplier,
-      selectedTimelineIndex,
-      updateAnimationMultiplierMeta,
-    ],
+    [animationsMeta, currentAnimationName, selectedTimelineIndex, updateAnimationMetaEntry],
   );
 
   return (
@@ -1069,14 +1174,12 @@ export const AnimationStudio = ({
                     const frameScale = frame ? viewportSize / Math.max(frame.w, frame.h) : 1;
                     const storedMultiplier =
                       currentAnimationName !== null && currentAnimationName !== undefined
-                        ? animationSettings.multipliers?.[currentAnimationName]?.[timelineIndex]
+                        ? animationsMeta[currentAnimationName]?.multipliers?.[timelineIndex]
                         : undefined;
                     const computedMultiplier =
                       typeof storedMultiplier === 'number'
                         ? storedMultiplier
-                        : frame && currentBaseDuration
-                          ? (frame.duration ?? currentBaseDuration) / currentBaseDuration
-                          : 1;
+                        : DEFAULT_FRAME_MULTIPLIER;
                     const multiplierLabel =
                       Math.abs(computedMultiplier - 1) < 0.01
                         ? ''

@@ -25,6 +25,10 @@ const SAMPLE_FRAMES: SpriteEditorFrame[] = [
   { id: 'sample-3', x: 96, y: 0, w: 32, h: 32, duration: 120 },
 ];
 
+const SAMPLE_DEFAULT_FPS = 5;
+
+const createDefaultMultipliers = (length: number) => new Array(length).fill(1);
+
 const SAMPLE_INITIAL_STATE: Partial<SpriteEditorState> = {
   frames: SAMPLE_FRAMES,
   animations: {
@@ -32,8 +36,8 @@ const SAMPLE_INITIAL_STATE: Partial<SpriteEditorState> = {
     blink: [1, 2, 1, 0],
   },
   animationsMeta: {
-    walk: { loop: true },
-    blink: { loop: false },
+    walk: { loop: true, fps: SAMPLE_DEFAULT_FPS, multipliers: createDefaultMultipliers(4) },
+    blink: { loop: false, fps: SAMPLE_DEFAULT_FPS, multipliers: createDefaultMultipliers(4) },
   },
   selected: [SAMPLE_FRAMES[0].id],
   meta: {},

@@ -52,6 +52,10 @@ export interface SpriteAnimationMeta {
   loop?: boolean;
   /** When true, editor previews may automatically start playback. */
   autoPlay?: boolean;
+  /** Optional FPS override for this animation (used when frame duration is not provided). */
+  fps?: number;
+  /** Optional per-timeline multipliers to stretch individual keyframes. */
+  multipliers?: number[];
 }
 
 /**
@@ -192,6 +196,7 @@ interface AnimationState {
 
 const DEFAULT_FPS = 12;
 const DEFAULT_FRAME_DURATION = 1000 / DEFAULT_FPS;
+const MIN_FRAME_MULTIPLIER = 0.01;
 const MIN_SPEED = 0.001;
 const DEFAULT_DIRECTION: SpriteAnimatorDirection = 'forward';
 
@@ -481,12 +486,30 @@ const SpriteAnimatorComponent = (
     }
     const frameIndex = sequence[animState.frameCursor] ?? sequence[0];
     const frame = frames[frameIndex];
-    const baseDuration = frame?.duration ?? DEFAULT_FRAME_DURATION;
+    const animationMeta = animState.name ? mergedAnimationsMeta?.[animState.name] : undefined;
+    const animationFps = animationMeta?.fps;
+    const baseDuration = (() => {
+      if (typeof animationFps === 'number' && Number.isFinite(animationFps) && animationFps > 0) {
+        return 1000 / animationFps;
+      }
+      if (frame?.duration) {
+        return frame.duration;
+      }
+      return DEFAULT_FRAME_DURATION;
+    })();
+    const storedMultiplier = animationMeta?.multipliers?.[animState.frameCursor];
+    const frameMultiplier =
+      typeof storedMultiplier === 'number' && Number.isFinite(storedMultiplier)
+        ? Math.max(MIN_FRAME_MULTIPLIER, storedMultiplier)
+        : 1;
     const effectiveSpeed =
       Math.max(MIN_SPEED, normalizedSpeedScale) * Math.max(MIN_SPEED, animState.speed);
-    const timer = setTimeout(() => {
-      advanceFrame();
-    }, baseDuration / effectiveSpeed);
+    const timer = setTimeout(
+      () => {
+        advanceFrame();
+      },
+      (baseDuration * frameMultiplier) / effectiveSpeed,
+    );
     return () => {
       clearTimeout(timer);
     };
@@ -497,6 +520,7 @@ const SpriteAnimatorComponent = (
     animState.playing,
     animState.speed,
     frames,
+    mergedAnimationsMeta,
     normalizedSpeedScale,
     resolveSequence,
   ]);

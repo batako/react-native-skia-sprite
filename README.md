@@ -62,9 +62,9 @@ export function HeroPreview() {
 ```
 
 - `image`: Accepts both `require()` assets and `SkImage` values.
-- `data.frames`: Array of `{ x, y, w, h, duration? }`. `duration` (ms) overrides the default per-frame timing (~12 fps) when provided.
+- `data.frames`: Array of `{ x, y, w, h, duration? }`. The optional `duration` field exists for backward compatibility, but rendering now derives timing exclusively from the per-animation `fps` + `multipliers` metadata described below.
 - `data.animations` / `animations`: Map animation names to frame indexes (e.g. `{ walk: [0, 1, 2] }`). Pass an explicit `animations` prop when you need runtime overrides.
-- `data.animationsMeta` / `animationsMeta`: Optional per-animation flags (e.g. `{ blink: { loop: false } }`) that override the component-level `loop` prop.
+- `data.animationsMeta` / `animationsMeta`: Optional per-animation overrides (`loop`, `autoPlay`, `fps`, and `multipliers` to stretch individual frames) that augment the component-level props.
 - `initialAnimation`: Name of the animation that should play first. Falls back to the first available animation or raw frame order.
 - `autoplay`: Whether the component should start advancing frames immediately (defaults to `true`).
 - `speedScale`: Multiplier applied to frame timing (`2` renders twice as fast, `0.5` slows down).
@@ -119,8 +119,8 @@ const data: SpriteData = {
     blink: [1],
   },
   animationsMeta: {
-    walk: { loop: true },
-    blink: { loop: false },
+    walk: { loop: true, fps: 8, multipliers: [1, 0.75] },
+    blink: { loop: false, autoPlay: false, fps: 5, multipliers: [1] },
   },
   meta: {
     displayName: 'Hero Walk',
@@ -130,6 +130,8 @@ const data: SpriteData = {
   },
 };
 ```
+
+> `cleanSpriteData` and the default editor template always include `fps` and `multipliers` for every animation (even when values stay at the defaults) so SpriteAnimator receives a complete timing description with no additional props.
 
 ### Frame events
 

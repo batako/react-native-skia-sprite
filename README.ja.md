@@ -62,9 +62,9 @@ export function HeroPreview() {
 ```
 
 - `image`: `require()` や `SkImage` をそのまま渡せます。
-- `data.frames`: `{ x, y, w, h, duration? }` の配列。`duration` を指定するとフレーム単位でミリ秒制御でき、未指定時は内部のデフォルトタイミング（約 12fps 相当）が使われます。
+- `data.frames`: `{ x, y, w, h, duration? }` の配列。`duration` は後方互換のために残してありますが、実際のタイミングはアニメーションごとの `fps` / `multipliers` メタデータで決まります。
 - `data.animations` / `animations`: `{ walk: [0, 1, 2] }` のようにアニメーション名とフレーム番号を紐づけます。ランタイムで差し替えたい場合は props の `animations` を渡してください。
-- `data.animationsMeta` / `animationsMeta`: `{ blink: { loop: false } }` のようにアニメーション単位の設定を記述し、コンポーネント全体の `loop` 設定を上書きできます。
+- `data.animationsMeta` / `animationsMeta`: 各アニメーションごとに `loop` / `autoPlay` / `fps` / `multipliers`（フレーム倍率）を上書きするための設定です。
 - `initialAnimation`: 再生開始時に選択するアニメーション名。指定が無い場合は最初のアニメーション、または素のフレーム順を使います。
 - `autoplay`: コンポーネントがマウントされた直後に自動で再生するかどうか (デフォルト `true`)。
 - `speedScale`: 再生速度の倍率。`2` で 2 倍速、`0.5` で半分の速度になります。
@@ -119,8 +119,8 @@ const data: SpriteData = {
     blink: [1],
   },
   animationsMeta: {
-    walk: { loop: true },
-    blink: { loop: false },
+    walk: { loop: true, fps: 8, multipliers: [1, 0.75] },
+    blink: { loop: false, autoPlay: false, fps: 5, multipliers: [1] },
   },
   meta: {
     displayName: "Hero Walk",
@@ -129,6 +129,8 @@ const data: SpriteData = {
     version: 2,
   },
 };
+
+> `cleanSpriteData` や既定テンプレートは、すべてのアニメーションに `fps` と `multipliers` を常に含めます（デフォルト値のままでも出力）。追加設定をしなくても SpriteAnimator に完全なタイミング情報が渡る想定です。
 
 ### フレームイベント
 

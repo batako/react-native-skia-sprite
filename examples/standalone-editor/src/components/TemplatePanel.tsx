@@ -1,6 +1,10 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import type { SpriteEditorApi, SpriteTemplate } from 'react-native-skia-sprite-animator';
+import type {
+  SpriteAnimationsMeta,
+  SpriteEditorApi,
+  SpriteTemplate,
+} from 'react-native-skia-sprite-animator';
 import { DefaultSpriteTemplate, cleanSpriteData } from 'react-native-skia-sprite-animator';
 import { IconButton } from './IconButton';
 
@@ -13,8 +17,9 @@ interface TemplatePanelProps {
 interface CompactTemplatePayload {
   name: string;
   version: number;
-  frames: [number, number, number, number, number?][];
+  frames: [number, number, number, number][];
   animations?: Record<string, number[]>;
+  animationsMeta?: SpriteAnimationsMeta;
 }
 
 const createFrameId = () => `frame_${Math.random().toString(36).slice(2, 10)}`;
@@ -25,23 +30,24 @@ const CompactSpriteTemplate: SpriteTemplate<CompactTemplatePayload> = {
   toJSON: (state) => ({
     name: state.meta.displayName ?? 'Untitled Sprite',
     version: state.meta.version ?? 1,
-    frames: state.frames.map((frame) => [frame.x, frame.y, frame.w, frame.h, frame.duration]),
+    frames: state.frames.map((frame) => [frame.x, frame.y, frame.w, frame.h]),
     animations: state.animations,
+    animationsMeta: state.animationsMeta,
   }),
   fromJSON: (payload) => {
     if (!payload?.frames) {
       return null;
     }
     return {
-      frames: payload.frames.map(([x, y, w, h, duration]) => ({
+      frames: payload.frames.map(([x, y, w, h]) => ({
         id: createFrameId(),
         x,
         y,
         w,
         h,
-        duration,
       })),
       animations: payload.animations ?? {},
+      animationsMeta: payload.animationsMeta,
       selected: [],
       meta: { displayName: payload.name, version: payload.version },
     };

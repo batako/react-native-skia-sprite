@@ -4,14 +4,17 @@ import { cloneSnapshot, createFrameId } from '../utils/state';
 import type { SpriteTemplate } from './SpriteTemplate';
 
 const stripFrameIds = (frames: SpriteEditorSnapshot['frames']): SpriteData['frames'] => {
-  return frames.map(({ id: _id, ...rest }) => ({ ...rest }));
+  return frames.map(({ id: _id, duration: _duration, ...rest }) => ({ ...rest }));
 };
 
 const withFrameIds = (frames: SpriteData['frames']): SpriteEditorSnapshot['frames'] => {
-  return (frames ?? []).map((frame) => ({
-    ...frame,
-    id: createFrameId(),
-  }));
+  return (frames ?? []).map((frame) => {
+    const { duration: _duration, ...rest } = frame;
+    return {
+      ...rest,
+      id: createFrameId(),
+    };
+  });
 };
 
 /**
