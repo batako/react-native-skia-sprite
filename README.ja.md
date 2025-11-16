@@ -120,9 +120,7 @@ const data: SpriteData = {
   },
   meta: {
     displayName: "Hero Walk",
-    imageUri: "file:///sprites/images/img_hero.png",
     origin: { x: 0.5, y: 1 },
-    version: 2,
   },
 };
 
@@ -146,7 +144,7 @@ const handleFrameChange = (event: SpriteAnimatorFrameChangeEvent) => {
 
 ## spriteStorage API
 
-`spriteStorage` は `expo-file-system` 上に `/sprites/images` と `/sprites/meta` を作成し、`registry.json` にレジストリを保存します。
+`spriteStorage` は `expo-file-system` 上に `/sprites/meta` ディレクトリと `registry.json` を作成し、JSON とメタデータのみを保存します。
 
 ```ts
 import {
@@ -161,7 +159,6 @@ const payload: SpriteSavePayload = {
   frames,
   meta: {
     displayName: "Hero Walk",
-    version: 1,
   },
   animations: {
     walk: [0, 1, 2],
@@ -171,10 +168,7 @@ const payload: SpriteSavePayload = {
   },
 };
 
-const saved = await saveSprite({
-  imageTempUri: tempImageUri,
-  sprite: payload,
-});
+const saved = await saveSprite({ sprite: payload });
 
 const items = await listSprites();
 const full = await loadSprite(saved.id);
@@ -206,7 +200,7 @@ UI を持たないエディター用ツール群も `src/editor/` で提供し�
 - `useSpriteEditor` によるフレーム CRUD／選択／クリップボード／Undo/Redo／メタデータ編集／テンプレート import/export。
 - `SpriteAnimator` と同期する再生パネル（再生/停止/シーク/速度調整/選択フレームへのジャンプ）。
 - `DefaultSpriteTemplate` とカスタムテンプレートの切り替え、エクスポート JSON プレビュー、インポートテキストエリア。
-- `spriteStorage` 連携の保存・読み込み・削除・レジストリ更新、メタデータのバージョン管理。
+- `spriteStorage` 連携の保存・読み込み・削除・レジストリ更新。
 - `SpriteEditUtils` を使ったグリッド、ヒットテスト、選択境界の描画。
 
 利用手順 (`examples/standalone-editor/` ディレクトリで実行):

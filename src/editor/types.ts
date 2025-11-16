@@ -18,10 +18,6 @@ export interface SpriteEditorFrame extends RenderSpriteFrame {
 export interface SpriteEditorMeta {
   /** Human-readable sprite name displayed by editors. */
   displayName?: string;
-  /** Absolute URI to the source image (optional). */
-  imageUri?: string;
-  /** Incrementing schema/version number maintained by the editor. */
-  version?: number;
   [key: string]: unknown;
 }
 

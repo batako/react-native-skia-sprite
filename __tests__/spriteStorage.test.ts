@@ -16,12 +16,6 @@ const mockFs = jest.requireMock(
 ) as typeof import('../__mocks__/expo-file-system/legacy');
 
 const sampleFrames: SpriteFrame[] = [{ x: 0, y: 0, w: 32, h: 32 }];
-const TEMP_IMAGE = 'file:///tmp/temp.png';
-
-const writeTempImage = (uri = TEMP_IMAGE) => {
-  mockFs.__writeMockFile(uri, 'binary');
-  return uri;
-};
 
 beforeEach(() => {
   mockFs.__resetMockFileSystem();
@@ -30,32 +24,25 @@ beforeEach(() => {
 
 describe('spriteStorage', () => {
   it('saves sprites and lists summaries', async () => {
-    writeTempImage();
-
     const stored = await saveSprite({
-      imageTempUri: TEMP_IMAGE,
       sprite: {
         frames: sampleFrames,
         meta: { displayName: 'Hero' },
       },
     });
 
-    expect(stored.meta.imageUri).toContain('/sprites/images/');
     const list = await listSprites();
     expect(list).toHaveLength(1);
     expect(list[0].displayName).toBe('Hero');
+    expect(typeof list[0].createdAt).toBe('number');
+    expect(typeof list[0].updatedAt).toBe('number');
 
-    const loaded = (await loadSprite(stored.id)) as {
-      frames: SpriteFrame[];
-    } | null;
+    const loaded = (await loadSprite(stored.id)) as { frames: SpriteFrame[] } | null;
     expect(loaded?.frames[0].w).toBe(32);
   });
 
   it('merges extra metadata and skips undefined values', async () => {
-    writeTempImage();
-
     const stored = await saveSprite({
-      imageTempUri: TEMP_IMAGE,
       sprite: {
         frames: sampleFrames,
         meta: {
@@ -71,9 +58,7 @@ describe('spriteStorage', () => {
   });
 
   it('deletes sprites and cleans registry', async () => {
-    writeTempImage();
     const stored = await saveSprite({
-      imageTempUri: TEMP_IMAGE,
       sprite: { frames: sampleFrames },
     });
 
@@ -91,39 +76,29 @@ describe('spriteStorage', () => {
 
   it('respects custom root configuration', async () => {
     configureSpriteStorage({ rootDir: 'file:///custom-root/' });
-    writeTempImage();
 
     const stored = await saveSprite({
-      imageTempUri: TEMP_IMAGE,
       sprite: { frames: sampleFrames },
     });
 
-    expect(stored.meta.imageUri.startsWith('file:///custom-root/images/')).toBe(true);
     const paths = getSpriteStoragePaths();
     expect(paths.root).toBe('file:///custom-root/');
-  });
-
-  it('throws when imageTempUri is missing', async () => {
-    await expect(
-      saveSprite({ imageTempUri: '', sprite: { frames: sampleFrames } }),
-    ).rejects.toThrow('imageTempUri is required');
+    const storedInfo = await mockFs.getInfoAsync(`${paths.meta}${stored.id}.json`);
+    expect(storedInfo.exists).toBe(true);
   });
 
   it('throws when frames array is empty', async () => {
-    writeTempImage();
-    await expect(saveSprite({ imageTempUri: TEMP_IMAGE, sprite: { frames: [] } })).rejects.toThrow(
+    await expect(saveSprite({ sprite: { frames: [] } })).rejects.toThrow(
       'sprite.frames must contain at least one frame',
     );
   });
 
   it('generates fallback sprite ids when crypto.randomUUID is unavailable', async () => {
-    writeTempImage();
     const cryptoGetter = jest
       .spyOn(globalThis as unknown as { crypto: Crypto }, 'crypto', 'get')
       .mockReturnValue(undefined as unknown as Crypto);
 
     const stored = await saveSprite({
-      imageTempUri: TEMP_IMAGE,
       sprite: { frames: sampleFrames },
     });
     expect(stored.id.startsWith('sprite_')).toBe(true);
@@ -132,18 +107,15 @@ describe('spriteStorage', () => {
 
   it('throws if document/cache directories are unavailable', async () => {
     mockFs.__setWritableDirectories(null, null);
-    writeTempImage();
-    await expect(
-      saveSprite({ imageTempUri: TEMP_IMAGE, sprite: { frames: sampleFrames } }),
-    ).rejects.toThrow('writable directory');
+    await expect(saveSprite({ sprite: { frames: sampleFrames } })).rejects.toThrow(
+      'writable directory',
+    );
   });
 
   it('handles orphaned metadata that lacks a registry entry', async () => {
     const paths = getSpriteStoragePaths();
     await listSprites(); // ensure directories exist
     const spriteId = 'orphan';
-    const imagePath = `${paths.images}${spriteId}.png`;
-    mockFs.__writeMockFile(imagePath, 'img');
     mockFs.__writeMockFile(
       `${paths.meta}${spriteId}.json`,
       JSON.stringify({
@@ -152,8 +124,7 @@ describe('spriteStorage', () => {
         meta: {
           displayName: 'Orphan',
           createdAt: Date.now(),
-          version: 1,
-          imageUri: imagePath,
+          updatedAt: Date.now(),
         },
       }),
     );
@@ -164,16 +135,11 @@ describe('spriteStorage', () => {
   });
 
   it('updates existing registry entries when saving the same id', async () => {
-    writeTempImage();
     const stored = await saveSprite({
-      imageTempUri: TEMP_IMAGE,
       sprite: { frames: sampleFrames, meta: { displayName: 'Hero' } },
     });
 
-    const secondImage = 'file:///tmp/temp2.png';
-    writeTempImage(secondImage);
     await saveSprite({
-      imageTempUri: secondImage,
       sprite: { id: stored.id, frames: sampleFrames, meta: { displayName: 'Hero v2' } },
     });
 
@@ -183,23 +149,14 @@ describe('spriteStorage', () => {
   });
 
   it('recovers from ensureStorage failures and resets internal promise state', async () => {
-    writeTempImage();
     const makeDirSpy = jest.spyOn(mockFs, 'makeDirectoryAsync').mockImplementation(async () => {
       throw new Error('boom');
     });
 
-    await expect(
-      saveSprite({ imageTempUri: TEMP_IMAGE, sprite: { frames: sampleFrames } }),
-    ).rejects.toThrow('boom');
+    await expect(saveSprite({ sprite: { frames: sampleFrames } })).rejects.toThrow('boom');
 
     makeDirSpy.mockRestore();
-    writeTempImage('file:///tmp/temp3.png');
-    await expect(
-      saveSprite({
-        imageTempUri: 'file:///tmp/temp3.png',
-        sprite: { frames: sampleFrames },
-      }),
-    ).resolves.toBeTruthy();
+    await expect(saveSprite({ sprite: { frames: sampleFrames } })).resolves.toBeTruthy();
   });
 
   it('handles invalid registry JSON by falling back to an empty list', async () => {

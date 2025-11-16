@@ -53,7 +53,6 @@ export const EditorScreen = () => {
   const integration = useEditorIntegration({ editor });
 
   const [imageSource, setImageSource] = React.useState<DataSourceParam>(SAMPLE_SPRITE);
-  const [imageUri, setImageUri] = React.useState<string | null>(null);
   const editorRef = React.useRef(editor);
 
   React.useEffect(() => {
@@ -69,7 +68,6 @@ export const EditorScreen = () => {
         return;
       }
       const uri = asset.localUri ?? asset.uri;
-      setImageUri(uri);
       setImageSource(uri);
       editorRef.current.reset({
         frames: SAMPLE_FRAMES.map((frame) => ({ ...frame, imageUri: uri })),
@@ -83,15 +81,6 @@ export const EditorScreen = () => {
     return () => {
       mounted = false;
     };
-  }, []);
-
-  const handleImageUriChange = React.useCallback((uri: string | null) => {
-    setImageUri(uri);
-    if (uri) {
-      setImageSource(uri);
-    } else {
-      setImageSource(SAMPLE_SPRITE);
-    }
   }, []);
 
   return (
@@ -108,7 +97,7 @@ export const EditorScreen = () => {
         <AnimationStudio editor={editor} integration={integration} image={imageSource} />
         <MetaEditor editor={editor} />
         <TemplatePanel editor={editor} template={template} onTemplateChange={setTemplate} />
-        <StoragePanel editor={editor} imageUri={imageUri} onImageUriChange={handleImageUriChange} />
+        <StoragePanel editor={editor} />
       </ScrollView>
     </SafeAreaView>
   );

@@ -16,7 +16,6 @@ interface TemplatePanelProps {
 
 interface CompactTemplatePayload {
   name: string;
-  version: number;
   frames: [number, number, number, number][];
   animations?: Record<string, number[]>;
   animationsMeta?: SpriteAnimationsMeta;
@@ -29,7 +28,6 @@ const CompactSpriteTemplate: SpriteTemplate<CompactTemplatePayload> = {
   version: 1,
   toJSON: (state) => ({
     name: state.meta.displayName ?? 'Untitled Sprite',
-    version: state.meta.version ?? 1,
     frames: state.frames.map((frame) => [frame.x, frame.y, frame.w, frame.h]),
     animations: state.animations,
     animationsMeta: state.animationsMeta,
@@ -49,7 +47,7 @@ const CompactSpriteTemplate: SpriteTemplate<CompactTemplatePayload> = {
       animations: payload.animations ?? {},
       animationsMeta: payload.animationsMeta,
       selected: [],
-      meta: { displayName: payload.name, version: payload.version },
+      meta: { displayName: payload.name },
     };
   },
 };

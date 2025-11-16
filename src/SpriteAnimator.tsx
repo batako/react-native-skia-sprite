@@ -69,14 +69,10 @@ export type SpriteAnimationsMeta = Record<string, SpriteAnimationMeta>;
  * Metadata payload forwarded alongside sprite frames.
  */
 export interface SpriteDataMeta {
-  /** Optional URI for the sprite image on disk. */
-  imageUri?: string;
   /** Human-readable name for the sprite. */
   displayName?: string;
   /** Anchor point used by consuming applications. */
   origin?: { x: number; y: number };
-  /** Arbitrary version number assigned by the editor. */
-  version?: number;
   [key: string]: unknown;
 }
 

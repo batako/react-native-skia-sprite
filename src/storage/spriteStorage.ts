@@ -7,14 +7,10 @@ import type { SpriteAnimations, SpriteAnimationsMeta, SpriteFrame } from '../Spr
 export interface SpriteMetadata {
   /** Human-friendly name for the sprite. */
   displayName: string;
-  /** Absolute file path to the stored image asset. */
-  imageUri: string;
   /** Creation timestamp in milliseconds. */
   createdAt: number;
   /** Last update timestamp in milliseconds. */
   updatedAt: number;
-  /** Version number assigned when exporting the sprite. */
-  version: number;
   [key: string]: unknown;
 }
 
@@ -26,10 +22,10 @@ export interface SpriteSummary {
   id: string;
   /** Display name stored in the registry. */
   displayName: string;
-  /** Path to the stored image asset. */
-  imageUri: string;
   /** Creation timestamp in milliseconds. */
   createdAt: number;
+  /** Last update timestamp in milliseconds. */
+  updatedAt: number;
 }
 
 /**
@@ -53,7 +49,7 @@ export type SpriteSavePayload<TExtra = Record<string, unknown>> = {
  */
 export type StoredSprite<TExtra = Record<string, unknown>> = Omit<
   SpriteSavePayload<TExtra>,
-  'meta' | 'id'
+  'id'
 > & {
   id: string;
   meta: SpriteMetadata;
@@ -63,8 +59,6 @@ export type StoredSprite<TExtra = Record<string, unknown>> = Omit<
  * Parameters accepted by the saveSprite helper.
  */
 export interface SaveSpriteParams<TExtra = Record<string, unknown>> {
-  /** Path to a temporary image file that will be persisted. */
-  imageTempUri: string;
   /** Sprite data describing the sprite sheet and metadata. */
   sprite: SpriteSavePayload<TExtra>;
 }
@@ -108,7 +102,6 @@ const resolveBaseDir = () => {
   return `${ensureTrailingSlash(writable)}sprites/`;
 };
 
-const imagesDir = () => `${resolveBaseDir()}images/`;
 const metaDir = () => `${resolveBaseDir()}meta/`;
 const registryPath = () => `${resolveBaseDir()}registry.json`;
 
@@ -126,7 +119,6 @@ const ensureStorage = async () => {
   if (!ensurePromise) {
     ensurePromise = (async () => {
       await ensureDir(resolveBaseDir());
-      await ensureDir(imagesDir());
       await ensureDir(metaDir());
     })().catch((error) => {
       ensurePromise = null;
@@ -198,14 +190,6 @@ const removeFromRegistry = async (id: string) => {
 };
 
 /**
- * Extracts the file extension portion of a URI.
- */
-const extractExtension = (uri: string) => {
-  const match = /\.([a-zA-Z0-9]+)(?:\?|$)/.exec(uri);
-  return match ? match[1] : 'png';
-};
-
-/**
  * Generates a unique identifier for a new sprite entry.
  */
 const createSpriteId = () => {
@@ -216,31 +200,17 @@ const createSpriteId = () => {
 };
 
 /**
- * Persists sprite metadata and image assets to disk.
+ * Persists sprite metadata and animation data to disk.
  */
 export const saveSprite = async <TExtra extends Record<string, unknown>>({
-  imageTempUri,
   sprite,
 }: SaveSpriteParams<TExtra>): Promise<StoredSprite<TExtra>> => {
-  if (!imageTempUri) {
-    throw new Error('imageTempUri is required to save a sprite.');
-  }
   if (!sprite?.frames?.length) {
     throw new Error('sprite.frames must contain at least one frame.');
   }
 
   await ensureStorage();
   const spriteId = sprite.id ?? createSpriteId();
-  const extension = extractExtension(imageTempUri);
-  const imageFilename = `img_${spriteId}.${extension}`;
-  const destination = `${imagesDir()}${imageFilename}`;
-
-  await deleteIfExists(destination);
-  await FileSystem.copyAsync({
-    from: imageTempUri,
-    to: destination,
-  });
-
   const metaInput = (sprite.meta ?? {}) as Partial<SpriteMetadata>;
   const now = Date.now();
   const metadata: SpriteMetadata = {
@@ -250,32 +220,23 @@ export const saveSprite = async <TExtra extends Record<string, unknown>>({
         : `Sprite ${spriteId.slice(0, 6)}`,
     createdAt: typeof metaInput.createdAt === 'number' ? metaInput.createdAt : now,
     updatedAt: typeof metaInput.updatedAt === 'number' ? metaInput.updatedAt : now,
-    version: typeof metaInput.version === 'number' ? metaInput.version : 1,
-    imageUri: destination,
   };
 
   Object.entries(metaInput).forEach(([key, value]) => {
     if (value === undefined) {
       return;
     }
-    if (
-      key === 'displayName' ||
-      key === 'createdAt' ||
-      key === 'updatedAt' ||
-      key === 'version' ||
-      key === 'imageUri'
-    ) {
+    if (key === 'displayName' || key === 'createdAt' || key === 'updatedAt') {
       return;
     }
     (metadata as Record<string, unknown>)[key] = value;
   });
-  metadata.imageUri = destination;
 
-  const storedSprite = {
+  const storedSprite: StoredSprite<TExtra> = {
     ...sprite,
     id: spriteId,
     meta: metadata,
-  } as StoredSprite<TExtra>;
+  };
 
   await FileSystem.writeAsStringAsync(
     `${metaDir()}${spriteId}.json`,
@@ -285,8 +246,8 @@ export const saveSprite = async <TExtra extends Record<string, unknown>>({
   await upsertRegistry({
     id: spriteId,
     displayName: metadata.displayName,
-    imageUri: metadata.imageUri,
     createdAt: metadata.createdAt,
+    updatedAt: metadata.updatedAt,
   });
 
   return storedSprite;
@@ -313,7 +274,12 @@ export const loadSprite = async <TExtra extends Record<string, unknown>>(
  */
 export const listSprites = async (): Promise<SpriteSummary[]> => {
   const registry = await readRegistry();
-  return registry.items;
+  return registry.items.map((item) => ({
+    id: item.id,
+    displayName: item.displayName,
+    createdAt: item.createdAt ?? item.updatedAt ?? Date.now(),
+    updatedAt: item.updatedAt ?? item.createdAt ?? Date.now(),
+  }));
 };
 
 /**
@@ -324,7 +290,6 @@ export const deleteSprite = async (id: string) => {
   if (!sprite) {
     return;
   }
-  await deleteIfExists(sprite.meta?.imageUri);
   await deleteIfExists(`${metaDir()}${id}.json`);
   await removeFromRegistry(id);
 };
@@ -343,7 +308,6 @@ export const clearSpriteStorage = async () => {
  */
 export const getSpriteStoragePaths = () => ({
   root: resolveBaseDir(),
-  images: imagesDir(),
   meta: metaDir(),
   registry: registryPath(),
 });

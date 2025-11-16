@@ -89,7 +89,7 @@ interface SpriteTemplate<TData = unknown> {
 import { DefaultSpriteTemplate } from 'react-native-skia-sprite-animator';
 
 const json = editor.exportJSON(DefaultSpriteTemplate);
-await saveSprite({ imageTempUri, sprite: json });
+await saveSprite({ sprite: json });
 
 const imported = DefaultSpriteTemplate.fromJSON(json);
 editor.importJSON(json); // undoable

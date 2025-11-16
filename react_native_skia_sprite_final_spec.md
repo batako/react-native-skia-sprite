@@ -79,9 +79,9 @@ const { frames, selectedIndex, selectFrame, addFrame, updateFrame, deleteFrame, 
 ```ts
 const customTemplate: SpriteTemplate = {
   name: 'withAnimations',
-  build: ({ displayName, imageUri, frames, extra }) => ({
+  build: ({ displayName, frames, extra }) => ({
     id: crypto.randomUUID(),
-    meta: { displayName, imageUri, category: extra?.category ?? 'default' },
+    meta: { displayName, category: extra?.category ?? 'default' },
     frames,
     animations: extra?.animations ?? {},
   }),
@@ -92,14 +92,13 @@ const customTemplate: SpriteTemplate = {
 
 ### 5. spriteStorage
 
-Expo FileSystem 上でのファイル管理API。
+Expo FileSystem 上で JSON とメタデータを管理する API。
 
-- `/sprites/images/` にPNG保存
 - `/sprites/meta/` にJSON保存
-- `index.json` でリスト管理
+- `index.json` でリスト管理 (レジストリ)
 
 ```ts
-await saveSprite({ imageTempUri, json });
+await saveSprite({ sprite: json });
 const sprite = await loadSprite(spriteId);
 ```
 
@@ -112,9 +111,8 @@ const sprite = await loadSprite(spriteId);
   "id": "uuid",
   "meta": {
     "displayName": "Hero Walk",
-    "imageUri": "file:///.../images/img_abc123_uuid.png",
     "createdAt": 1730890000000,
-    "version": 1
+    "updatedAt": 1730893600000
   },
   "frames": [
     { "x": 0, "y": 0, "w": 64, "h": 64 },

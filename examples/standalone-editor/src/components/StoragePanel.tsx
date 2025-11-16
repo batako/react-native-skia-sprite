@@ -1,6 +1,5 @@
 import React from 'react';
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import * as FileSystem from 'expo-file-system/legacy';
 import {
   DefaultSpriteTemplate,
   deleteSprite,
@@ -14,11 +13,9 @@ import { IconButton } from './IconButton';
 
 interface StoragePanelProps {
   editor: SpriteEditorApi;
-  imageUri: string | null;
-  onImageUriChange: (uri: string | null) => void;
 }
 
-export const StoragePanel = ({ editor, imageUri, onImageUriChange }: StoragePanelProps) => {
+export const StoragePanel = ({ editor }: StoragePanelProps) => {
   const [sprites, setSprites] = React.useState<SpriteSummary[]>([]);
   const [status, setStatus] = React.useState<string | null>(null);
   const [isBusy, setIsBusy] = React.useState(false);
@@ -50,13 +47,11 @@ export const StoragePanel = ({ editor, imageUri, onImageUriChange }: StoragePane
       const payload = editor.exportJSON(DefaultSpriteTemplate);
       const now = Date.now();
       await saveSprite({
-        imageTempUri: imageUri,
         sprite: {
           ...payload,
           meta: {
             ...(payload.meta ?? {}),
             displayName: trimmedName,
-            version: (payload.meta?.version ?? 0) + 1,
             createdAt: payload.meta?.createdAt ?? now,
             updatedAt: now,
           },
@@ -81,9 +76,7 @@ export const StoragePanel = ({ editor, imageUri, onImageUriChange }: StoragePane
         setStatus('Sprite not found on disk.');
         return;
       }
-      const { imageUri: loadedImageUri, version: _version, ...restMeta } = stored.meta;
-      editor.importJSON({ ...stored, meta: restMeta }, DefaultSpriteTemplate);
-      onImageUriChange(loadedImageUri ?? null);
+      editor.importJSON(stored, DefaultSpriteTemplate);
       setStatus(`Loaded sprite ${stored.meta.displayName}.`);
     } catch (error) {
       setStatus((error as Error).message);
@@ -98,7 +91,6 @@ export const StoragePanel = ({ editor, imageUri, onImageUriChange }: StoragePane
       return;
     }
     setIsBusy(true);
-    let tempImageCopy: string | null = null;
     try {
       const payload = editor.exportJSON(DefaultSpriteTemplate);
       const stored = await loadSprite(id);
@@ -106,27 +98,14 @@ export const StoragePanel = ({ editor, imageUri, onImageUriChange }: StoragePane
         setStatus('Sprite not found on disk.');
         return;
       }
-      let sourceImage = imageUri;
-      if (!sourceImage) {
-        if (!stored.meta.imageUri) {
-          throw new Error('Image URI is required to persist sprites.');
-        }
-        tempImageCopy = `${
-          FileSystem.cacheDirectory ?? FileSystem.documentDirectory
-        }overwrite_${Date.now()}`;
-        await FileSystem.copyAsync({ from: stored.meta.imageUri, to: tempImageCopy });
-        sourceImage = tempImageCopy;
-      }
       const now = Date.now();
       await saveSprite({
-        imageTempUri: sourceImage,
         sprite: {
           ...payload,
           id,
           meta: {
             ...(payload.meta ?? {}),
             displayName,
-            version: (payload.meta?.version ?? 0) + 1,
             createdAt: stored.meta.createdAt ?? now,
             updatedAt: now,
           },
@@ -137,9 +116,6 @@ export const StoragePanel = ({ editor, imageUri, onImageUriChange }: StoragePane
     } catch (error) {
       setStatus((error as Error).message);
     } finally {
-      if (tempImageCopy) {
-        await FileSystem.deleteAsync(tempImageCopy, { idempotent: true });
-      }
       setIsBusy(false);
     }
   };
@@ -190,10 +166,7 @@ export const StoragePanel = ({ editor, imageUri, onImageUriChange }: StoragePane
         setStatus('Sprite not found on disk.');
         return;
       }
-      const tempUri = `${FileSystem.cacheDirectory ?? FileSystem.documentDirectory}rename_${Date.now()}`;
-      await FileSystem.copyAsync({ from: stored.meta.imageUri, to: tempUri });
       await saveSprite({
-        imageTempUri: tempUri,
         sprite: {
           id: stored.id,
           frames: stored.frames,
@@ -202,7 +175,6 @@ export const StoragePanel = ({ editor, imageUri, onImageUriChange }: StoragePane
           meta: { ...stored.meta, displayName: trimmed, updatedAt: Date.now() },
         },
       });
-      await FileSystem.deleteAsync(tempUri, { idempotent: true });
       setStatus(`Renamed sprite to ${trimmed}.`);
       await refresh();
     } catch (error) {

@@ -120,9 +120,7 @@ const data: SpriteData = {
   },
   meta: {
     displayName: 'Hero Walk',
-    imageUri: 'file:///sprites/images/img_hero.png',
     origin: { x: 0.5, y: 1 },
-    version: 2,
   },
 };
 ```
@@ -145,7 +143,7 @@ const handleFrameChange = (event: SpriteAnimatorFrameChangeEvent) => {
 
 ## spriteStorage API
 
-`spriteStorage` creates `/sprites/images`, `/sprites/meta`, and a `registry.json` file under `expo-file-system` so you can persist sprites alongside their metadata.
+`spriteStorage` creates `/sprites/meta` plus a `registry.json` file under `expo-file-system` so you can persist sprites alongside their metadata.
 
 ```ts
 import {
@@ -160,7 +158,6 @@ const payload: SpriteSavePayload = {
   frames,
   meta: {
     displayName: 'Hero Walk',
-    version: 1,
   },
   animations: {
     walk: [0, 1, 2],
@@ -170,10 +167,7 @@ const payload: SpriteSavePayload = {
   },
 };
 
-const saved = await saveSprite({
-  imageTempUri: tempImageUri,
-  sprite: payload,
-});
+const saved = await saveSprite({ sprite: payload });
 
 const items = await listSprites();
 const full = await loadSprite(saved.id);
@@ -205,7 +199,7 @@ What it demonstrates:
 - `useSpriteEditor` powering frame CRUD, selection, clipboard, undo/redo, metadata editing, and template-aware import/export.
 - Real-time playback by piping live editor state into `SpriteAnimator`, including seek, pause, and speed scaling.
 - Template workflows (`DefaultSpriteTemplate` plus a compact custom template) with JSON preview/import text areas.
-- Local persistence backed by `spriteStorage` (`saveSprite`, `loadSprite`, `listSprites`, `deleteSprite`) and metadata version bumps.
+- Local persistence backed by `spriteStorage` (`saveSprite`, `loadSprite`, `listSprites`, `deleteSprite`).
 - `SpriteEditUtils` on the Skia canvas (grid overlays, hit-testing, selection bounds) so geometry helpers are shown in context.
 
 Run it locally with `npm install` followed by `npm run start` inside `examples/standalone-editor`. The project links back to the library via `link:../../`, so editing the main package instantly updates the demo.
