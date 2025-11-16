@@ -49,7 +49,6 @@ export function HeroPreview() {
       initialAnimation="idle"
       animations={heroData.animations}
       autoplay
-      fps={12}
       loop
       speedScale={1}
       flipX={false}
@@ -63,14 +62,13 @@ export function HeroPreview() {
 ```
 
 - `image`: `require()` や `SkImage` をそのまま渡せます。
-- `data.frames`: `{ x, y, w, h, duration? }` の配列。`duration` を指定するとフレーム単位でミリ秒制御できます。
+- `data.frames`: `{ x, y, w, h, duration? }` の配列。`duration` を指定するとフレーム単位でミリ秒制御でき、未指定時は内部のデフォルトタイミング（約 12fps 相当）が使われます。
 - `data.animations` / `animations`: `{ walk: [0, 1, 2] }` のようにアニメーション名とフレーム番号を紐づけます。ランタイムで差し替えたい場合は props の `animations` を渡してください。
 - `data.animationsMeta` / `animationsMeta`: `{ blink: { loop: false } }` のようにアニメーション単位の設定を記述し、コンポーネント全体の `loop` 設定を上書きできます。
 - `initialAnimation`: 再生開始時に選択するアニメーション名。指定が無い場合は最初のアニメーション、または素のフレーム順を使います。
 - `autoplay`: コンポーネントがマウントされた直後に自動で再生するかどうか (デフォルト `true`)。
 - `speedScale`: 再生速度の倍率。`2` で 2 倍速、`0.5` で半分の速度になります。
 - `flipX` / `flipY`: 画像を左右・上下に反転して描画します (フレームデータの編集は不要)。
-- `fps`: `duration` を指定していないフレームのデフォルト速度。
 - `loop`: false の場合はアニメーションの最後のフレームで停止し、`onEnd` が一度だけ呼ばれます。
 - `spriteScale`: 描画サイズを倍率指定したい場合に使用します (デフォルト 1)。
 - `onAnimationEnd`: ループしないアニメーションが最後のフレームまで到達したときに一度だけ呼ばれます（引数はアニメーション名、または `null`）。

@@ -815,7 +815,6 @@ export const AnimationStudio = ({
         return;
       }
       const nextDuration = Math.max(1, currentBaseDuration * safeMultiplier);
-      // TODO: Replace this conversion once SpriteAnimator natively supports per-animation fps.
       editor.updateFrame(frame.id, { duration: nextDuration });
       updateAnimationMultiplierMeta(currentAnimationName, selectedTimelineIndex, safeMultiplier);
     },

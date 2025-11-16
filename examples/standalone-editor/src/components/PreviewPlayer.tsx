@@ -195,7 +195,6 @@ export const PreviewPlayer = ({
                     ref={animatorRef}
                     image={image}
                     data={runtimeData}
-                    fps={12}
                     loop
                     autoplay={false}
                     animationsMeta={animationsMeta}

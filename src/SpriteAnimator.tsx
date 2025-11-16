@@ -34,7 +34,7 @@ export interface SpriteFrame {
   h: number;
   /**
    * Optional per-frame duration in milliseconds.
-   * Falls back to the component level fps when omitted.
+   * Falls back to the built-in default timing when omitted.
    */
   duration?: number;
 }
@@ -158,8 +158,6 @@ export interface SpriteAnimatorProps {
   animations?: SpriteAnimations;
   /** Optional runtime override for animation metadata like looping. */
   animationsMeta?: SpriteAnimationsMeta;
-  /** Default frames per second when per-frame duration is absent. */
-  fps?: number;
   /** Global fallback for whether animations should loop. */
   loop?: boolean;
   /** Automatically start playback when the component mounts. */
@@ -193,6 +191,7 @@ interface AnimationState {
 }
 
 const DEFAULT_FPS = 12;
+const DEFAULT_FRAME_DURATION = 1000 / DEFAULT_FPS;
 const MIN_SPEED = 0.001;
 const DEFAULT_DIRECTION: SpriteAnimatorDirection = 'forward';
 
@@ -229,7 +228,6 @@ const SpriteAnimatorComponent = (
     data,
     animations,
     animationsMeta,
-    fps = DEFAULT_FPS,
     loop = true,
     autoplay = true,
     initialAnimation,
@@ -344,8 +342,6 @@ const SpriteAnimatorComponent = (
   const assetSource = imageIsSkImage ? null : (image as unknown as DataSourceParam);
   const assetImage = useImage(assetSource);
   const resolvedImage = imageIsSkImage ? image : assetImage;
-  const stableFps = Math.max(1, fps);
-
   useEffect(() => {
     setAnimState((prev) => {
       const ensuredName = ensureAnimationName(prev.name);
@@ -485,7 +481,7 @@ const SpriteAnimatorComponent = (
     }
     const frameIndex = sequence[animState.frameCursor] ?? sequence[0];
     const frame = frames[frameIndex];
-    const baseDuration = frame?.duration ?? 1000 / stableFps;
+    const baseDuration = frame?.duration ?? DEFAULT_FRAME_DURATION;
     const effectiveSpeed =
       Math.max(MIN_SPEED, normalizedSpeedScale) * Math.max(MIN_SPEED, animState.speed);
     const timer = setTimeout(() => {
@@ -503,7 +499,6 @@ const SpriteAnimatorComponent = (
     frames,
     normalizedSpeedScale,
     resolveSequence,
-    stableFps,
   ]);
 
   const play = useCallback(

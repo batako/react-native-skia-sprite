@@ -67,16 +67,14 @@ describe('SpriteAnimator', () => {
     expect(imageNode.props.height).toBe(512);
   });
 
-  it('advances frames according to fps and calls onEnd when loop is false', async () => {
+  it('advances frames according to frame durations and calls onEnd when loop is false', async () => {
     const onEnd = jest.fn();
+    const timedFrames: SpriteFrame[] = [
+      { ...frames[0], duration: 50 },
+      { ...frames[1], duration: 50 },
+    ];
     const renderer = renderComponent(
-      <SpriteAnimator
-        image={mockSkImage()}
-        data={{ frames }}
-        fps={10}
-        loop={false}
-        onEnd={onEnd}
-      />,
+      <SpriteAnimator image={mockSkImage()} data={{ frames: timedFrames }} loop={false} onEnd={onEnd} />,
     );
 
     await act(async () => {
@@ -101,8 +99,12 @@ describe('SpriteAnimator', () => {
   });
 
   it('respects speedScale to accelerate frame playback', () => {
+    const timedFrames: SpriteFrame[] = [
+      { ...frames[0], duration: 100 },
+      { ...frames[1], duration: 100 },
+    ];
     const renderer = renderComponent(
-      <SpriteAnimator image={mockSkImage()} data={{ frames }} fps={10} speedScale={2} />,
+      <SpriteAnimator image={mockSkImage()} data={{ frames: timedFrames }} speedScale={2} />,
     );
 
     act(() => {
@@ -131,7 +133,7 @@ describe('SpriteAnimator', () => {
   it('clears pending timers on unmount', () => {
     const clearSpy = jest.spyOn(global, 'clearTimeout');
     const renderer = renderComponent(
-      <SpriteAnimator image={mockSkImage()} data={{ frames }} fps={12} />,
+      <SpriteAnimator image={mockSkImage()} data={{ frames }} />,
     );
 
     act(() => {
@@ -232,8 +234,12 @@ describe('SpriteAnimator', () => {
 
   it('pauses playback without advancing frames', () => {
     const controller = React.createRef<SpriteAnimatorHandle>();
+    const timedFrames: SpriteFrame[] = [
+      { ...frames[0], duration: 80 },
+      { ...frames[1], duration: 80 },
+    ];
     const renderer = renderComponent(
-      <SpriteAnimator ref={controller} image={mockSkImage()} data={{ frames }} fps={10} />,
+      <SpriteAnimator ref={controller} image={mockSkImage()} data={{ frames: timedFrames }} />,
     );
 
     act(() => {
@@ -273,7 +279,6 @@ describe('SpriteAnimator', () => {
         animations={{ blink: [0, 1] }}
         animationsMeta={{ blink: { loop: false } }}
         loop
-        fps={10}
         autoplay={false}
         onEnd={onEnd}
       />,
