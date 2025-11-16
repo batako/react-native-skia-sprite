@@ -120,7 +120,7 @@ export const MetaEditor = ({ editor }: MetaEditorProps) => {
         <IconButton name="save" onPress={handleApply} accessibilityLabel="Apply metadata" />
       </View>
       <Text style={styles.metaSummary}>
-        Active template exports this metadata via `editor.exportJSON` and persists through
+        `editor.exportJSON()` (spriteStorage JSON) includes this metadata and persists via
         spriteStorage.
       </Text>
     </View>

@@ -1,7 +1,6 @@
 import React from 'react';
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import {
-  DefaultSpriteTemplate,
   deleteSprite,
   listSprites,
   loadSprite,
@@ -44,7 +43,7 @@ export const StoragePanel = ({ editor }: StoragePanelProps) => {
     const trimmedName = saveName.trim() || 'Untitled Sprite';
     setIsBusy(true);
     try {
-      const payload = editor.exportJSON(DefaultSpriteTemplate);
+      const payload = editor.exportJSON();
       const now = Date.now();
       await saveSprite({
         sprite: {
@@ -76,7 +75,7 @@ export const StoragePanel = ({ editor }: StoragePanelProps) => {
         setStatus('Sprite not found on disk.');
         return;
       }
-      editor.importJSON(stored, DefaultSpriteTemplate);
+      editor.importJSON(stored);
       setStatus(`Loaded sprite ${stored.meta.displayName}.`);
     } catch (error) {
       setStatus((error as Error).message);
@@ -92,7 +91,7 @@ export const StoragePanel = ({ editor }: StoragePanelProps) => {
     }
     setIsBusy(true);
     try {
-      const payload = editor.exportJSON(DefaultSpriteTemplate);
+      const payload = editor.exportJSON();
       const stored = await loadSprite(id);
       if (!stored) {
         setStatus('Sprite not found on disk.');

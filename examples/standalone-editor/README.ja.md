@@ -6,10 +6,10 @@
 
 - `useSpriteEditor` を使ったリアルタイム編集 (フレーム CRUD / 選択 / クリップボード / Undo/Redo)
 - `SpriteAnimator` によるキャンバス上でのプレビュー再生
-- `SpriteTemplate` + `DefaultSpriteTemplate` によるテンプレートのインポート / エクスポート
+- SpriteStorage 互換 JSON を扱うエクスポート / インポート
 - `spriteStorage` を利用したローカル永続化
 - `SpriteEditUtils` を用いたグリッド描画・スナップ・ヒットテスト
-- 表示名・オリジン・バージョンなどのメタデータ編集
+- 表示名・オリジンなどのメタデータ編集
 
 ## セットアップ
 

@@ -1,13 +1,7 @@
 import React from 'react';
 import { Asset } from 'expo-asset';
 import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
-import {
-  DefaultSpriteTemplate,
-  type SpriteEditorFrame,
-  type SpriteEditorState,
-  type SpriteTemplate,
-  useSpriteEditor,
-} from 'react-native-skia-sprite-animator';
+import { type SpriteEditorFrame, type SpriteEditorState, useSpriteEditor } from 'react-native-skia-sprite-animator';
 import type { DataSourceParam } from '@shopify/react-native-skia';
 import { AnimationStudio } from '../components/AnimationStudio';
 import { TemplatePanel } from '../components/TemplatePanel';
@@ -43,10 +37,8 @@ const SAMPLE_INITIAL_STATE: Partial<SpriteEditorState> = {
 };
 
 export const EditorScreen = () => {
-  const [template, setTemplate] = React.useState<SpriteTemplate<any>>(DefaultSpriteTemplate);
   const editor = useSpriteEditor({
     historyLimit: 100,
-    template,
     trackSelectionInHistory: true,
     initialState: SAMPLE_INITIAL_STATE,
   });
@@ -91,12 +83,12 @@ export const EditorScreen = () => {
           <Text style={styles.title}>Sprite Editor</Text>
         </View>
         <Text style={styles.subtitle}>
-          Edit frames, play animations, switch templates, and persist sprites to disk with a single
-          screen.
+          Edit frames, play animations, preview with SpriteAnimator, and persist sprites to disk
+          with a single screen.
         </Text>
         <AnimationStudio editor={editor} integration={integration} image={imageSource} />
         <MetaEditor editor={editor} />
-        <TemplatePanel editor={editor} template={template} onTemplateChange={setTemplate} />
+        <TemplatePanel editor={editor} />
         <StoragePanel editor={editor} />
       </ScrollView>
     </SafeAreaView>

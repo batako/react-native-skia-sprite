@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { SpriteAnimations, SpriteAnimationsMeta } from '../../SpriteAnimator';
-import type { SpriteTemplate } from '../templates/SpriteTemplate';
+import type { SpriteAnimations, SpriteAnimationsMeta, SpriteData } from '../../SpriteAnimator';
 import { DefaultSpriteTemplate } from '../templates/DefaultSpriteTemplate';
 import type {
   SpriteEditorFrame,
@@ -35,8 +34,6 @@ export interface UseSpriteEditorOptions {
   initialState?: Partial<SpriteEditorState>;
   /** Maximum number of undo snapshots tracked in memory. */
   historyLimit?: number;
-  /** Default template used by export/import helpers. */
-  template?: SpriteTemplate;
   /** When true, selection changes participate in undo/redo. Defaults to false. */
   trackSelectionInHistory?: boolean;
 }
@@ -109,10 +106,10 @@ export interface SpriteEditorApi {
   canUndo: boolean;
   /** Whether redo is currently possible. */
   canRedo: boolean;
-  /** Serialises the state using the provided template. */
-  exportJSON: <TData = unknown>(template?: SpriteTemplate<TData>) => TData;
-  /** Imports editor state from a template payload. */
-  importJSON: <TData = unknown>(payload: TData, template?: SpriteTemplate<TData>) => void;
+  /** Serialises the state into spriteStorage-compatible JSON. */
+  exportJSON: () => SpriteData;
+  /** Imports editor state from spriteStorage-compatible JSON. */
+  importJSON: (payload: SpriteData) => void;
   /** Replaces the animation map. */
   setAnimations: (animations: SpriteAnimations) => void;
   /** Replaces the animation meta map. */
@@ -121,8 +118,6 @@ export interface SpriteEditorApi {
   updateMeta: (meta: Partial<SpriteEditorMeta>) => void;
   /** Resets the editor with a partial state. */
   reset: (nextState?: Partial<SpriteEditorState>) => void;
-  /** Template currently backing import/export helpers. */
-  template: SpriteTemplate<any>;
 }
 
 /**
@@ -282,16 +277,11 @@ const applySnapshot = (
  */
 export const useSpriteEditor = (options: UseSpriteEditorOptions = {}): SpriteEditorApi => {
   const historyLimitRef = useRef(ensureHistoryLimit(options.historyLimit));
-  const templateRef = useRef<SpriteTemplate<any>>(options.template ?? DefaultSpriteTemplate);
   const trackSelectionRef = useRef(Boolean(options.trackSelectionInHistory));
 
   useEffect(() => {
     historyLimitRef.current = ensureHistoryLimit(options.historyLimit);
   }, [options.historyLimit]);
-
-  useEffect(() => {
-    templateRef.current = options.template ?? DefaultSpriteTemplate;
-  }, [options.template]);
 
   useEffect(() => {
     trackSelectionRef.current = Boolean(options.trackSelectionInHistory);
@@ -617,23 +607,15 @@ export const useSpriteEditor = (options: UseSpriteEditorOptions = {}): SpriteEdi
     });
   }, []);
 
-  /** Serialises the current editor state using the resolved template. */
-  const exportJSON = useCallback(
-    <TData = unknown>(template?: SpriteTemplate<TData>) => {
-      const activeTemplate = (template ?? templateRef.current) as SpriteTemplate<TData>;
-      return activeTemplate.toJSON(state);
-    },
-    [state],
-  );
+  /** Serialises the current editor state into spriteStorage-compatible JSON. */
+  const exportJSON = useCallback((): SpriteData => {
+    return DefaultSpriteTemplate.toJSON(state);
+  }, [state]);
 
-  /** Imports editor state using the resolved template and resets history. */
+  /** Imports spriteStorage-compatible JSON and resets history. */
   const importJSON = useCallback(
-    <TData = unknown>(payload: TData, template?: SpriteTemplate<TData>) => {
-      const activeTemplate = (template ?? templateRef.current) as SpriteTemplate<TData>;
-      if (typeof activeTemplate.fromJSON !== 'function') {
-        throw new Error(`Template \"${activeTemplate.name}\" does not support fromJSON.`);
-      }
-      const snapshot = activeTemplate.fromJSON(payload);
+    (payload: SpriteData) => {
+      const snapshot = DefaultSpriteTemplate.fromJSON(payload);
       if (!snapshot) {
         return;
       }
@@ -721,7 +703,6 @@ export const useSpriteEditor = (options: UseSpriteEditorOptions = {}): SpriteEdi
       setAnimationsMeta,
       updateMeta,
       reset,
-      template: templateRef.current,
     }),
     [
       state,

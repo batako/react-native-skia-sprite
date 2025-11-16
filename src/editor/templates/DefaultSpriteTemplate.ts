@@ -1,7 +1,6 @@
 import type { SpriteData } from '../../SpriteAnimator';
 import type { SpriteEditorSnapshot } from '../types';
 import { cloneSnapshot, createFrameId } from '../utils/state';
-import type { SpriteTemplate } from './SpriteTemplate';
 
 const stripFrameIds = (frames: SpriteEditorSnapshot['frames']): SpriteData['frames'] => {
   return frames.map(({ id: _id, duration: _duration, ...rest }) => ({ ...rest }));
@@ -18,21 +17,19 @@ const withFrameIds = (frames: SpriteData['frames']): SpriteEditorSnapshot['frame
 };
 
 /**
- * Default template that mirrors the spriteStorage payload (v0.2 schema).
+ * Serialization helpers that mirror the spriteStorage payload.
  */
-export const DefaultSpriteTemplate: SpriteTemplate<SpriteData> = {
-  name: 'spriteStorage',
-  version: 2,
-  toJSON: (state) => {
+export const DefaultSpriteTemplate = {
+  toJSON: (state: SpriteEditorSnapshot): SpriteData => {
     const snapshot = cloneSnapshot(state);
     return {
       frames: stripFrameIds(snapshot.frames),
       animations: snapshot.animations,
       animationsMeta: snapshot.animationsMeta,
       meta: snapshot.meta,
-    } satisfies SpriteData;
+    };
   },
-  fromJSON: (data) => {
+  fromJSON: (data?: SpriteData | null): Partial<SpriteEditorSnapshot> | null => {
     if (!data || !Array.isArray(data.frames)) {
       return null;
     }
@@ -42,6 +39,6 @@ export const DefaultSpriteTemplate: SpriteTemplate<SpriteData> = {
       animationsMeta: data.animationsMeta,
       selected: [],
       meta: data.meta ?? {},
-    } satisfies Partial<SpriteEditorSnapshot>;
+    };
   },
 };
