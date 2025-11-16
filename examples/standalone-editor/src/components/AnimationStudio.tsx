@@ -515,9 +515,15 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
   const currentAnimationLoop = currentAnimationName
     ? (animationsMeta[currentAnimationName]?.loop ?? true)
     : true;
-  const currentAnimationAutoPlay = currentAnimationName
-    ? Boolean(animationsMeta[currentAnimationName]?.autoPlay)
-    : false;
+  const autoPlayAnimationName = useMemo(() => {
+    for (let i = 0; i < animationNames.length; i += 1) {
+      const name = animationNames[i];
+      if (animationsMeta[name]?.autoPlay) {
+        return name;
+      }
+    }
+    return null;
+  }, [animationNames, animationsMeta]);
 
   const lastAnimationRef = useRef<string | null>(null);
   useEffect(() => {
@@ -846,15 +852,28 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
     updateAnimationMetaEntry,
   ]);
 
-  const handleToggleAnimationAutoPlay = useCallback(() => {
-    if (!currentAnimationName) {
-      return;
-    }
-    updateAnimationMetaEntry(currentAnimationName, (draft) => {
-      const prevAuto = Boolean(draft.autoPlay);
-      draft.autoPlay = !prevAuto;
-    });
-  }, [currentAnimationName, updateAnimationMetaEntry]);
+  const handleSelectAutoPlayAnimation = useCallback(
+    (targetName: string | null) => {
+      const nextMeta: SpriteAnimationsMeta = {};
+      Object.entries(animationsMeta).forEach(([name, meta]) => {
+        const copy: SpriteAnimationMeta = { ...meta };
+        if ('autoPlay' in copy) {
+          delete copy.autoPlay;
+        }
+        if (Object.keys(copy).length) {
+          nextMeta[name] = copy;
+        }
+      });
+      if (targetName) {
+        nextMeta[targetName] = {
+          ...(nextMeta[targetName] ?? animationsMeta[targetName] ?? {}),
+          autoPlay: true,
+        };
+      }
+      editor.setAnimationsMeta(nextMeta);
+    },
+    [animationsMeta, editor],
+  );
 
   const confirmDeleteAnimation = useCallback(
     (name: string) => {
@@ -1082,22 +1101,6 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
               />
               <View style={styles.timelineDivider} />
               <IconButton
-                name="play-circle-outline"
-                onPress={handleToggleAnimationAutoPlay}
-                disabled={!currentAnimationName}
-                style={[
-                  currentAnimationAutoPlay
-                    ? styles.autoPlayButtonActive
-                    : styles.autoPlayButtonInactive,
-                ]}
-                accessibilityLabel={
-                  currentAnimationAutoPlay
-                    ? 'Disable autoplay metadata for animation'
-                    : 'Enable autoplay metadata for animation'
-                }
-              />
-              <View style={styles.timelineDivider} />
-              <IconButton
                 name="repeat"
                 onPress={handleToggleAnimationLoop}
                 disabled={!currentAnimationName}
@@ -1129,6 +1132,26 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
                   onPress={() => handleAnimationListPress(name)}
                 >
                   <View style={styles.animationListItemInner}>
+                    <TouchableOpacity
+                      onPress={() =>
+                        handleSelectAutoPlayAnimation(
+                          autoPlayAnimationName === name ? null : name,
+                        )
+                      }
+                      accessibilityLabel={
+                        autoPlayAnimationName === name
+                          ? 'Disable autoplay for this animation'
+                          : 'Enable autoplay for this animation'
+                      }
+                      style={styles.autoPlayIndicatorButton}
+                      hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                    >
+                      <MaterialIcons
+                        name={autoPlayAnimationName === name ? 'play-circle' : 'play-circle-outline'}
+                        size={20}
+                        color={autoPlayAnimationName === name ? '#f6c343' : '#4d5878'}
+                      />
+                    </TouchableOpacity>
                     {renamingAnimation === name ? (
                       <>
                         <TextInput
@@ -1689,12 +1712,6 @@ const styles = StyleSheet.create({
   loopButtonInactive: {
     backgroundColor: '#1f2430',
   },
-  autoPlayButtonActive: {
-    backgroundColor: '#28a745',
-  },
-  autoPlayButtonInactive: {
-    backgroundColor: '#1f2430',
-  },
   animationFpsRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1735,7 +1752,9 @@ const styles = StyleSheet.create({
   },
   animationListItemInner: {
     flex: 1,
-    justifyContent: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   animationListItemActive: {
     backgroundColor: '#28304b',
@@ -1743,6 +1762,11 @@ const styles = StyleSheet.create({
   animationListItemText: {
     color: '#dee6ff',
     fontSize: 13,
+  },
+  autoPlayIndicatorButton: {
+    width: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   timelineColumn: {
     flex: 1,
