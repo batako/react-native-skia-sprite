@@ -152,11 +152,6 @@ export const useEditorIntegration = ({ editor }: UseEditorIntegrationOptions) =>
     setIsPlaying(false);
   }, []);
 
-  const resume = useCallback(() => {
-    animatorRef.current?.resume();
-    setIsPlaying(true);
-  }, []);
-
   const togglePlayback = useCallback(
     (name?: string | null) => {
       if (isPlaying) {
@@ -305,7 +300,6 @@ export const useEditorIntegration = ({ editor }: UseEditorIntegrationOptions) =>
     playReverse,
     stop,
     pause,
-    resume,
     togglePlayback,
     seekFrame,
     isPlaying,

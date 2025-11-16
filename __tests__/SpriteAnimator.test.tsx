@@ -230,7 +230,7 @@ describe('SpriteAnimator', () => {
     expect(imageNode.props.x).toBeCloseTo(0);
   });
 
-  it('pauses and resumes playback', () => {
+  it('pauses playback without advancing frames', () => {
     const controller = React.createRef<SpriteAnimatorHandle>();
     const renderer = renderComponent(
       <SpriteAnimator ref={controller} image={mockSkImage()} data={{ frames }} fps={10} />,
@@ -247,20 +247,19 @@ describe('SpriteAnimator', () => {
     let imageNode = renderer.root.findByType(skiaMock.MockSkiaImage);
     expect(imageNode.props.x).toBe(-64);
 
+    const pausedX = imageNode.props.x;
+
     act(() => {
       controller.current?.pause();
     });
     expect(controller.current?.isPlaying()).toBe(false);
 
     act(() => {
-      controller.current?.resume();
-    });
-    act(() => {
-      jest.advanceTimersByTime(110);
+      jest.advanceTimersByTime(220);
     });
 
     imageNode = renderer.root.findByType(skiaMock.MockSkiaImage);
-    expect(imageNode.props.x).toBeCloseTo(0);
+    expect(imageNode.props.x).toBeCloseTo(pausedX);
   });
 
   it('honors per-animation loop overrides via animationsMeta', async () => {

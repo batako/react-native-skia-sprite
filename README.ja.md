@@ -94,7 +94,6 @@ return (
       onPress={() => animatorRef.current?.play('blink', { speedScale: 1.5 })}
     />
     <Button title="Pause" onPress={() => animatorRef.current?.pause()} />
-    <Button title="Resume" onPress={() => animatorRef.current?.resume()} />
   </>
 );
 ```
@@ -103,7 +102,7 @@ return (
 
 - `play(name?: string, opts?: { fromFrame?: number; speedScale?: number })`: 指定アニメーションを最初または任意のフレームから再生開始。非ループのアニメが最後で停止した後でも `{ fromFrame: 0 }` を渡せば再度冒頭から再生できます。
 - `stop()`: 再生を止め、現在のアニメーションをフレーム `0` に戻す。
-- `pause()` / `resume()`: 現在位置を維持したままタイマーを一時停止／再開。
+- `pause()`: 現在位置を維持したままタイマーを一時停止します（再開する場合は `play()` を使ってください）。
 - `setFrame(frameIndex: number)`: 再生状態に関わらず、アクティブなアニメーション内の任意フレームへジャンプ。
 - `isPlaying()` / `getCurrentAnimation()`: 最新の再生状態やアニメーション名を参照（レンダーは発生しません）。
 

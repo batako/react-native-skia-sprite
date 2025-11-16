@@ -133,8 +133,6 @@ export interface SpriteAnimatorHandle {
   stop: () => void;
   /** Temporarily pauses playback without changing the cursor. */
   pause: () => void;
-  /** Resumes playback if it was previously paused. */
-  resume: () => void;
   /** Moves the cursor to a specific frame. */
   setFrame: (frameIndex: number, options?: SpriteAnimatorSetFrameOptions) => void;
   /** Returns whether an animation is actively playing. */
@@ -565,19 +563,6 @@ const SpriteAnimatorComponent = (
     });
   }, []);
 
-  const resume = useCallback(() => {
-    setAnimState((prev) => {
-      if (prev.playing) {
-        return prev;
-      }
-      const sequence = resolveSequence(prev.name);
-      if (sequence.length <= 1) {
-        return prev;
-      }
-      return { ...prev, playing: true };
-    });
-  }, [resolveSequence]);
-
   const setFrame = useCallback(
     (frameIndex: number, options?: SpriteAnimatorSetFrameOptions) => {
       setAnimState((prev) => {
@@ -605,12 +590,11 @@ const SpriteAnimatorComponent = (
       play,
       stop,
       pause,
-      resume,
       setFrame,
       isPlaying: () => animStateRef.current.playing,
       getCurrentAnimation: () => animStateRef.current.name,
     }),
-    [pause, play, resume, setFrame, stop],
+    [pause, play, setFrame, stop],
   );
 
   const activeSequence = resolveSequence(animState.name);

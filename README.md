@@ -94,16 +94,15 @@ return (
       onPress={() => animatorRef.current?.play('blink', { speedScale: 1.5 })}
     />
     <Button title="Pause" onPress={() => animatorRef.current?.pause()} />
-    <Button title="Resume" onPress={() => animatorRef.current?.resume()} />
   </>
 );
 ```
 
 Available methods:
 
-- `play(name?: string, opts?: { fromFrame?: number; speedScale?: number })`: Switch animations (or restart the current one) and begin playback when the sequence has at least two frames. Pass `fromFrame` to force playback to resume from a specific frame (e.g. `0` to restart a non-looping animation that has already finished).
+- `play(name?: string, opts?: { fromFrame?: number; speedScale?: number })`: Switch animations (or restart the current one) and begin playback when the sequence has at least two frames. Pass `fromFrame` to force playback to restart from a specific frame (e.g. `0` to restart a non-looping animation that has already finished).
 - `stop()`: Halt playback and reset the current animation to frame `0`.
-- `pause()` / `resume()`: Suspend or restart the internal timer without changing the current frame index.
+- `pause()`: Suspend the internal timer without changing the current frame index (use `play()` to restart from a specific frame).
 - `setFrame(frameIndex: number)`: Jump to any frame within the active animation, regardless of playing state.
 - `isPlaying()` / `getCurrentAnimation()`: Inspect the latest animator status without forcing a re-render.
 
@@ -208,7 +207,7 @@ A **complete Expo demo** lives under `examples/standalone-editor/`, exposing eve
 What it demonstrates:
 
 - `useSpriteEditor` powering frame CRUD, selection, clipboard, undo/redo, metadata editing, and template-aware import/export.
-- Real-time playback by piping live editor state into `SpriteAnimator`, including seek, pause/resume, and speed scaling.
+- Real-time playback by piping live editor state into `SpriteAnimator`, including seek, pause, and speed scaling.
 - Template workflows (`DefaultSpriteTemplate` plus a compact custom template) with JSON preview/import text areas.
 - Local persistence backed by `spriteStorage` (`saveSprite`, `loadSprite`, `listSprites`, `deleteSprite`) and metadata version bumps.
 - `SpriteEditUtils` on the Skia canvas (grid overlays, hit-testing, selection bounds) so geometry helpers are shown in context.
