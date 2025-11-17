@@ -21,11 +21,15 @@ import type { ImageSourcePropType } from 'react-native';
 import {
   cleanSpriteData,
   saveSprite,
+  listSprites,
+  loadSprite,
+  deleteSprite,
   type SpriteAnimationMeta,
   type SpriteAnimationsMeta,
   type SpriteEditorApi,
   type SpriteEditorFrame,
   type SpriteSummary,
+  type StoredSprite,
 } from 'react-native-skia-sprite-animator';
 import type { DataSourceParam } from '@shopify/react-native-skia';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -42,10 +46,19 @@ import type { EditorIntegration } from '../hooks/useEditorIntegration';
 import { FileBrowserModal } from './FileBrowserModal';
 import { StoragePanel } from './StoragePanel';
 
+interface SpriteStorageController {
+  saveSprite: typeof saveSprite;
+  loadSprite: (id: string) => Promise<StoredSprite | null>;
+  listSprites: () => Promise<SpriteSummary[]>;
+  deleteSprite: (id: string) => Promise<void>;
+}
+
 interface AnimationStudioProps {
   editor: SpriteEditorApi;
   integration: EditorIntegration;
   image: DataSourceParam;
+  storageController?: SpriteStorageController;
+  protectedMetaKeys?: string[];
 }
 
 interface MetaEntry {
@@ -66,6 +79,16 @@ const MIN_FRAME_MULTIPLIER = 0.1;
 const MULTIPLIER_EPSILON = 0.0001;
 const STORAGE_MESSAGE_DEFAULT = 'Manage saved sprites or import past work.';
 const STORAGE_MESSAGE_REQUIRE_NAME = 'Use Sprite Storage to name and save new sprites.';
+const DEFAULT_PROTECTED_META_KEYS = ['displayName', 'createdAt', 'updatedAt'];
+
+const defaultStorageController: SpriteStorageController = {
+  saveSprite,
+  loadSprite: async (id) => {
+    return loadSprite ? loadSprite(id) : null;
+  },
+  listSprites,
+  deleteSprite,
+};
 
 type LegacyAnimationSettingsMeta = {
   fps?: Record<string, number>;
@@ -184,7 +207,13 @@ const cleanupAnimationMetaEntry = (
   sequenceLength: number,
 ): SpriteAnimationMeta => normalizeAnimationMetaEntry(entry, sequenceLength);
 
-export const AnimationStudio = ({ editor, integration, image }: AnimationStudioProps) => {
+export const AnimationStudio = ({
+  editor,
+  integration,
+  image,
+  storageController,
+  protectedMetaKeys = DEFAULT_PROTECTED_META_KEYS,
+}: AnimationStudioProps) => {
   const frames = editor.state.frames;
   const animations = useMemo(() => editor.state.animations ?? {}, [editor.state.animations]);
   const animationsMeta = useMemo(
@@ -212,6 +241,8 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
   const [templateStatus, setTemplateStatus] = useState<string | null>(null);
   const [isMetaModalVisible, setMetaModalVisible] = useState(false);
   const [isTemplateModalVisible, setTemplateModalVisible] = useState(false);
+  const storageApi = storageController ?? defaultStorageController;
+  const protectedMetaKeySet = useMemo(() => new Set(protectedMetaKeys), [protectedMetaKeys]);
 
   useEffect(() => {
     if (!fileActionMessage) {
@@ -495,7 +526,7 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
     try {
       const payload = editor.exportJSON();
       const now = Date.now();
-      const stored = await saveSprite({
+      const stored = await storageApi.saveSprite({
         sprite: {
           ...payload,
           id: lastStoredSummary.id,
@@ -532,15 +563,14 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
   }, []);
 
   useEffect(() => {
-    const protectedKeys = new Set(['displayName', 'createdAt', 'updatedAt']);
     const primitiveEntries = Object.entries(editor.state.meta ?? {})
       .filter(([, value]) => {
         const type = typeof value;
         return value !== null && (type === 'string' || type === 'number' || type === 'boolean');
       })
-      .map(([key, value]) => createMetaEntry(key, String(value), protectedKeys.has(key)));
+      .map(([key, value]) => createMetaEntry(key, String(value), protectedMetaKeySet.has(key)));
     setMetaEntries(primitiveEntries);
-  }, [createMetaEntry, editor.state.meta]);
+  }, [createMetaEntry, editor.state.meta, protectedMetaKeySet]);
 
   const autoPlayAnimationName = editor.state.autoPlayAnimation ?? null;
 
@@ -1297,7 +1327,7 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
             accessibilityLabel="Edit metadata"
           />
           <IconButton
-            name="code"
+            name="data-object"
             onPress={handleOpenTemplateModal}
             accessibilityLabel="Open sprite JSON tools"
           />
@@ -1690,6 +1720,12 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
         onSpriteLoaded={handleStorageLoaded}
         onSpriteSaved={handleStorageSaved}
         defaultStatusMessage={storagePromptMessage}
+        storageApi={{
+          listSprites: storageApi.listSprites,
+          loadSprite: storageApi.loadSprite,
+          deleteSprite: storageApi.deleteSprite,
+          saveSprite: storageApi.saveSprite,
+        }}
       />
       <Modal
         visible={isMetaModalVisible}

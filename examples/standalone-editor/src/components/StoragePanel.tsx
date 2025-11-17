@@ -21,6 +21,13 @@ import {
 import { IconButton } from './IconButton';
 import { MacWindow } from './MacWindow';
 
+interface SpriteStorageApi {
+  listSprites: () => Promise<SpriteSummary[]>;
+  loadSprite: (id: string) => Promise<StoredSprite | null>;
+  saveSprite: typeof saveSprite;
+  deleteSprite: (id: string) => Promise<void>;
+}
+
 interface StoragePanelProps {
   editor: SpriteEditorApi;
   visible: boolean;
@@ -28,6 +35,7 @@ interface StoragePanelProps {
   onSpriteSaved?: (summary: SpriteSummary) => void;
   onSpriteLoaded?: (summary: SpriteSummary) => void;
   defaultStatusMessage?: string;
+  storageApi?: SpriteStorageApi;
 }
 
 const toSummary = (stored: StoredSprite): SpriteSummary => ({
@@ -37,6 +45,13 @@ const toSummary = (stored: StoredSprite): SpriteSummary => ({
   updatedAt: stored.meta.updatedAt,
 });
 
+const defaultStorageApi: SpriteStorageApi = {
+  listSprites,
+  loadSprite,
+  saveSprite,
+  deleteSprite,
+};
+
 export const StoragePanel = ({
   editor,
   visible,
@@ -44,6 +59,7 @@ export const StoragePanel = ({
   onSpriteSaved,
   onSpriteLoaded,
   defaultStatusMessage,
+  storageApi,
 }: StoragePanelProps) => {
   const [sprites, setSprites] = React.useState<SpriteSummary[]>([]);
   const [status, setStatus] = React.useState<string | null>(null);
@@ -51,15 +67,16 @@ export const StoragePanel = ({
   const [saveName, setSaveName] = React.useState('');
   const [editingId, setEditingId] = React.useState<string | null>(null);
   const [renameDraft, setRenameDraft] = React.useState('');
+  const storage = storageApi ?? defaultStorageApi;
 
   const refresh = React.useCallback(async () => {
     try {
-      const items = await listSprites();
+      const items = await storage.listSprites();
       setSprites(items);
     } catch (error) {
       setStatus((error as Error).message);
     }
-  }, []);
+  }, [storage]);
 
   React.useEffect(() => {
     if (visible) {
@@ -77,7 +94,7 @@ export const StoragePanel = ({
     try {
       const payload = editor.exportJSON();
       const now = Date.now();
-      const stored = await saveSprite({
+      const stored = await storage.saveSprite({
         sprite: {
           ...payload,
           meta: {
@@ -104,7 +121,7 @@ export const StoragePanel = ({
   const handleLoad = async (id: string) => {
     setIsBusy(true);
     try {
-      const stored = await loadSprite(id);
+      const stored = await storage.loadSprite(id);
       if (!stored) {
         setStatus('Sprite not found on disk.');
         return;
@@ -127,13 +144,13 @@ export const StoragePanel = ({
     setIsBusy(true);
     try {
       const payload = editor.exportJSON();
-      const stored = await loadSprite(id);
+      const stored = await storage.loadSprite(id);
       if (!stored) {
         setStatus('Sprite not found on disk.');
         return;
       }
       const now = Date.now();
-      const storedResult = await saveSprite({
+      const storedResult = await storage.saveSprite({
         sprite: {
           ...payload,
           id,
@@ -168,7 +185,7 @@ export const StoragePanel = ({
         onPress: async () => {
           setIsBusy(true);
           try {
-            await deleteSprite(id);
+            await storage.deleteSprite(id);
             await refresh();
             setStatus(`Sprite ${name} removed from storage.`);
           } catch (error) {
@@ -197,12 +214,12 @@ export const StoragePanel = ({
     }
     setIsBusy(true);
     try {
-      const stored = await loadSprite(id);
+      const stored = await storage.loadSprite(id);
       if (!stored) {
         setStatus('Sprite not found on disk.');
         return;
       }
-      const storedResult = await saveSprite({
+      const storedResult = await storage.saveSprite({
         sprite: {
           id: stored.id,
           frames: stored.frames,
