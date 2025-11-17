@@ -46,6 +46,7 @@ import type { EditorIntegration } from '../hooks/useEditorIntegration';
 import { FileBrowserModal } from './FileBrowserModal';
 import { StoragePanel } from './StoragePanel';
 import { useMetadataManager } from '../hooks/useMetadataManager';
+import { TimelineControls } from './TimelineControls';
 
 interface SpriteStorageController {
   saveSprite: typeof saveSprite;
@@ -1457,43 +1458,16 @@ export const AnimationStudio = ({
                   accessibilityLabel="Open frame picker modal"
                 />
                 <View style={styles.timelineDivider} />
-                <IconButton
-                  name="content-copy"
-                  onPress={handleCopyTimelineFrame}
-                  disabled={isPlaying || selectedTimelineIndex === null}
-                  accessibilityLabel="Copy timeline frame"
-                />
-                <IconButton
-                  name="content-paste"
-                  onPress={handlePasteTimelineFrame}
-                  disabled={isPlaying || !timelineClipboard?.length}
-                  accessibilityLabel="Paste timeline frame"
-                />
-                <View style={styles.timelineDivider} />
-                <IconButton
-                  name="skip-previous"
-                  onPress={() => handleMoveTimelineFrame(-1)}
-                  disabled={
-                    isPlaying || selectedTimelineIndex === null || selectedTimelineIndex === 0
-                  }
-                  accessibilityLabel="Move frame left"
-                />
-                <IconButton
-                  name="skip-next"
-                  onPress={() => handleMoveTimelineFrame(1)}
-                  disabled={
-                    isPlaying ||
-                    selectedTimelineIndex === null ||
-                    selectedTimelineIndex === currentSequence.length - 1 ||
-                    currentSequence.length === 0
-                  }
-                  accessibilityLabel="Move frame right"
-                />
-                <IconButton
-                  name="delete-forever"
-                  onPress={handleRemoveTimelineFrame}
-                  disabled={isPlaying || selectedTimelineIndex === null}
-                  accessibilityLabel="Remove timeline frame"
+                <TimelineControls
+                  isPlaying={isPlaying}
+                  selectedTimelineIndex={selectedTimelineIndex}
+                  currentSequenceLength={currentSequence.length}
+                  hasClipboard={Boolean(timelineClipboard?.length)}
+                  onCopy={handleCopyTimelineFrame}
+                  onPaste={handlePasteTimelineFrame}
+                  onMoveLeft={() => handleMoveTimelineFrame(-1)}
+                  onMoveRight={() => handleMoveTimelineFrame(1)}
+                  onRemove={handleRemoveTimelineFrame}
                 />
               </View>
               <View style={styles.timelineDivider} />
