@@ -1279,35 +1279,30 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
             </Text>
           </View>
         </View>
-        <View style={styles.fileControlsBar}>
-        <TouchableOpacity
-          style={[styles.fileButton, isQuickSaving && styles.fileButtonDisabled]}
-          onPress={handleQuickSave}
-          disabled={isQuickSaving}
-        >
-          <MaterialIcons name="save" size={18} color="#f6f8ff" />
-          <Text style={styles.fileButtonText}>Save</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.fileButton}
-          onPress={handleOpenStorageManager}
-          accessibilityLabel="Open storage manager"
-        >
-          <MaterialIcons name="folder-open" size={18} color="#f6f8ff" />
-          <Text style={styles.fileButtonText}>Manage</Text>
-        </TouchableOpacity>
-        <IconButton
-          name="edit-note"
-          onPress={handleOpenMetaModal}
-          accessibilityLabel="Edit metadata"
-        />
-        <IconButton
-          name="code"
-          onPress={handleOpenTemplateModal}
-          accessibilityLabel="Open sprite JSON tools"
-        />
+        <View style={styles.actionButtons}>
+          <IconButton
+            name="save"
+            onPress={handleQuickSave}
+            disabled={isQuickSaving}
+            accessibilityLabel="Save sprite"
+          />
+          <IconButton
+            name="folder"
+            onPress={handleOpenStorageManager}
+            accessibilityLabel="Open storage manager"
+          />
+          <IconButton
+            name="edit-note"
+            onPress={handleOpenMetaModal}
+            accessibilityLabel="Edit metadata"
+          />
+          <IconButton
+            name="code"
+            onPress={handleOpenTemplateModal}
+            accessibilityLabel="Open sprite JSON tools"
+          />
+        </View>
       </View>
-    </View>
       <View style={styles.previewSection}>
         <View style={styles.previewHeaderRow}>
           <Text style={styles.sectionTitle}>Animation Preview</Text>
@@ -2023,28 +2018,10 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
   },
-  fileControlsBar: {
+  actionButtons: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginBottom: 4,
-  },
-  fileButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: '#1b2234',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  fileButtonDisabled: {
-    opacity: 0.6,
-  },
-  fileButtonText: {
-    color: '#f6f8ff',
-    fontWeight: '600',
-    fontSize: 13,
   },
   fileStatusSlot: {
     minWidth: 140,
