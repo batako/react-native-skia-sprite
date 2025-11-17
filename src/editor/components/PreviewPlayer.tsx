@@ -1,8 +1,8 @@
 import React from 'react';
-import { Image, LayoutChangeEvent, Pressable, StyleSheet, Text, View } from 'react-native';
+import { LayoutChangeEvent, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SpriteAnimator } from '../../SpriteAnimator';
 import type { SpriteAnimatorSource } from '../../SpriteAnimator';
-import type { DataSourceParam, SkImage } from '@shopify/react-native-skia';
+import type { DataSourceParam } from '@shopify/react-native-skia';
 import type { EditorIntegration } from '../hooks/useEditorIntegration';
 import { IconButton } from './IconButton';
 
@@ -34,7 +34,6 @@ export const PreviewPlayer = ({
     frameCursor,
   } = integration;
   const animatorImageSource = image as SpriteAnimatorSource;
-  const { width: imageWidth, height: imageHeight } = useImageDimensions(image);
   const [viewportWidth, setViewportWidth] = React.useState<number | null>(null);
   const [zoom, setZoom] = React.useState(1);
   const [autoZoomed, setAutoZoomed] = React.useState(false);
@@ -49,7 +48,7 @@ export const PreviewPlayer = ({
     maxWidth: null,
     previewHeight: 0,
   });
-  const frames = runtimeData.frames ?? [];
+  const frames = React.useMemo(() => runtimeData.frames ?? [], [runtimeData.frames]);
   const frameBounds = React.useMemo(() => {
     if (!frames.length) {
       return { width: 64, height: 64 };
@@ -229,11 +228,9 @@ export const PreviewPlayer = ({
                       style={[
                         styles.canvas,
                         {
-                          width: centered
-                            ? currentFrameSize?.width ?? targetWidth
-                            : targetWidth,
+                          width: centered ? (currentFrameSize?.width ?? targetWidth) : targetWidth,
                           height: centered
-                            ? currentFrameSize?.height ?? targetHeight
+                            ? (currentFrameSize?.height ?? targetHeight)
                             : targetHeight,
                         },
                       ]}
@@ -321,56 +318,3 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
 });
-
-const useImageDimensions = (source: DataSourceParam) => {
-  const [size, setSize] = React.useState<{ width?: number; height?: number }>({});
-
-  React.useEffect(() => {
-    if (isSkiaImage(source)) {
-      setSize({ width: source.width(), height: source.height() });
-      return;
-    }
-    if (typeof source === 'number') {
-      const resolved = Image.resolveAssetSource(source);
-      if (resolved?.width && resolved?.height) {
-        setSize({ width: resolved.width, height: resolved.height });
-      } else {
-        setSize({});
-      }
-      return;
-    }
-    const uri = typeof source === 'string' ? source : (source as { uri?: string }).uri;
-    if (!uri) {
-      setSize({});
-      return;
-    }
-    let cancelled = false;
-    Image.getSize(
-      uri,
-      (width, height) => {
-        if (!cancelled) {
-          setSize({ width, height });
-        }
-      },
-      () => {
-        if (!cancelled) {
-          setSize({});
-        }
-      },
-    );
-    return () => {
-      cancelled = true;
-    };
-  }, [source]);
-
-  return size;
-};
-
-const isSkiaImage = (value: unknown): value is SkImage => {
-  return Boolean(
-    value &&
-      typeof value === 'object' &&
-      typeof (value as SkImage).width === 'function' &&
-      typeof (value as SkImage).height === 'function',
-  );
-};

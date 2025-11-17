@@ -368,7 +368,7 @@ export const TimelinePanel = ({
             disabled={!hasActiveAnimation || isPlaying}
             accessibilityLabel="Open frame picker modal"
           />
-         <View style={styles.timelineDivider} />
+          <View style={styles.timelineDivider} />
           <TimelineControls
             isPlaying={isPlaying}
             selectedTimelineIndex={selectedTimelineIndex}
