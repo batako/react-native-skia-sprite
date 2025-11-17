@@ -342,15 +342,16 @@ const styles = StyleSheet.create({
     maxWidth: 720,
   },
   windowContent: {
-    paddingHorizontal: 24,
-    paddingVertical: 16,
+    paddingHorizontal: 12,
+    paddingTop: 2,
+    paddingBottom: 12,
   },
   toolbarContent: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 0,
   },
   toolbarStatus: {
     color: '#d9def7',
@@ -378,15 +379,16 @@ const styles = StyleSheet.create({
     borderColor: '#303852',
     backgroundColor: '#1a1f2d',
     color: '#f6f8ff',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   meta: {
-    marginTop: 8,
+    marginTop: 6,
+    marginBottom: 6,
     color: '#9ea4bc',
     fontSize: 12,
   },
   list: {
-    marginTop: 12,
+    marginTop: 6,
     maxHeight: 360,
   },
   listContent: {
