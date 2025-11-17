@@ -27,6 +27,7 @@ interface StoragePanelProps {
   onClose: () => void;
   onSpriteSaved?: (summary: SpriteSummary) => void;
   onSpriteLoaded?: (summary: SpriteSummary) => void;
+  defaultStatusMessage?: string;
 }
 
 const toSummary = (stored: StoredSprite): SpriteSummary => ({
@@ -42,6 +43,7 @@ export const StoragePanel = ({
   onClose,
   onSpriteSaved,
   onSpriteLoaded,
+  defaultStatusMessage,
 }: StoragePanelProps) => {
   const [sprites, setSprites] = React.useState<SpriteSummary[]>([]);
   const [status, setStatus] = React.useState<string | null>(null);
@@ -91,6 +93,7 @@ export const StoragePanel = ({
       setStatus(`Saved sprite ${trimmedName}.`);
       await refresh();
       setSaveName('');
+      onClose();
     } catch (error) {
       setStatus((error as Error).message);
     } finally {
@@ -145,6 +148,7 @@ export const StoragePanel = ({
       onSpriteSaved?.(toSummary(storedResult));
       setStatus(`Overwrote sprite ${displayName}.`);
       await refresh();
+      onClose();
     } catch (error) {
       setStatus((error as Error).message);
     } finally {
@@ -210,6 +214,7 @@ export const StoragePanel = ({
       onSpriteSaved?.(toSummary(storedResult));
       setStatus(`Renamed sprite to ${trimmed}.`);
       await refresh();
+      onClose();
     } catch (error) {
       setStatus((error as Error).message);
     } finally {
@@ -233,7 +238,7 @@ export const StoragePanel = ({
           toolbarContent={
             <View style={styles.toolbarContent}>
               <Text style={styles.toolbarStatus}>
-                {status ? status : 'Manage saved sprites or import past work'}
+                {status ?? defaultStatusMessage ?? 'Manage saved sprites or import past work.'}
               </Text>
               <View style={styles.toolbarSpacer} />
               <IconButton

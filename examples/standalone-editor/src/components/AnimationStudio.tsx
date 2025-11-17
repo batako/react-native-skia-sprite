@@ -56,6 +56,8 @@ const TIMELINE_FOOTER_HEIGHT = 28;
 const DEFAULT_FRAME_MULTIPLIER = 1;
 const MIN_FRAME_MULTIPLIER = 0.1;
 const MULTIPLIER_EPSILON = 0.0001;
+const STORAGE_MESSAGE_DEFAULT = 'Manage saved sprites or import past work.';
+const STORAGE_MESSAGE_REQUIRE_NAME = 'Use Sprite Storage to name and save new sprites.';
 
 type LegacyAnimationSettingsMeta = {
   fps?: Record<string, number>;
@@ -193,6 +195,7 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
   const [framePickerVariant, setFramePickerVariant] = useState<MacWindowVariant>('default');
   const [isStorageManagerVisible, setStorageManagerVisible] = useState(false);
   const [fileActionMessage, setFileActionMessage] = useState<string | null>(null);
+  const [storagePromptMessage, setStoragePromptMessage] = useState(STORAGE_MESSAGE_DEFAULT);
   const [isQuickSaving, setIsQuickSaving] = useState(false);
   const [lastStoredSummary, setLastStoredSummary] = useState<SpriteSummary | null>(null);
 
@@ -354,11 +357,13 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
   }, [animationsMeta, editor, editor.state.meta]);
 
   const handleOpenStorageManager = useCallback(() => {
+    setStoragePromptMessage(STORAGE_MESSAGE_DEFAULT);
     setStorageManagerVisible(true);
   }, []);
 
   const handleCloseStorageManager = useCallback(() => {
     setStorageManagerVisible(false);
+    setStoragePromptMessage(STORAGE_MESSAGE_DEFAULT);
   }, []);
 
   const handleStorageSaved = useCallback((summary: SpriteSummary) => {
@@ -383,14 +388,18 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
       setFileActionMessage('Add at least one frame before saving.');
       return;
     }
-    const displayName = (editor.state.meta?.displayName ?? '').trim();
-    if (!displayName.length) {
-      setFileActionMessage('Set a sprite name in the Meta panel before saving.');
+    if (!lastStoredSummary) {
+      setFileActionMessage(STORAGE_MESSAGE_REQUIRE_NAME);
+      setStoragePromptMessage(STORAGE_MESSAGE_REQUIRE_NAME);
       setStorageManagerVisible(true);
       return;
     }
-    if (!lastStoredSummary) {
-      setFileActionMessage('Use "Save as" to create a storage entry first.');
+    const resolvedDisplayName = (
+      editor.state.meta?.displayName ?? lastStoredSummary.displayName ?? ''
+    ).trim();
+    if (!resolvedDisplayName.length) {
+      setFileActionMessage(STORAGE_MESSAGE_REQUIRE_NAME);
+      setStoragePromptMessage(STORAGE_MESSAGE_REQUIRE_NAME);
       setStorageManagerVisible(true);
       return;
     }
@@ -404,7 +413,7 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
           id: lastStoredSummary.id,
           meta: {
             ...(payload.meta ?? {}),
-            displayName,
+            displayName: resolvedDisplayName,
             createdAt: lastStoredSummary.createdAt,
             updatedAt: now,
           },
@@ -1147,25 +1156,29 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Animation Studio</Text>
-      </View>
-      <View style={styles.fileControlsBar}>
-        <TouchableOpacity
-          style={[styles.fileButton, isQuickSaving && styles.fileButtonDisabled]}
-          onPress={handleQuickSave}
-          disabled={isQuickSaving}
-        >
+      <View style={styles.headerRow}>
+        <View style={styles.headerLeft}>
+          <Text style={styles.title}>Animation Studio</Text>
+          <View style={styles.fileStatusSlot}>
+            <Text
+              style={[
+                styles.fileStatusText,
+                !(lastStoredSummary && fileActionMessage) && styles.fileStatusHidden,
+              ]}
+              numberOfLines={1}
+            >
+              {lastStoredSummary && fileActionMessage ? fileActionMessage : ' '}
+            </Text>
+          </View>
+        </View>
+        <View style={styles.fileControlsBar}>
+          <TouchableOpacity
+            style={[styles.fileButton, isQuickSaving && styles.fileButtonDisabled]}
+            onPress={handleQuickSave}
+            disabled={isQuickSaving}
+          >
           <MaterialIcons name="save" size={18} color="#f6f8ff" />
           <Text style={styles.fileButtonText}>Save</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.fileButton}
-          onPress={handleOpenStorageManager}
-          accessibilityLabel="Save as new sprite"
-        >
-          <MaterialIcons name="save-alt" size={18} color="#f6f8ff" />
-          <Text style={styles.fileButtonText}>Save As</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.fileButton}
@@ -1176,7 +1189,7 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
           <Text style={styles.fileButtonText}>Manage</Text>
         </TouchableOpacity>
       </View>
-      {fileActionMessage ? <Text style={styles.fileStatus}>{fileActionMessage}</Text> : null}
+    </View>
       <View style={styles.previewSection}>
         <View style={styles.previewHeaderRow}>
           <Text style={styles.sectionTitle}>Animation Preview</Text>
@@ -1563,6 +1576,7 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
         onClose={handleCloseStorageManager}
         onSpriteLoaded={handleStorageLoaded}
         onSpriteSaved={handleStorageSaved}
+        defaultStatusMessage={storagePromptMessage}
       />
     </View>
   );
@@ -1740,12 +1754,23 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#1f2430',
   },
-  header: {
-    marginBottom: 8,
+  headerRow: {
+    marginBottom: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 12,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+  },
+  title: {
+    color: '#f1f5ff',
+    fontSize: 18,
+    fontWeight: '700',
   },
   fileControlsBar: {
     flexDirection: 'row',
@@ -1770,15 +1795,17 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 13,
   },
-  fileStatus: {
-    color: '#8fb3ff',
-    fontSize: 12,
-    marginBottom: 8,
+  fileStatusSlot: {
+    minWidth: 140,
+    flexShrink: 1,
+    alignItems: 'flex-start',
   },
-  title: {
-    color: '#f1f5ff',
-    fontSize: 18,
-    fontWeight: '700',
+  fileStatusText: {
+    color: '#7f8aac',
+    fontSize: 11,
+  },
+  fileStatusHidden: {
+    opacity: 0,
   },
   headerActions: {
     flexDirection: 'row',
