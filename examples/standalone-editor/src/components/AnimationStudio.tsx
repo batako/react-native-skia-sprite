@@ -45,6 +45,7 @@ import { SelectableTextInput } from './SelectableTextInput';
 import type { EditorIntegration } from '../hooks/useEditorIntegration';
 import { FileBrowserModal } from './FileBrowserModal';
 import { StoragePanel } from './StoragePanel';
+import { useMetadataManager } from '../hooks/useMetadataManager';
 
 interface SpriteStorageController {
   saveSprite: typeof saveSprite;
@@ -235,7 +236,14 @@ export const AnimationStudio = ({
   const [storagePromptMessage, setStoragePromptMessage] = useState(STORAGE_MESSAGE_DEFAULT);
   const [isQuickSaving, setIsQuickSaving] = useState(false);
   const [lastStoredSummary, setLastStoredSummary] = useState<SpriteSummary | null>(null);
-  const [metaEntries, setMetaEntries] = useState<MetaEntry[]>([]);
+  const {
+    entries: metaEntries,
+    resetEntries: resetMeta,
+    addEntry,
+    updateEntry,
+    removeEntry,
+    applyEntries,
+  } = useMetadataManager({ editor, protectedKeys: protectedMetaKeys });
   const [exportPreview, setExportPreview] = useState('');
   const [importText, setImportText] = useState('');
   const [templateStatus, setTemplateStatus] = useState<string | null>(null);
@@ -288,46 +296,9 @@ export const AnimationStudio = ({
     [commitPendingMultiplier],
   );
 
-  const handleMetaChange = useCallback((id: string, field: 'key' | 'value', text: string) => {
-    setMetaEntries((prev) =>
-      prev.map((entry) =>
-        entry.id === id && !entry.readOnly ? { ...entry, [field]: text } : entry,
-      ),
-    );
-  }, []);
-
-  const handleMetaRemove = useCallback((id: string) => {
-    setMetaEntries((prev) => prev.filter((entry) => entry.id !== id || entry.readOnly));
-  }, []);
-
-  const handleMetaAdd = useCallback(() => {
-    setMetaEntries((prev) => [...prev, createMetaEntry()]);
-  }, [createMetaEntry]);
-
-  const handleApplyMeta = useCallback(() => {
-    const payload: Record<string, unknown> = {};
-    const seenKeys = new Set<string>();
-    metaEntries.forEach(({ key, value }) => {
-      const trimmedKey = key.trim();
-      if (!trimmedKey) {
-        return;
-      }
-      seenKeys.add(trimmedKey);
-      payload[trimmedKey] = value;
-    });
-    const primitiveKeys = Object.entries(editor.state.meta ?? {})
-      .filter(([, value]) => {
-        const type = typeof value;
-        return value !== null && (type === 'string' || type === 'number' || type === 'boolean');
-      })
-      .map(([key]) => key);
-    primitiveKeys.forEach((key) => {
-      if (!seenKeys.has(key)) {
-        payload[key] = undefined;
-      }
-    });
-    editor.updateMeta(payload);
-  }, [editor, metaEntries]);
+  useEffect(() => {
+    resetMeta();
+  }, [editor.state.meta, resetMeta]);
 
   const handleExportTemplate = useCallback(() => {
     const payload = cleanSpriteData(editor.exportJSON());
@@ -347,12 +318,14 @@ export const AnimationStudio = ({
   }, [editor, importText]);
 
   const handleOpenMetaModal = useCallback(() => {
+    resetMeta();
     setMetaModalVisible(true);
-  }, []);
+  }, [resetMeta]);
 
   const handleCloseMetaModal = useCallback(() => {
+    resetMeta();
     setMetaModalVisible(false);
-  }, []);
+  }, [resetMeta]);
 
   const handleOpenTemplateModal = useCallback(() => {
     setTemplateModalVisible(true);
@@ -552,25 +525,6 @@ export const AnimationStudio = ({
       setIsQuickSaving(false);
     }
   }, [editor, isQuickSaving, lastStoredSummary]);
-
-  const createMetaEntry = useCallback((key = '', value = '', readOnly = false): MetaEntry => {
-    return {
-      id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
-      key,
-      value,
-      readOnly,
-    };
-  }, []);
-
-  useEffect(() => {
-    const primitiveEntries = Object.entries(editor.state.meta ?? {})
-      .filter(([, value]) => {
-        const type = typeof value;
-        return value !== null && (type === 'string' || type === 'number' || type === 'boolean');
-      })
-      .map(([key, value]) => createMetaEntry(key, String(value), protectedMetaKeySet.has(key)));
-    setMetaEntries(primitiveEntries);
-  }, [createMetaEntry, editor.state.meta, protectedMetaKeySet]);
 
   const autoPlayAnimationName = editor.state.autoPlayAnimation ?? null;
 
@@ -1743,11 +1697,7 @@ export const AnimationStudio = ({
           >
         <View style={styles.metaHeaderRow}>
           <Text style={styles.metaHeading}>Primitive keys are exported with the sprite.</Text>
-          <IconButton
-            name="add"
-            onPress={handleMetaAdd}
-            accessibilityLabel="Add metadata entry"
-          />
+          <IconButton name="add" onPress={addEntry} accessibilityLabel="Add metadata entry" />
         </View>
         <ScrollView style={styles.metaRowsStack} contentContainerStyle={styles.metaRowsContent}>
           {metaEntries.map((entry) => (
@@ -1756,7 +1706,7 @@ export const AnimationStudio = ({
                 <Text style={styles.metaLabel}>Key</Text>
                 <TextInput
                   value={entry.key}
-                  onChangeText={(text) => handleMetaChange(entry.id, 'key', text)}
+                  onChangeText={(text) => updateEntry(entry.id, 'key', text)}
                   style={styles.metaInput}
                   editable={!entry.readOnly}
                   placeholder="metadata key"
@@ -1766,7 +1716,7 @@ export const AnimationStudio = ({
                 <Text style={styles.metaLabel}>Value</Text>
                 <TextInput
                   value={entry.value}
-                  onChangeText={(text) => handleMetaChange(entry.id, 'value', text)}
+                  onChangeText={(text) => updateEntry(entry.id, 'value', text)}
                   style={styles.metaInput}
                   editable={!entry.readOnly}
                   placeholder="value"
@@ -1777,7 +1727,7 @@ export const AnimationStudio = ({
               ) : (
                 <IconButton
                   name="delete"
-                  onPress={() => handleMetaRemove(entry.id)}
+                  onPress={() => removeEntry(entry.id)}
                   accessibilityLabel="Remove metadata entry"
                 />
               )}
@@ -1785,11 +1735,7 @@ export const AnimationStudio = ({
           ))}
         </ScrollView>
         <View style={styles.metaButtonRow}>
-              <IconButton
-                name="save"
-                onPress={handleApplyMeta}
-                accessibilityLabel="Apply metadata"
-              />
+          <IconButton name="save" onPress={applyEntries} accessibilityLabel="Apply metadata" />
             </View>
             <Text style={styles.metaHelpText}>
               Saved metadata is included when exporting JSON or saving via Sprite Storage.
