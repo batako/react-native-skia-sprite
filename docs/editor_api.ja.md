@@ -156,6 +156,54 @@ const storage = useSpriteStorage({
 
 ---
 
+## useEditorIntegration Hook
+
+`useEditorIntegration` は `useSpriteEditor` の状態と `SpriteAnimator` のプレビューを結び付けるためのフックです。`playForward` / `playReverse` / `seekFrame` といった再生操作、`animatorRef`、現在のアニメーション名、速度倍率などをまとめて返すため、プレビュー UI が常に編集内容と同期します。
+
+```tsx
+import {
+  useEditorIntegration,
+  useSpriteEditor,
+  SpriteAnimator,
+} from 'react-native-skia-sprite-animator';
+
+const editor = useSpriteEditor();
+const integration = useEditorIntegration({ editor });
+
+<SpriteAnimator
+  ref={integration.animatorRef}
+  image={spriteSheet}
+  data={integration.runtimeData}
+  onFrameChange={integration.onFrameChange}
+/>;
+```
+
+戻り値（`EditorIntegration` 型）は、再生ハンドラーや選択管理・速度調整・プレビュー用データ (`runtimeData`) などをすべて含みます。
+
+---
+
+## AnimationStudio コンポーネント
+
+`AnimationStudio` は、フレーム一覧・メタデータ編集・Sprite JSON import/export・spriteStorage モーダル・タイムライン・プレビューを 1 つにまとめた完成済み UI です。`useSpriteEditor` と `useEditorIntegration` の戻り値、表示したい画像を渡すだけでアプリに組み込めます。
+
+```tsx
+import {
+  AnimationStudio,
+  useEditorIntegration,
+  useSpriteEditor,
+} from 'react-native-skia-sprite-animator';
+
+const editor = useSpriteEditor();
+const integration = useEditorIntegration({ editor });
+
+<AnimationStudio editor={editor} integration={integration} image={spriteSheet} />;
+```
+
+- `storageController`: 保存/読み込み/削除/一覧を独自ストレージへ差し替える場合に渡します。
+- `protectedMetaKeys`: Metadata エディター上で削除させたくないキーを指定します（デフォルトは `['displayName', 'createdAt', 'updatedAt']`）。
+
+---
+
 ## シリアライズヘルパー
 
 `exportJSON()` / `importJSON()` は常に組み込みの `DefaultSpriteTemplate` を使用し、spriteStorage 互換の JSON をやり取りします。SpriteAnimator へのプレビューや `spriteStorage` 連携はこの JSON をそのまま使えば OK です。

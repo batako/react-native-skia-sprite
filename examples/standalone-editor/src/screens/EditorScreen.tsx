@@ -61,9 +61,11 @@ export const EditorScreen = () => {
         return;
       }
       const uri = asset.localUri ?? asset.uri;
-      setImageSource(uri);
+      const nextSource = uri ?? SAMPLE_SPRITE;
+      const frameImageUri = typeof uri === 'string' ? uri : undefined;
+      setImageSource(nextSource);
       editorRef.current.reset({
-        frames: SAMPLE_FRAMES.map((frame) => ({ ...frame, imageUri: uri })),
+        frames: SAMPLE_FRAMES.map((frame) => ({ ...frame, imageUri: frameImageUri })),
         animations: SAMPLE_INITIAL_STATE.animations ?? {},
         animationsMeta: SAMPLE_INITIAL_STATE.animationsMeta,
         selected: SAMPLE_INITIAL_STATE.selected ?? [],

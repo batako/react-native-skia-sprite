@@ -189,9 +189,11 @@ await deleteSprite(saved.id);
 UI を持たないエディター用ツール群も `src/editor/` で提供しています。これらを組み合わせれば、各プロダクトに最適なエディター UI を自由に構築できます。
 
 - `useSpriteEditor`: フレーム一覧、選択状態、クリップボード、Undo/Redo、テンプレートベースの import/export を一括で管理する React Hook。UI には一切依存しないため、ボタンやジェスチャー、ショートカットに自由に接続できます。
+- `useEditorIntegration`: `useSpriteEditor` の状態と `SpriteAnimator` プレビューを橋渡しするフック。再生／停止／シーク／速度調整といったハンドラーをまとめて返し、プレビューコンポーネントにそのまま渡せます。
 - `useTimelineEditor`: タイムラインの選択位置やクリップボード、レイアウト寸法を管理し、再生パネルや Timeline UI と `SpriteAnimator` を同期させやすくします。
 - `useMetadataManager`: `editor.state.meta` に格納されたプリミティブ値を `{ key, value }` の行として編集するためのヘルパー。保護キーの指定やリセット/適用操作も提供します。
 - `useSpriteStorage`: `spriteStorage` の list/load/save/delete をラップし、`status` や `isBusy` を含む UI 向け状態を返します。カスタムコントローラーを渡せば保存先も差し替え可能です。
+- `AnimationStudio`: 上記フック群をすべて組み合わせた完成済みエディター画面。`useSpriteEditor` インスタンスと `useEditorIntegration` の戻り値、ベース画像を渡すだけで、メタ編集・タイムライン・プレビュー・ストレージが揃ったスタジオを埋め込めます。
 - `SpriteEditUtils`: `snapToGrid`、`normalizeRect`、`pointInFrame`、`mergeFrames` など、エディターで使い回せるジオメトリ系のヘルパー群。
 - `DefaultSpriteTemplate`: エディター状態を `spriteStorage` と同じ JSON へ変換するためのヘルパー。
 

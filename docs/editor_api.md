@@ -161,6 +161,58 @@ You can provide a custom `controller` to back these operations with your own fil
 
 ---
 
+## useEditorIntegration hook
+
+`useEditorIntegration` ties `useSpriteEditor` state to a `SpriteAnimator` instance. It exposes imperative handlers (play/pause/seek), playback speed, selected animations, and refs so that your preview widgets stay synchronized with the editor state.
+
+```tsx
+import {
+  useEditorIntegration,
+  useSpriteEditor,
+  SpriteAnimator,
+} from 'react-native-skia-sprite-animator';
+
+const editor = useSpriteEditor();
+const integration = useEditorIntegration({ editor });
+
+return (
+  <SpriteAnimator
+    ref={integration.animatorRef}
+    image={spriteSheet}
+    data={integration.runtimeData}
+    onFrameChange={integration.onFrameChange}
+  />
+);
+```
+
+The returned object (exported as `EditorIntegration`) includes helpers such as `playForward`, `playReverse`, `seekFrame`, `setActiveAnimation`, `setSpeedScale`, `onFrameChange`, `onAnimationEnd`, and the `runtimeData` snapshot consumed by the animator/preview components.
+
+---
+
+## AnimationStudio component
+
+`AnimationStudio` is a ready-made editor surface that combines every hook above: frame list, metadata editor, sprite JSON import/export, sprite storage modal, timeline panel, and the SpriteAnimator preview. Bring your own editor instance, integration hook result, and sprite sheet image.
+
+```tsx
+import {
+  AnimationStudio,
+  useEditorIntegration,
+  useSpriteEditor,
+} from 'react-native-skia-sprite-animator';
+
+const editor = useSpriteEditor();
+const integration = useEditorIntegration({ editor });
+
+<AnimationStudio editor={editor} integration={integration} image={spriteSheet} />;
+```
+
+Additional props:
+
+- `storageController`: Override the save/load/list/delete helpers when you want to persist somewhere other than `expo-file-system`.
+- `protectedMetaKeys`: Prevent specific metadata keys from being deleted in the Metadata editor (defaults to `['displayName', 'createdAt', 'updatedAt']`).
+
+---
+
 ## Serialization helpers
 
 `exportJSON()` and `importJSON()` always use the built-in `DefaultSpriteTemplate`, which mirrors the spriteStorage payload (frames are exported without ids). Use it whenever you need to persist editor state or preview the JSON handed to `SpriteAnimator`.
