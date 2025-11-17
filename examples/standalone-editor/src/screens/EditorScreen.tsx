@@ -9,7 +9,6 @@ import {
 import type { DataSourceParam } from '@shopify/react-native-skia';
 import { AnimationStudio } from '../components/AnimationStudio';
 import { TemplatePanel } from '../components/TemplatePanel';
-import { StoragePanel } from '../components/StoragePanel';
 import { MetaEditor } from '../components/MetaEditor';
 import { useEditorIntegration } from '../hooks/useEditorIntegration';
 
@@ -93,7 +92,6 @@ export const EditorScreen = () => {
         <AnimationStudio editor={editor} integration={integration} image={imageSource} />
         <MetaEditor editor={editor} />
         <TemplatePanel editor={editor} />
-        <StoragePanel editor={editor} />
       </ScrollView>
     </SafeAreaView>
   );

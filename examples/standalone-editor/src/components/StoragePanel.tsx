@@ -1,5 +1,14 @@
 import React from 'react';
-import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+  Alert,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import {
   deleteSprite,
   listSprites,
@@ -7,14 +16,33 @@ import {
   saveSprite,
   type SpriteEditorApi,
   type SpriteSummary,
+  type StoredSprite,
 } from 'react-native-skia-sprite-animator';
 import { IconButton } from './IconButton';
+import { MacWindow } from './MacWindow';
 
 interface StoragePanelProps {
   editor: SpriteEditorApi;
+  visible: boolean;
+  onClose: () => void;
+  onSpriteSaved?: (summary: SpriteSummary) => void;
+  onSpriteLoaded?: (summary: SpriteSummary) => void;
 }
 
-export const StoragePanel = ({ editor }: StoragePanelProps) => {
+const toSummary = (stored: StoredSprite): SpriteSummary => ({
+  id: stored.id,
+  displayName: stored.meta.displayName,
+  createdAt: stored.meta.createdAt,
+  updatedAt: stored.meta.updatedAt,
+});
+
+export const StoragePanel = ({
+  editor,
+  visible,
+  onClose,
+  onSpriteSaved,
+  onSpriteLoaded,
+}: StoragePanelProps) => {
   const [sprites, setSprites] = React.useState<SpriteSummary[]>([]);
   const [status, setStatus] = React.useState<string | null>(null);
   const [isBusy, setIsBusy] = React.useState(false);
@@ -32,8 +60,10 @@ export const StoragePanel = ({ editor }: StoragePanelProps) => {
   }, []);
 
   React.useEffect(() => {
-    refresh();
-  }, [refresh]);
+    if (visible) {
+      refresh();
+    }
+  }, [refresh, visible]);
 
   const handleSave = async () => {
     if (!editor.state.frames.length) {
@@ -45,7 +75,7 @@ export const StoragePanel = ({ editor }: StoragePanelProps) => {
     try {
       const payload = editor.exportJSON();
       const now = Date.now();
-      await saveSprite({
+      const stored = await saveSprite({
         sprite: {
           ...payload,
           meta: {
@@ -56,6 +86,7 @@ export const StoragePanel = ({ editor }: StoragePanelProps) => {
           },
         },
       });
+      onSpriteSaved?.(toSummary(stored));
       editor.updateMeta({ displayName: trimmedName });
       setStatus(`Saved sprite ${trimmedName}.`);
       await refresh();
@@ -76,6 +107,7 @@ export const StoragePanel = ({ editor }: StoragePanelProps) => {
         return;
       }
       editor.importJSON(stored);
+      onSpriteLoaded?.(toSummary(stored));
       setStatus(`Loaded sprite ${stored.meta.displayName}.`);
     } catch (error) {
       setStatus((error as Error).message);
@@ -98,7 +130,7 @@ export const StoragePanel = ({ editor }: StoragePanelProps) => {
         return;
       }
       const now = Date.now();
-      await saveSprite({
+      const storedResult = await saveSprite({
         sprite: {
           ...payload,
           id,
@@ -110,6 +142,7 @@ export const StoragePanel = ({ editor }: StoragePanelProps) => {
           },
         },
       });
+      onSpriteSaved?.(toSummary(storedResult));
       setStatus(`Overwrote sprite ${displayName}.`);
       await refresh();
     } catch (error) {
@@ -165,7 +198,7 @@ export const StoragePanel = ({ editor }: StoragePanelProps) => {
         setStatus('Sprite not found on disk.');
         return;
       }
-      await saveSprite({
+      const storedResult = await saveSprite({
         sprite: {
           id: stored.id,
           frames: stored.frames,
@@ -174,6 +207,7 @@ export const StoragePanel = ({ editor }: StoragePanelProps) => {
           meta: { ...stored.meta, displayName: trimmed, updatedAt: Date.now() },
         },
       });
+      onSpriteSaved?.(toSummary(storedResult));
       setStatus(`Renamed sprite to ${trimmed}.`);
       await refresh();
     } catch (error) {
@@ -185,101 +219,140 @@ export const StoragePanel = ({ editor }: StoragePanelProps) => {
     }
   };
 
+  if (!visible) {
+    return null;
+  }
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.heading}>Storage</Text>
-      <View style={styles.formRow}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.meta}>Sprite name</Text>
-          <TextInput
-            style={styles.nameInput}
-            value={saveName}
-            onChangeText={setSaveName}
-            placeholder="Untitled Sprite"
-            editable={!isBusy}
-          />
-        </View>
-        <View style={styles.formActions}>
-          <IconButton
-            iconFamily="material"
-            name="save"
-            onPress={handleSave}
-            disabled={isBusy}
-            accessibilityLabel="Save sprite"
-          />
-        </View>
-      </View>
-      <View style={styles.list}>
-        {sprites.map((sprite) => (
-          <View key={sprite.id} style={styles.spriteRow}>
-            <View style={{ flex: 1 }}>
-              {editingId === sprite.id ? (
-                <TextInput
-                  style={styles.renameInput}
-                  value={renameDraft}
-                  onChangeText={setRenameDraft}
-                  autoFocus
-                  onSubmitEditing={() => handleRename(sprite.id, renameDraft)}
-                  onBlur={() => handleRename(sprite.id, renameDraft)}
-                />
-              ) : (
-                <TouchableOpacity
-                  style={styles.renameDisplay}
-                  onPress={() => {
-                    setEditingId(sprite.id);
-                    setRenameDraft(sprite.displayName);
-                  }}
-                  disabled={isBusy}
-                >
-                  <Text style={styles.spriteName}>{sprite.displayName}</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-            <View style={styles.rowButtons}>
-              {editingId === sprite.id ? null : (
-                <IconButton
-                  iconFamily="material"
-                  name="save"
-                  onPress={() => handleOverwrite(sprite.id, sprite.displayName)}
-                  disabled={isBusy}
-                  accessibilityLabel="Overwrite sprite with current editor state"
-                />
-              )}
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <View style={styles.backdrop}>
+        <MacWindow
+          title="Sprite Storage"
+          onClose={onClose}
+          contentStyle={styles.windowContent}
+          toolbarContent={
+            <View style={styles.toolbarContent}>
+              <Text style={styles.toolbarStatus}>
+                {status ? status : 'Manage saved sprites or import past work'}
+              </Text>
+              <View style={styles.toolbarSpacer} />
               <IconButton
-                name="file-upload"
-                onPress={() => handleLoad(sprite.id)}
+                iconFamily="material"
+                name="refresh"
+                onPress={refresh}
                 disabled={isBusy}
-                accessibilityLabel="Load sprite"
+                accessibilityLabel="Refresh storage list"
               />
+            </View>
+          }
+          style={styles.window}
+        >
+          <View style={styles.formRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.meta}>Sprite name</Text>
+              <TextInput
+                style={styles.nameInput}
+                value={saveName}
+                onChangeText={setSaveName}
+                placeholder="Untitled Sprite"
+                editable={!isBusy}
+              />
+            </View>
+            <View style={styles.formActions}>
               <IconButton
-                name="delete"
-                onPress={() => handleDelete(sprite.id, sprite.displayName)}
+                iconFamily="material"
+                name="save"
+                onPress={handleSave}
                 disabled={isBusy}
-                accessibilityLabel="Delete sprite"
+                accessibilityLabel="Save sprite"
               />
             </View>
           </View>
-        ))}
-        {!sprites.length && <Text style={styles.empty}>No sprites saved yet.</Text>}
+          <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
+            {sprites.map((sprite) => (
+              <View key={sprite.id} style={styles.spriteRow}>
+                <View style={{ flex: 1 }}>
+                  {editingId === sprite.id ? (
+                    <TextInput
+                      style={styles.renameInput}
+                      value={renameDraft}
+                      onChangeText={setRenameDraft}
+                      autoFocus
+                      onSubmitEditing={() => handleRename(sprite.id, renameDraft)}
+                      onBlur={() => handleRename(sprite.id, renameDraft)}
+                      editable={!isBusy}
+                    />
+                  ) : (
+                    <TouchableOpacity
+                      style={styles.renameDisplay}
+                      onPress={() => {
+                        setEditingId(sprite.id);
+                        setRenameDraft(sprite.displayName);
+                      }}
+                      disabled={isBusy}
+                    >
+                      <Text style={styles.spriteName}>{sprite.displayName}</Text>
+                      <Text style={styles.spriteMeta}>
+                        Updated {new Date(sprite.updatedAt).toLocaleString()}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+                <View style={styles.rowButtons}>
+                  <IconButton
+                    iconFamily="material"
+                    name="file-upload"
+                    onPress={() => handleLoad(sprite.id)}
+                    disabled={isBusy}
+                    accessibilityLabel="Load sprite"
+                  />
+                  <IconButton
+                    iconFamily="material"
+                    name="delete"
+                    onPress={() => handleDelete(sprite.id, sprite.displayName)}
+                    disabled={isBusy}
+                    accessibilityLabel="Delete sprite"
+                  />
+                </View>
+              </View>
+            ))}
+            {!sprites.length && (
+              <Text style={styles.empty}>No sprites saved yet. Use the form above to add one.</Text>
+            )}
+          </ScrollView>
+        </MacWindow>
       </View>
-      {status && <Text style={styles.status}>{status}</Text>}
-    </View>
+    </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    marginTop: 16,
-    padding: 12,
-    borderRadius: 12,
-    backgroundColor: '#141925',
-    borderWidth: 1,
-    borderColor: '#1f2435',
+  backdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(6, 10, 18, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  heading: {
-    color: '#f0f4ff',
-    fontWeight: '600',
-    marginBottom: 8,
+  window: {
+    maxWidth: 720,
+  },
+  windowContent: {
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+  },
+  toolbarContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  toolbarStatus: {
+    color: '#d9def7',
+    fontSize: 13,
+  },
+  toolbarSpacer: {
+    flex: 1,
   },
   formRow: {
     flexDirection: 'row',
@@ -309,6 +382,10 @@ const styles = StyleSheet.create({
   },
   list: {
     marginTop: 12,
+    maxHeight: 360,
+  },
+  listContent: {
+    paddingBottom: 12,
   },
   spriteRow: {
     flexDirection: 'row',
@@ -347,10 +424,5 @@ const styles = StyleSheet.create({
   },
   empty: {
     color: '#606984',
-  },
-  status: {
-    marginTop: 8,
-    color: '#7ddac9',
-    fontSize: 12,
   },
 });

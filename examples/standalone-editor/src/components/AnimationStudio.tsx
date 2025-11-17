@@ -18,11 +18,13 @@ import {
   View,
 } from 'react-native';
 import type { ImageSourcePropType } from 'react-native';
-import type {
-  SpriteAnimationMeta,
-  SpriteAnimationsMeta,
-  SpriteEditorApi,
-  SpriteEditorFrame,
+import {
+  saveSprite,
+  type SpriteAnimationMeta,
+  type SpriteAnimationsMeta,
+  type SpriteEditorApi,
+  type SpriteEditorFrame,
+  type SpriteSummary,
 } from 'react-native-skia-sprite-animator';
 import type { DataSourceParam } from '@shopify/react-native-skia';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -37,6 +39,7 @@ import {
 import { SelectableTextInput } from './SelectableTextInput';
 import type { EditorIntegration } from '../hooks/useEditorIntegration';
 import { FileBrowserModal } from './FileBrowserModal';
+import { StoragePanel } from './StoragePanel';
 
 interface AnimationStudioProps {
   editor: SpriteEditorApi;
@@ -188,6 +191,22 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
   const [timelineFilledHeight, setTimelineFilledHeight] = useState(0);
   const [isFramePickerVisible, setFramePickerVisible] = useState(false);
   const [framePickerVariant, setFramePickerVariant] = useState<MacWindowVariant>('default');
+  const [isStorageManagerVisible, setStorageManagerVisible] = useState(false);
+  const [fileActionMessage, setFileActionMessage] = useState<string | null>(null);
+  const [isQuickSaving, setIsQuickSaving] = useState(false);
+  const [lastStoredSummary, setLastStoredSummary] = useState<SpriteSummary | null>(null);
+
+  useEffect(() => {
+    if (!fileActionMessage) {
+      return;
+    }
+    const timer = setTimeout(() => {
+      setFileActionMessage(null);
+    }, 4000);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [fileActionMessage]);
   const [isFrameSourceBrowserVisible, setFrameSourceBrowserVisible] = useState(false);
   const [framePickerImage, setFramePickerImage] = useState<FrameGridImageDescriptor | null>(null);
   const [frameImageInfos, setFrameImageInfos] = useState<
@@ -333,6 +352,78 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
     });
     legacySettingsMigratedRef.current = true;
   }, [animationsMeta, editor, editor.state.meta]);
+
+  const handleOpenStorageManager = useCallback(() => {
+    setStorageManagerVisible(true);
+  }, []);
+
+  const handleCloseStorageManager = useCallback(() => {
+    setStorageManagerVisible(false);
+  }, []);
+
+  const handleStorageSaved = useCallback((summary: SpriteSummary) => {
+    setLastStoredSummary(summary);
+    setFileActionMessage(`Saved ${summary.displayName}`);
+  }, []);
+
+  const handleStorageLoaded = useCallback(
+    (summary: SpriteSummary) => {
+      setLastStoredSummary(summary);
+      setFileActionMessage(`Loaded ${summary.displayName}`);
+      handleCloseStorageManager();
+    },
+    [handleCloseStorageManager],
+  );
+
+  const handleQuickSave = useCallback(async () => {
+    if (isQuickSaving) {
+      return;
+    }
+    if (!editor.state.frames.length) {
+      setFileActionMessage('Add at least one frame before saving.');
+      return;
+    }
+    const displayName = (editor.state.meta?.displayName ?? '').trim();
+    if (!displayName.length) {
+      setFileActionMessage('Set a sprite name in the Meta panel before saving.');
+      setStorageManagerVisible(true);
+      return;
+    }
+    if (!lastStoredSummary) {
+      setFileActionMessage('Use "Save as" to create a storage entry first.');
+      setStorageManagerVisible(true);
+      return;
+    }
+    setIsQuickSaving(true);
+    try {
+      const payload = editor.exportJSON();
+      const now = Date.now();
+      const stored = await saveSprite({
+        sprite: {
+          ...payload,
+          id: lastStoredSummary.id,
+          meta: {
+            ...(payload.meta ?? {}),
+            displayName,
+            createdAt: lastStoredSummary.createdAt,
+            updatedAt: now,
+          },
+        },
+      });
+      const summary: SpriteSummary = {
+        id: stored.id,
+        displayName: stored.meta.displayName,
+        createdAt: stored.meta.createdAt,
+        updatedAt: stored.meta.updatedAt,
+      };
+      setLastStoredSummary(summary);
+      setFileActionMessage(`Saved ${summary.displayName}`);
+    } catch (error) {
+      setFileActionMessage((error as Error).message);
+    } finally {
+      setIsQuickSaving(false);
+    }
+  }, [editor, isQuickSaving, lastStoredSummary]);
 
   const autoPlayAnimationName = editor.state.autoPlayAnimation ?? null;
 
@@ -1059,6 +1150,33 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
       <View style={styles.header}>
         <Text style={styles.title}>Animation Studio</Text>
       </View>
+      <View style={styles.fileControlsBar}>
+        <TouchableOpacity
+          style={[styles.fileButton, isQuickSaving && styles.fileButtonDisabled]}
+          onPress={handleQuickSave}
+          disabled={isQuickSaving}
+        >
+          <MaterialIcons name="save" size={18} color="#f6f8ff" />
+          <Text style={styles.fileButtonText}>Save</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.fileButton}
+          onPress={handleOpenStorageManager}
+          accessibilityLabel="Save as new sprite"
+        >
+          <MaterialIcons name="save-alt" size={18} color="#f6f8ff" />
+          <Text style={styles.fileButtonText}>Save As</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.fileButton}
+          onPress={handleOpenStorageManager}
+          accessibilityLabel="Open storage manager"
+        >
+          <MaterialIcons name="folder-open" size={18} color="#f6f8ff" />
+          <Text style={styles.fileButtonText}>Manage</Text>
+        </TouchableOpacity>
+      </View>
+      {fileActionMessage ? <Text style={styles.fileStatus}>{fileActionMessage}</Text> : null}
       <View style={styles.previewSection}>
         <View style={styles.previewHeaderRow}>
           <Text style={styles.sectionTitle}>Animation Preview</Text>
@@ -1439,6 +1557,13 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
         }}
         allowedMimeTypes={['image/*']}
       />
+      <StoragePanel
+        editor={editor}
+        visible={isStorageManagerVisible}
+        onClose={handleCloseStorageManager}
+        onSpriteLoaded={handleStorageLoaded}
+        onSpriteSaved={handleStorageSaved}
+      />
     </View>
   );
 };
@@ -1621,6 +1746,34 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 12,
+  },
+  fileControlsBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
+  fileButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#1b2234',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  fileButtonDisabled: {
+    opacity: 0.6,
+  },
+  fileButtonText: {
+    color: '#f6f8ff',
+    fontWeight: '600',
+    fontSize: 13,
+  },
+  fileStatus: {
+    color: '#8fb3ff',
+    fontSize: 12,
+    marginBottom: 8,
   },
   title: {
     color: '#f1f5ff',
