@@ -36,5 +36,5 @@ Transform the current `AnimationStudio` implementation into a library-ready tool
 ## Working Tasks
 - [x] Implement `useSpriteStorage` hook and refactor StoragePanel to consume it.
 - [x] Extract metadata management hook + modal.
-- [ ] Split timeline/timeline controls into independent component & hook.
+- [x] Split timeline/timeline controls into independent component & hook.
 - [ ] Provide TypeScript types + docs for all exported pieces.

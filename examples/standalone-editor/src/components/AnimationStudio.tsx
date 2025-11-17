@@ -1,11 +1,4 @@
-import React, {
-  useCallback,
-  useEffect,
-  useImperativeHandle,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Image,
@@ -33,7 +26,7 @@ import {
 } from 'react-native-skia-sprite-animator';
 import type { DataSourceParam } from '@shopify/react-native-skia';
 import { MaterialIcons } from '@expo/vector-icons';
-import { IconButton, type IconButtonRenderIconProps } from './IconButton';
+import { IconButton } from './IconButton';
 import { MacWindow, type MacWindowVariant } from './MacWindow';
 import { PreviewPlayer } from './PreviewPlayer';
 import {
@@ -47,7 +40,12 @@ import { FileBrowserModal } from './FileBrowserModal';
 import { StoragePanel } from './StoragePanel';
 import { useMetadataManager } from '../hooks/useMetadataManager';
 import { useTimelineEditor } from '../hooks/useTimelineEditor';
-import { TimelineControls } from './TimelineControls';
+import {
+  TimelinePanel,
+  type FrameImageInfo,
+  type MultiplierFieldHandle,
+  type TimelineSequenceCard,
+} from './TimelinePanel';
 
 interface SpriteStorageController {
   saveSprite: typeof saveSprite;
@@ -67,9 +65,6 @@ interface AnimationStudioProps {
 const DEFAULT_ANIMATION_FPS = 5;
 const MIN_ANIMATION_FPS = 1;
 const MAX_ANIMATION_FPS = 60;
-const TIMELINE_CARD_SIZE = 150;
-const TIMELINE_CARD_PADDING = 10;
-const TIMELINE_FOOTER_HEIGHT = 28;
 const DEFAULT_FRAME_MULTIPLIER = 1;
 const MIN_FRAME_MULTIPLIER = 0.1;
 const MULTIPLIER_EPSILON = 0.0001;
@@ -255,9 +250,7 @@ export const AnimationStudio = ({
   }, [fileActionMessage]);
   const [isFrameSourceBrowserVisible, setFrameSourceBrowserVisible] = useState(false);
   const [framePickerImage, setFramePickerImage] = useState<FrameGridImageDescriptor | null>(null);
-  const [frameImageInfos, setFrameImageInfos] = useState<
-    Record<string, { width: number; height: number; ready: boolean }>
-  >({});
+  const [frameImageInfos, setFrameImageInfos] = useState<Record<string, FrameImageInfo>>({});
   const frameImageInfosRef = useRef(frameImageInfos);
   useEffect(() => {
     frameImageInfosRef.current = frameImageInfos;
@@ -524,26 +517,6 @@ export const AnimationStudio = ({
 
   const autoPlayAnimationName = editor.state.autoPlayAnimation ?? null;
 
-  const renderRestartForwardIcon = useCallback(
-    ({ color, size }: IconButtonRenderIconProps) => (
-      <View style={styles.restartIcon}>
-        <View style={[styles.restartIconBar, { backgroundColor: color, height: size }]} />
-        <MaterialIcons name="play-arrow" size={size} color={color} />
-      </View>
-    ),
-    [],
-  );
-
-  const renderRestartReverseIcon = useCallback(
-    ({ color, size }: IconButtonRenderIconProps) => (
-      <View style={[styles.restartIcon, styles.restartIconReverse]}>
-        <View style={[styles.restartIconBar, { backgroundColor: color, height: size }]} />
-        <MaterialIcons name="play-arrow" size={size} color={color} style={styles.reverseIcon} />
-      </View>
-    ),
-    [],
-  );
-
   const cancelRename = useCallback(() => {
     setRenamingAnimation(null);
     setRenameDraft('');
@@ -795,6 +768,26 @@ export const AnimationStudio = ({
     }
     playReverse(currentAnimationName, { fromFrame: startCursor });
   }, [currentAnimationName, currentSequence.length, playReverse, resolvePlaybackStartCursor]);
+
+  const handleRestartForward = useCallback(() => {
+    if (!currentAnimationName || !currentSequence.length) {
+      return;
+    }
+    stop();
+    playForward(currentAnimationName, { fromFrame: 0 });
+  }, [currentAnimationName, currentSequence.length, playForward, stop]);
+
+  const handleRestartReverse = useCallback(() => {
+    if (!currentAnimationName || !currentSequence.length) {
+      return;
+    }
+    stop();
+    playReverse(currentAnimationName, { fromFrame: currentSequence.length - 1 });
+  }, [currentAnimationName, currentSequence.length, playReverse, stop]);
+
+  const handleOpenFramePicker = useCallback(() => {
+    setFrameSourceBrowserVisible(true);
+  }, []);
 
   const imageInfo = useImageDimensions(image);
   const timelineImageSource = useMemo(() => resolveReactNativeImageSource(image), [image]);
@@ -1137,7 +1130,7 @@ export const AnimationStudio = ({
     selectTimelineFrame(targetIndex, next);
   };
 
-  const sequenceCards = currentSequence.map((frameIndex, idx) => {
+  const sequenceCards: TimelineSequenceCard[] = currentSequence.map((frameIndex, idx) => {
     const frame = frames[frameIndex];
     return {
       frame,
@@ -1377,211 +1370,39 @@ export const AnimationStudio = ({
               ))}
             </ScrollView>
           </View>
-          <View
-            style={styles.timelineColumn}
-            onLayout={(event) => {
-              const { height } = event.nativeEvent.layout;
-              if (height > 0 && Math.abs(height - timelineMeasuredHeight) > 1) {
-                setTimelineMeasuredHeight(height);
-              }
-            }}
-          >
-            <View style={styles.timelineHeader}>
-              <Text style={styles.sectionTitle}>Animation Frames</Text>
-            </View>
-            <View style={styles.timelineToolbar}>
-              <View style={styles.timelineButtons}>
-                <IconButton
-                  iconFamily="material"
-                  name="play-arrow"
-                  onPress={handleReverseFromSelection}
-                  disabled={isPlaying || currentSequence.length === 0}
-                  accessibilityLabel="Play animation in reverse"
-                  iconStyle={styles.reverseIcon}
-                />
-                <IconButton
-                  renderIcon={renderRestartReverseIcon}
-                  onPress={() => {
-                    if (!currentSequence.length) {
-                      return;
-                    }
-                    stop();
-                    playReverse(currentAnimationName, { fromFrame: currentSequence.length - 1 });
-                  }}
-                  disabled={currentSequence.length === 0}
-                  accessibilityLabel="Restart animation in reverse from beginning"
-                />
-                <IconButton
-                  iconFamily="material"
-                  name={isPlaying ? 'pause' : 'stop'}
-                  onPress={() => (isPlaying ? pause() : stop())}
-                  disabled={!hasActiveAnimation || !currentSequence.length}
-                  accessibilityLabel={
-                    isPlaying ? 'Pause animation preview' : 'Stop animation preview'
-                  }
-                />
-                <IconButton
-                  renderIcon={renderRestartForwardIcon}
-                  onPress={() => {
-                    if (!currentSequence.length) {
-                      return;
-                    }
-                    stop();
-                    playForward(currentAnimationName, { fromFrame: 0 });
-                  }}
-                  disabled={currentSequence.length === 0}
-                  accessibilityLabel="Restart animation from beginning"
-                />
-                <IconButton
-                  iconFamily="material"
-                  name="play-arrow"
-                  onPress={handlePlayFromSelection}
-                  disabled={isPlaying || currentSequence.length === 0}
-                  accessibilityLabel="Play animation preview"
-                />
-                <View style={styles.timelineDivider} />
-                <IconButton
-                  name="grid-on"
-                  onPress={() => setFrameSourceBrowserVisible(true)}
-                  disabled={!hasActiveAnimation || isPlaying}
-                  accessibilityLabel="Open frame picker modal"
-                />
-                <View style={styles.timelineDivider} />
-                <TimelineControls
-                  isPlaying={isPlaying}
-                  selectedTimelineIndex={selectedTimelineIndex}
-                  currentSequenceLength={currentSequence.length}
-                  hasClipboard={hasTimelineClipboard}
-                  onCopy={handleCopyTimelineFrame}
-                  onPaste={handlePasteTimelineFrame}
-                  onMoveLeft={() => handleMoveTimelineFrame(-1)}
-                  onMoveRight={() => handleMoveTimelineFrame(1)}
-                  onRemove={handleRemoveTimelineFrame}
-                />
-              </View>
-              <View style={styles.timelineDivider} />
-              <MultiplierField
-                ref={multiplierFieldRef}
-                value={selectedMultiplier}
-                disabled={isPlaying || !selectedFrame}
-                onSubmit={handleMultiplierSubmit}
-              />
-            </View>
-            <View style={styles.timelineTrack}>
-              {sequenceCards.length === 0 ? (
-                <View style={styles.emptyTimelineWrapper} />
-              ) : (
-                <ScrollView
-                  horizontal
-                  style={styles.timelineScroll}
-                  contentContainerStyle={styles.timelineContent}
-                  showsHorizontalScrollIndicator={false}
-                >
-                  {sequenceCards.map(({ frame, frameIndex, timelineIndex, isSelected }) => {
-                    const viewportSize =
-                      TIMELINE_CARD_SIZE - TIMELINE_FOOTER_HEIGHT - TIMELINE_CARD_PADDING * 2;
-                    const frameScale = frame ? viewportSize / Math.max(frame.w, frame.h) : 1;
-                    const storedMultiplier =
-                      currentAnimationName !== null && currentAnimationName !== undefined
-                        ? animationsMeta[currentAnimationName]?.multipliers?.[timelineIndex]
-                        : undefined;
-                    const computedMultiplier =
-                      typeof storedMultiplier === 'number'
-                        ? storedMultiplier
-                        : DEFAULT_FRAME_MULTIPLIER;
-                    const multiplierLabel =
-                      Math.abs(computedMultiplier - 1) < 0.01
-                        ? ''
-                        : ` [×${computedMultiplier.toFixed(2)}]`;
-                    return (
-                      <TouchableOpacity
-                        key={`${frameIndex}-${timelineIndex}`}
-                        style={[styles.timelineCard, isSelected && styles.timelineCardSelected]}
-                        onPress={() => selectTimelineFrame(timelineIndex)}
-                      >
-                        <View style={styles.timelineCardBody}>
-                          {(() => {
-                            if (!frame) {
-                              return (
-                                <View
-                                  style={[
-                                    styles.thumb,
-                                    styles.thumbPlaceholder,
-                                    { width: viewportSize, height: viewportSize },
-                                  ]}
-                                >
-                                  <Text style={styles.thumbPlaceholderText}>No Image</Text>
-                                </View>
-                              );
-                            }
-                            const frameSource = frame.imageUri
-                              ? { uri: frame.imageUri }
-                              : timelineImageSource;
-                            const frameInfo = frame.imageUri
-                              ? frameImageInfos[frame.imageUri]
-                              : imageInfo;
-                            if (!frameSource || !frameInfo || !frameInfo.ready) {
-                              return (
-                                <View
-                                  style={[
-                                    styles.thumb,
-                                    styles.thumbPlaceholder,
-                                    { width: viewportSize, height: viewportSize },
-                                  ]}
-                                >
-                                  <Text style={styles.thumbPlaceholderText}>No Image</Text>
-                                </View>
-                              );
-                            }
-                            const info = frameInfo;
-                            return (
-                              <View
-                                style={[
-                                  styles.thumb,
-                                  {
-                                    width: viewportSize,
-                                    height: viewportSize,
-                                  },
-                                ]}
-                              >
-                                <View
-                                  style={{
-                                    width: frame.w * frameScale,
-                                    height: frame.h * frameScale,
-                                    overflow: 'hidden',
-                                  }}
-                                >
-                                  <Image
-                                    source={frameSource}
-                                    resizeMode="cover"
-                                    style={{
-                                      width: (info.width || frame.w) * frameScale,
-                                      height: (info.height || frame.h) * frameScale,
-                                      transform: [
-                                        { translateX: -frame.x * frameScale },
-                                        { translateY: -frame.y * frameScale },
-                                      ],
-                                    }}
-                                  />
-                                </View>
-                              </View>
-                            );
-                          })()}
-                        </View>
-                        <View style={styles.timelineCardFooter}>
-                          <Text style={styles.timelineCardMeta}>
-                            {timelineIndex}
-                            {multiplierLabel}
-                            {typeof frameIndex === 'number' ? ` f${frameIndex}` : ''}
-                          </Text>
-                        </View>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </ScrollView>
-              )}
-            </View>
-          </View>
+          <TimelinePanel
+            isPlaying={isPlaying}
+            hasActiveAnimation={hasActiveAnimation}
+            currentSequenceLength={currentSequence.length}
+            currentAnimationName={currentAnimationName ?? null}
+            sequenceCards={sequenceCards}
+            selectedTimelineIndex={selectedTimelineIndex}
+            selectedMultiplier={selectedMultiplier}
+            selectedFrame={selectedFrame}
+            hasClipboard={hasTimelineClipboard}
+            defaultFrameMultiplier={DEFAULT_FRAME_MULTIPLIER}
+            timelineMeasuredHeight={timelineMeasuredHeight}
+            onTimelineMeasured={setTimelineMeasuredHeight}
+            onPlayFromSelection={handlePlayFromSelection}
+            onReverseFromSelection={handleReverseFromSelection}
+            onRestartForward={handleRestartForward}
+            onRestartReverse={handleRestartReverse}
+            onPause={pause}
+            onStop={stop}
+            onOpenFramePicker={handleOpenFramePicker}
+            onCopy={handleCopyTimelineFrame}
+            onPaste={handlePasteTimelineFrame}
+            onMoveLeft={() => handleMoveTimelineFrame(-1)}
+            onMoveRight={() => handleMoveTimelineFrame(1)}
+            onRemove={handleRemoveTimelineFrame}
+            onSelectFrame={selectTimelineFrame}
+            multiplierRef={multiplierFieldRef}
+            onSubmitMultiplier={handleMultiplierSubmit}
+            timelineImageSource={timelineImageSource ?? undefined}
+            frameImageInfos={frameImageInfos}
+            fallbackImageInfo={imageInfo}
+            animationsMeta={animationsMeta}
+          />
         </View>
       </View>
       <Modal
@@ -1773,63 +1594,6 @@ export const AnimationStudio = ({
   );
 };
 
-interface MultiplierFieldProps {
-  value: number;
-  onSubmit: (value: number) => void;
-  disabled?: boolean;
-}
-
-interface MultiplierFieldHandle {
-  commit: () => void;
-}
-
-const MultiplierField = React.forwardRef<MultiplierFieldHandle, MultiplierFieldProps>(
-  ({ value, onSubmit, disabled }, ref) => {
-    const [text, setText] = useState(value.toFixed(2));
-
-    const commit = useCallback(() => {
-      if (disabled) {
-        return;
-      }
-      const parsed = Number(text);
-      if (Number.isNaN(parsed)) {
-        setText(value.toFixed(2));
-        return;
-      }
-      if (Math.abs(parsed - value) < 0.0001) {
-        setText(value.toFixed(2));
-        return;
-      }
-      onSubmit(parsed);
-    }, [disabled, onSubmit, text, value]);
-
-    useImperativeHandle(ref, () => ({
-      commit,
-    }));
-
-    useEffect(() => {
-      setText(value.toFixed(2));
-    }, [value, disabled]);
-
-    return (
-      <View style={styles.multiplierRow}>
-        <Text style={styles.multiplierLabel}>Multiplier</Text>
-        <SelectableTextInput
-          style={[styles.multiplierInput, disabled && styles.multiplierInputDisabled]}
-          keyboardType="numeric"
-          value={text}
-          onChangeText={setText}
-          onBlur={commit}
-          onSubmitEditing={commit}
-          editable={!disabled}
-        />
-        <Text style={styles.multiplierUnit}>×</Text>
-      </View>
-    );
-  },
-);
-MultiplierField.displayName = 'MultiplierField';
-
 interface AnimationFpsFieldProps {
   value: number;
   onSubmit: (value: number) => void;
@@ -1866,14 +1630,16 @@ const AnimationFpsField = ({ value, onSubmit }: AnimationFpsFieldProps) => {
   );
 };
 
-const useImageDimensions = (source: DataSourceParam) => {
-  const [state, setState] = useState({ width: 0, height: 0, ready: false });
+const useImageDimensions = (source: DataSourceParam): FrameImageInfo | null => {
+  const [state, setState] = useState<FrameImageInfo | null>(null);
 
   useEffect(() => {
     if (typeof source === 'number') {
       const resolved = Image.resolveAssetSource(source);
       if (resolved?.width && resolved?.height) {
         setState({ width: resolved.width, height: resolved.height, ready: true });
+      } else {
+        setState({ width: 0, height: 0, ready: false });
       }
       return;
     }
@@ -2170,6 +1936,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginTop: 8,
   },
+  timelineDivider: {
+    width: 1,
+    height: 32,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    marginLeft: 0,
+    marginRight: 8,
+  },
   loopButtonActive: {
     backgroundColor: '#28a745',
   },
@@ -2232,141 +2005,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  timelineColumn: {
-    flex: 1,
-    minWidth: 320,
-  },
-  timelineHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
   sectionTitle: {
     color: '#dfe7ff',
     fontWeight: '600',
-  },
-  timelineToolbar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    marginTop: 8,
-    gap: 12,
-  },
-  timelineButtons: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    columnGap: 4,
-  },
-  restartIcon: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-  },
-  restartIconReverse: {
-    flexDirection: 'row-reverse',
-  },
-  restartIconBar: {
-    width: 2,
-    borderRadius: 1,
-  },
-  reverseIcon: {
-    transform: [{ scaleX: -1 }],
-  },
-  timelineDivider: {
-    width: 1,
-    height: 32,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    marginLeft: 0,
-    marginRight: 8,
-  },
-  timelineScroll: {
-    flexGrow: 1,
-  },
-  timelineContent: {
-    flexDirection: 'row',
-    paddingBottom: 6,
-  },
-  timelineCard: {
-    width: TIMELINE_CARD_SIZE,
-    height: TIMELINE_CARD_SIZE,
-    padding: TIMELINE_CARD_PADDING,
-    backgroundColor: '#141925',
-  },
-  timelineCardSelected: {
-    backgroundColor: '#1c2441',
-  },
-  timelineCardBody: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  timelineCardFooter: {
-    height: TIMELINE_FOOTER_HEIGHT,
-    justifyContent: 'center',
-  },
-  thumb: {
-    borderRadius: 0,
-    overflow: 'hidden',
-    backgroundColor: '#0f1321',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  thumbPlaceholder: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 12,
-  },
-  thumbPlaceholderText: {
-    color: '#6f7896',
-    fontSize: 10,
-  },
-  timelineCardMeta: {
-    color: '#a3acc7',
-    fontSize: 12,
-    textAlign: 'center',
-  },
-  multiplierRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    flexShrink: 0,
-  },
-  multiplierLabel: {
-    color: '#7d86a0',
-    fontSize: 11,
-  },
-  multiplierInput: {
-    width: 64,
-    textAlign: 'left',
-    paddingHorizontal: 6,
-    paddingVertical: 4,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#2b3246',
-    color: '#fff',
-    backgroundColor: '#191f2e',
-  },
-  multiplierInputDisabled: {
-    opacity: 0.5,
-  },
-  multiplierUnit: {
-    color: '#8a92ae',
-    fontSize: 11,
-  },
-  emptyTimelineWrapper: {
-    flex: 1,
-    width: '100%',
-    minHeight: TIMELINE_CARD_SIZE + TIMELINE_CARD_PADDING * 2,
-  },
-  timelineTrack: {
-    width: '100%',
-    marginTop: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#22293a',
-    backgroundColor: '#0f1321',
-    padding: 12,
-    minHeight: TIMELINE_CARD_SIZE + TIMELINE_CARD_PADDING * 2 + 24,
   },
   modalOverlay: {
     flex: 1,
