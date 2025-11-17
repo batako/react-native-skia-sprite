@@ -240,14 +240,6 @@ export const StoragePanel = ({
               <Text style={styles.toolbarStatus}>
                 {status ?? defaultStatusMessage ?? 'Manage saved sprites or import past work.'}
               </Text>
-              <View style={styles.toolbarSpacer} />
-              <IconButton
-                iconFamily="material"
-                name="refresh"
-                onPress={refresh}
-                disabled={isBusy}
-                accessibilityLabel="Refresh storage list"
-              />
             </View>
           }
           style={styles.window}
