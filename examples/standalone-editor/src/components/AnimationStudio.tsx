@@ -19,6 +19,7 @@ import {
 } from 'react-native';
 import type { ImageSourcePropType } from 'react-native';
 import {
+  cleanSpriteData,
   saveSprite,
   type SpriteAnimationMeta,
   type SpriteAnimationsMeta,
@@ -45,6 +46,13 @@ interface AnimationStudioProps {
   editor: SpriteEditorApi;
   integration: EditorIntegration;
   image: DataSourceParam;
+}
+
+interface MetaEntry {
+  id: string;
+  key: string;
+  value: string;
+  readOnly?: boolean;
 }
 
 const DEFAULT_ANIMATION_FPS = 5;
@@ -198,6 +206,12 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
   const [storagePromptMessage, setStoragePromptMessage] = useState(STORAGE_MESSAGE_DEFAULT);
   const [isQuickSaving, setIsQuickSaving] = useState(false);
   const [lastStoredSummary, setLastStoredSummary] = useState<SpriteSummary | null>(null);
+  const [metaEntries, setMetaEntries] = useState<MetaEntry[]>([]);
+  const [exportPreview, setExportPreview] = useState('');
+  const [importText, setImportText] = useState('');
+  const [templateStatus, setTemplateStatus] = useState<string | null>(null);
+  const [isMetaModalVisible, setMetaModalVisible] = useState(false);
+  const [isTemplateModalVisible, setTemplateModalVisible] = useState(false);
 
   useEffect(() => {
     if (!fileActionMessage) {
@@ -242,6 +256,80 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
     },
     [commitPendingMultiplier],
   );
+
+  const handleMetaChange = useCallback((id: string, field: 'key' | 'value', text: string) => {
+    setMetaEntries((prev) =>
+      prev.map((entry) =>
+        entry.id === id && !entry.readOnly ? { ...entry, [field]: text } : entry,
+      ),
+    );
+  }, []);
+
+  const handleMetaRemove = useCallback((id: string) => {
+    setMetaEntries((prev) => prev.filter((entry) => entry.id !== id || entry.readOnly));
+  }, []);
+
+  const handleMetaAdd = useCallback(() => {
+    setMetaEntries((prev) => [...prev, createMetaEntry()]);
+  }, [createMetaEntry]);
+
+  const handleApplyMeta = useCallback(() => {
+    const payload: Record<string, unknown> = {};
+    const seenKeys = new Set<string>();
+    metaEntries.forEach(({ key, value }) => {
+      const trimmedKey = key.trim();
+      if (!trimmedKey) {
+        return;
+      }
+      seenKeys.add(trimmedKey);
+      payload[trimmedKey] = value;
+    });
+    const primitiveKeys = Object.entries(editor.state.meta ?? {})
+      .filter(([, value]) => {
+        const type = typeof value;
+        return value !== null && (type === 'string' || type === 'number' || type === 'boolean');
+      })
+      .map(([key]) => key);
+    primitiveKeys.forEach((key) => {
+      if (!seenKeys.has(key)) {
+        payload[key] = undefined;
+      }
+    });
+    editor.updateMeta(payload);
+  }, [editor, metaEntries]);
+
+  const handleExportTemplate = useCallback(() => {
+    const payload = cleanSpriteData(editor.exportJSON());
+    setExportPreview(JSON.stringify(payload, null, 2));
+    setTemplateStatus('Exported spriteStorage-compatible JSON.');
+  }, [editor]);
+
+  const handleImportTemplate = useCallback(() => {
+    try {
+      const parsed = JSON.parse(importText);
+      editor.importJSON(cleanSpriteData(parsed));
+      setTemplateStatus('Import succeeded and editor history was reset.');
+      setTemplateModalVisible(false);
+    } catch (error) {
+      setTemplateStatus((error as Error).message);
+    }
+  }, [editor, importText]);
+
+  const handleOpenMetaModal = useCallback(() => {
+    setMetaModalVisible(true);
+  }, []);
+
+  const handleCloseMetaModal = useCallback(() => {
+    setMetaModalVisible(false);
+  }, []);
+
+  const handleOpenTemplateModal = useCallback(() => {
+    setTemplateModalVisible(true);
+  }, []);
+
+  const handleCloseTemplateModal = useCallback(() => {
+    setTemplateModalVisible(false);
+  }, []);
 
   const updateAnimationMetaEntry = useCallback(
     (name: string, mutator: (draft: SpriteAnimationMeta) => void) => {
@@ -433,6 +521,26 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
       setIsQuickSaving(false);
     }
   }, [editor, isQuickSaving, lastStoredSummary]);
+
+  const createMetaEntry = useCallback((key = '', value = '', readOnly = false): MetaEntry => {
+    return {
+      id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      key,
+      value,
+      readOnly,
+    };
+  }, []);
+
+  useEffect(() => {
+    const protectedKeys = new Set(['displayName', 'createdAt', 'updatedAt']);
+    const primitiveEntries = Object.entries(editor.state.meta ?? {})
+      .filter(([, value]) => {
+        const type = typeof value;
+        return value !== null && (type === 'string' || type === 'number' || type === 'boolean');
+      })
+      .map(([key, value]) => createMetaEntry(key, String(value), protectedKeys.has(key)));
+    setMetaEntries(primitiveEntries);
+  }, [createMetaEntry, editor.state.meta]);
 
   const autoPlayAnimationName = editor.state.autoPlayAnimation ?? null;
 
@@ -1172,11 +1280,11 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
           </View>
         </View>
         <View style={styles.fileControlsBar}>
-          <TouchableOpacity
-            style={[styles.fileButton, isQuickSaving && styles.fileButtonDisabled]}
-            onPress={handleQuickSave}
-            disabled={isQuickSaving}
-          >
+        <TouchableOpacity
+          style={[styles.fileButton, isQuickSaving && styles.fileButtonDisabled]}
+          onPress={handleQuickSave}
+          disabled={isQuickSaving}
+        >
           <MaterialIcons name="save" size={18} color="#f6f8ff" />
           <Text style={styles.fileButtonText}>Save</Text>
         </TouchableOpacity>
@@ -1188,6 +1296,16 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
           <MaterialIcons name="folder-open" size={18} color="#f6f8ff" />
           <Text style={styles.fileButtonText}>Manage</Text>
         </TouchableOpacity>
+        <IconButton
+          name="edit-note"
+          onPress={handleOpenMetaModal}
+          accessibilityLabel="Edit metadata"
+        />
+        <IconButton
+          name="code"
+          onPress={handleOpenTemplateModal}
+          accessibilityLabel="Open sprite JSON tools"
+        />
       </View>
     </View>
       <View style={styles.previewSection}>
@@ -1578,6 +1696,139 @@ export const AnimationStudio = ({ editor, integration, image }: AnimationStudioP
         onSpriteSaved={handleStorageSaved}
         defaultStatusMessage={storagePromptMessage}
       />
+      <Modal
+        visible={isMetaModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={handleCloseMetaModal}
+      >
+        <View style={styles.modalOverlay}>
+          <MacWindow
+            title="Metadata"
+            onClose={handleCloseMetaModal}
+            contentStyle={styles.metaModalContent}
+            enableCompact={false}
+            style={styles.metaModalWindow}
+          >
+        <View style={styles.metaHeaderRow}>
+          <Text style={styles.metaHeading}>Primitive keys are exported with the sprite.</Text>
+          <IconButton
+            name="add"
+            onPress={handleMetaAdd}
+            accessibilityLabel="Add metadata entry"
+          />
+        </View>
+        <ScrollView style={styles.metaRowsStack} contentContainerStyle={styles.metaRowsContent}>
+          {metaEntries.map((entry) => (
+            <View key={entry.id} style={styles.metaRow}>
+              <View style={styles.metaField}>
+                <Text style={styles.metaLabel}>Key</Text>
+                <TextInput
+                  value={entry.key}
+                  onChangeText={(text) => handleMetaChange(entry.id, 'key', text)}
+                  style={styles.metaInput}
+                  editable={!entry.readOnly}
+                  placeholder="metadata key"
+                />
+              </View>
+              <View style={styles.metaField}>
+                <Text style={styles.metaLabel}>Value</Text>
+                <TextInput
+                  value={entry.value}
+                  onChangeText={(text) => handleMetaChange(entry.id, 'value', text)}
+                  style={styles.metaInput}
+                  editable={!entry.readOnly}
+                  placeholder="value"
+                />
+              </View>
+              {entry.readOnly ? (
+                <View style={styles.metaDeleteSpacer} />
+              ) : (
+                <IconButton
+                  name="delete"
+                  onPress={() => handleMetaRemove(entry.id)}
+                  accessibilityLabel="Remove metadata entry"
+                />
+              )}
+            </View>
+          ))}
+        </ScrollView>
+        <View style={styles.metaButtonRow}>
+              <IconButton
+                name="save"
+                onPress={handleApplyMeta}
+                accessibilityLabel="Apply metadata"
+              />
+            </View>
+            <Text style={styles.metaHelpText}>
+              Saved metadata is included when exporting JSON or saving via Sprite Storage.
+            </Text>
+          </MacWindow>
+        </View>
+      </Modal>
+      <Modal
+        visible={isTemplateModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={handleCloseTemplateModal}
+      >
+        <View style={styles.modalOverlay}>
+          <MacWindow
+            title="Sprite JSON"
+            onClose={handleCloseTemplateModal}
+            contentStyle={styles.templateModalContent}
+            enableCompact={false}
+            style={styles.templateModalWindow}
+          >
+        <View style={styles.templateContent}>
+              <Text style={styles.templateDescription}>
+                Uses the same format consumed by SpriteAnimator previews and spriteStorage save/load
+                helpers.
+              </Text>
+              <View style={styles.templateButtonRow}>
+                <IconButton
+                  name="file-download"
+                  onPress={handleExportTemplate}
+                  accessibilityLabel="Export sprite JSON"
+                />
+                <IconButton
+                  name="file-upload"
+                  onPress={handleImportTemplate}
+                  disabled={!importText.trim()}
+                  accessibilityLabel="Import sprite JSON"
+                />
+              </View>
+            <View style={styles.templateRows}>
+              <View style={styles.templateHalf}>
+                <View style={styles.templateStack}>
+                  <Text style={styles.templateSubheading}>Export Preview</Text>
+                  <SelectableTextInput
+                    style={[styles.templateTextArea, styles.templateTextAreaFixed]}
+                    multiline
+                    value={exportPreview}
+                    onChangeText={() => {}}
+                    placeholder="Press Export to view the current payload"
+                  />
+                </View>
+              </View>
+              <View style={styles.templateHalf}>
+                <View style={styles.templateStack}>
+                  <Text style={styles.templateSubheading}>Import JSON</Text>
+                  <TextInput
+                    style={[styles.templateTextArea, styles.templateTextAreaFixed]}
+                    multiline
+                    value={importText}
+                    onChangeText={setImportText}
+                    placeholder="Paste JSON here and press Import"
+                  />
+                </View>
+              </View>
+            </View>
+              {templateStatus ? <Text style={styles.templateStatus}>{templateStatus}</Text> : null}
+            </View>
+          </MacWindow>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -1849,6 +2100,128 @@ const styles = StyleSheet.create({
   body: {
     marginTop: 16,
     width: '100%',
+  },
+  metaModalContent: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
+  metaModalWindow: {
+    minHeight: 520,
+    maxHeight: '90%',
+  },
+  metaHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  metaHeading: {
+    color: '#e2e7ff',
+    fontWeight: '600',
+  },
+  metaRowsStack: {
+    flex: 1,
+    marginBottom: 8,
+  },
+  metaRowsContent: {
+    paddingBottom: 8,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    marginBottom: 8,
+    gap: 8,
+  },
+  metaField: {
+    flex: 1,
+  },
+  metaLabel: {
+    color: '#9ba5c2',
+    fontSize: 12,
+    marginBottom: 4,
+  },
+  metaInput: {
+    backgroundColor: '#111520',
+    color: '#f6f8ff',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#232a3c',
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+  },
+  metaDeleteSpacer: {
+    width: 32,
+  },
+  metaButtonRow: {
+    flexDirection: 'row',
+    marginBottom: 6,
+  },
+  metaHelpText: {
+    color: '#8f97b0',
+    fontSize: 12,
+  },
+  templateModalContent: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 12,
+  },
+  templateModalWindow: {
+    minHeight: 520,
+    maxHeight: '90%',
+  },
+  templateContent: {
+    flex: 1,
+    marginTop: 8,
+  },
+  templateDescription: {
+    color: '#9aa4bd',
+    fontSize: 12,
+  },
+  templateButtonRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 8,
+  },
+  templateRows: {
+    flex: 1,
+    flexDirection: 'column',
+    gap: 12,
+    marginTop: 12,
+  },
+  templateHalf: {
+    flex: 1,
+    minHeight: 0,
+    justifyContent: 'flex-start',
+  },
+  templateStack: {
+    flex: 1,
+    minHeight: 0,
+  },
+  templateSubheading: {
+    color: '#9ea8c0',
+    fontWeight: '500',
+    fontSize: 12,
+    marginBottom: 4,
+  },
+  templateTextArea: {
+    marginTop: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#2e3545',
+    padding: 8,
+    color: '#f6f7ff',
+    fontFamily: 'Courier',
+    width: '100%',
+  },
+  templateTextAreaFixed: {
+    flex: 1,
+    minHeight: 0,
+    textAlignVertical: 'top',
+  },
+  templateStatus: {
+    marginTop: 4,
+    color: '#7ddac9',
+    fontSize: 12,
   },
   sequenceGroup: {
     flexDirection: 'row',

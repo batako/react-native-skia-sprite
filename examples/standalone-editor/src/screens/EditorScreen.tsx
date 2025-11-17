@@ -8,8 +8,6 @@ import {
 } from 'react-native-skia-sprite-animator';
 import type { DataSourceParam } from '@shopify/react-native-skia';
 import { AnimationStudio } from '../components/AnimationStudio';
-import { TemplatePanel } from '../components/TemplatePanel';
-import { MetaEditor } from '../components/MetaEditor';
 import { useEditorIntegration } from '../hooks/useEditorIntegration';
 
 const SAMPLE_SPRITE = require('../../assets/sample-sprite.png');
@@ -90,8 +88,6 @@ export const EditorScreen = () => {
           with a single screen.
         </Text>
         <AnimationStudio editor={editor} integration={integration} image={imageSource} />
-        <MetaEditor editor={editor} />
-        <TemplatePanel editor={editor} />
       </ScrollView>
     </SafeAreaView>
   );
