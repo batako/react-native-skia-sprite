@@ -114,6 +114,7 @@ export interface TimelinePanelProps {
   onPause: () => void;
   onStop: () => void;
   onOpenFramePicker: () => void;
+  onOpenImagePicker: () => void;
   onCopy: () => void;
   onPaste: () => void;
   onMoveLeft: () => void;
@@ -149,6 +150,7 @@ export const TimelinePanel = ({
   onPause,
   onStop,
   onOpenFramePicker,
+  onOpenImagePicker,
   onCopy,
   onPaste,
   onMoveLeft,
@@ -355,12 +357,18 @@ export const TimelinePanel = ({
           />
           <View style={styles.timelineDivider} />
           <IconButton
+            name="insert-photo"
+            onPress={onOpenImagePicker}
+            disabled={!hasActiveAnimation || isPlaying}
+            accessibilityLabel="Import image as frame"
+          />
+          <IconButton
             name="grid-on"
             onPress={onOpenFramePicker}
             disabled={!hasActiveAnimation || isPlaying}
             accessibilityLabel="Open frame picker modal"
           />
-          <View style={styles.timelineDivider} />
+         <View style={styles.timelineDivider} />
           <TimelineControls
             isPlaying={isPlaying}
             selectedTimelineIndex={selectedTimelineIndex}

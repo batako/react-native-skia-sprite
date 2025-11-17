@@ -248,6 +248,7 @@ export const AnimationStudio = ({
     };
   }, [fileActionMessage]);
   const [isFrameSourceBrowserVisible, setFrameSourceBrowserVisible] = useState(false);
+  const [framePickerMode, setFramePickerMode] = useState<'grid' | 'single'>('grid');
   const [framePickerImage, setFramePickerImage] = useState<FrameGridImageDescriptor | null>(null);
   const [frameImageInfos, setFrameImageInfos] = useState<Record<string, FrameImageInfo>>({});
   const frameImageInfosRef = useRef(frameImageInfos);
@@ -775,6 +776,12 @@ export const AnimationStudio = ({
   }, [currentAnimationName, currentSequence.length, playReverse, stop]);
 
   const handleOpenFramePicker = useCallback(() => {
+    setFramePickerMode('grid');
+    setFrameSourceBrowserVisible(true);
+  }, []);
+
+  const handleOpenSingleImagePicker = useCallback(() => {
+    setFramePickerMode('single');
     setFrameSourceBrowserVisible(true);
   }, []);
 
@@ -963,6 +970,36 @@ export const AnimationStudio = ({
       setTimelineSelection,
       updateSequence,
     ],
+  );
+
+  const handleAddImageAsFullFrame = useCallback(
+    (uri: string) => {
+      Image.getSize(
+        uri,
+        (width, height) => {
+          const descriptor: FrameGridImageDescriptor = {
+            source: uri,
+            width,
+            height,
+            name: uri.split('/').pop() ?? uri,
+          };
+          const cell: FrameGridCell = {
+            id: `full-${Date.now()}`,
+            row: 0,
+            column: 0,
+            x: 0,
+            y: 0,
+            width,
+            height,
+          };
+          handleGridAddFrames([cell], descriptor);
+        },
+        () => {
+          Alert.alert('Import failed', 'Unable to load the selected image.');
+        },
+      );
+    },
+    [handleGridAddFrames],
   );
 
   const handleAddAnimation = () => {
@@ -1376,6 +1413,7 @@ export const AnimationStudio = ({
             onPause={pause}
             onStop={stop}
             onOpenFramePicker={handleOpenFramePicker}
+            onOpenImagePicker={handleOpenSingleImagePicker}
             onCopy={handleCopyTimelineFrame}
             onPaste={handlePasteTimelineFrame}
             onMoveLeft={() => handleMoveTimelineFrame(-1)}
@@ -1431,6 +1469,10 @@ export const AnimationStudio = ({
         onClose={() => setFrameSourceBrowserVisible(false)}
         onOpenFile={(uri) => {
           setFrameSourceBrowserVisible(false);
+          if (framePickerMode === 'single') {
+            handleAddImageAsFullFrame(uri);
+            return;
+          }
           setFramePickerVariant('default');
           setFramePickerImage({
             source: uri,
