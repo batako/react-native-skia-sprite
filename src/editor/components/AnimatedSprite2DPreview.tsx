@@ -273,8 +273,6 @@ export const AnimatedSprite2DPreview = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 16,
-    // backgroundColor: 'red',
     width: '100%',
   },
   title: {
@@ -287,7 +285,7 @@ const styles = StyleSheet.create({
     padding: 16,
     minHeight: 420,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     borderWidth: 1,
     borderColor: '#1f2430',
     alignSelf: 'stretch',
