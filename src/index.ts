@@ -9,6 +9,17 @@ export * from './editor/hooks/useEditorIntegration';
 export * from './editor/templates/DefaultSpriteTemplate';
 export * from './editor/utils/SpriteEditUtils';
 export * from './editor/utils/cleanSpriteData';
+export type {
+  FrameImageSource,
+  AnimatedSpriteFrame,
+  AnimatedSpriteFrameChangeEvent,
+  SpriteAnimationMeta,
+  SpriteAnimationsMap,
+  SpriteAnimationsMetaMap,
+  SpriteFramesResource,
+  AnimatedSprite2DProps,
+  AnimatedSprite2DHandle,
+} from './editor/animatedSprite2dTypes';
 export { AnimationStudio, type AnimationStudioProps } from './editor/components/AnimationStudio';
 export { IconButton, type IconButtonProps } from './editor/components/IconButton';
 export {
