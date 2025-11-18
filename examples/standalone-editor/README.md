@@ -1,4 +1,4 @@
-# Standalone Sprite Editor (Expo)
+# React Native Skia Sprite Animator (Expo)
 
 This Expo app demonstrates every public API shipped in `react-native-skia-sprite-animator`. It is the canonical sample for v0.4.x and later releases and mirrors the editor architecture described in the project roadmap.
 

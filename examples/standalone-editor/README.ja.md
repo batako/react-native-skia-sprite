@@ -1,4 +1,4 @@
-# スタンドアロン スプライトエディタ (Expo)
+# React Native Skia Sprite Animator (Expo)
 
 この Expo アプリは `react-native-skia-sprite-animator` が提供するすべての API を実際に動かしながら確認できるサンプルです。v0.4.x 以降のリファレンス実装として、プロジェクトのロードマップで定義されたエディター構成をそのまま再現しています。
 

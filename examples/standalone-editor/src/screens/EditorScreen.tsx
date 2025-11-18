@@ -88,7 +88,7 @@ export const EditorScreen = () => {
       <StatusBar barStyle="light-content" />
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.headerRow}>
-          <Text style={styles.title}>Sprite Editor</Text>
+          <Text style={styles.title}>React Native Skia Sprite Animator</Text>
         </View>
         <Text style={styles.subtitle}>{strings.editorScreen.subtitle}</Text>
         <AnimationStudio editor={editor} integration={integration} image={imageSource} />
