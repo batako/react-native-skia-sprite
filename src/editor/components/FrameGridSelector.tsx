@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Image,
   Pressable,
@@ -130,6 +130,7 @@ export const FrameGridSelector = ({
   const [offsetX, setOffsetXInternal] = useState(0);
   const [offsetY, setOffsetYInternal] = useState(0);
   const [scale, setScale] = useState(1);
+  const [fitScaleTarget, setFitScaleTarget] = useState(1);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [horizontalOrder, setHorizontalOrder] = useState<'ltr' | 'rtl'>('ltr');
   const [verticalOrder, setVerticalOrder] = useState<'ttb' | 'btt'>('ttb');
@@ -141,6 +142,7 @@ export const FrameGridSelector = ({
     normalizedImage?.height ?? defaultCellHeight * vertical,
   );
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
+  const lastViewportRef = useRef({ width: 0, height: 0 });
   const [autoScaled, setAutoScaled] = useState(false);
 
   useEffect(() => {
@@ -188,7 +190,18 @@ export const FrameGridSelector = ({
 
   useEffect(() => {
     setAutoScaled(false);
-  }, [rnImageSource, normalizedImage?.width, normalizedImage?.height]);
+  }, [rnImageSource, normalizedImage?.width, normalizedImage?.height, imageWidth, imageHeight]);
+
+  useEffect(() => {
+    if (viewportSize.width <= 0 || viewportSize.height <= 0) {
+      return;
+    }
+    const last = lastViewportRef.current;
+    if (viewportSize.width !== last.width || viewportSize.height !== last.height) {
+      lastViewportRef.current = viewportSize;
+      setAutoScaled(false);
+    }
+  }, [viewportSize]);
 
   useEffect(() => {
     if (horizontal <= 0 || imageWidth <= 0) {
@@ -219,16 +232,20 @@ export const FrameGridSelector = ({
     ) {
       return;
     }
-    const fitScale =
-      viewportSize.width > 0 && viewportSize.height > 0
-        ? Math.min(viewportSize.width / imageWidth, viewportSize.height / imageHeight)
-        : 1;
-    if (fitScale > 1) {
-      const adjusted = fitScale * 0.9;
-      setScale(parseFloat(adjusted.toFixed(2)));
+    const availableWidth = Math.max(0, viewportSize.width - 24);
+    const availableHeight = Math.max(0, viewportSize.height - 24);
+    const fitScale = Math.min(availableWidth / imageWidth, availableHeight / imageHeight);
+    if (!Number.isFinite(fitScale) || fitScale <= 0) {
+      return;
+    }
+    const desiredScale = Math.max(fitScale, 0.05);
+    const roundedScale = parseFloat(desiredScale.toFixed(3));
+    setFitScaleTarget(roundedScale);
+    if (Math.abs(roundedScale - scale) > 0.01) {
+      setScale(roundedScale);
     }
     setAutoScaled(true);
-  }, [autoScaled, viewportSize, imageWidth, imageHeight, rnImageSource]);
+  }, [autoScaled, viewportSize, imageWidth, imageHeight, rnImageSource, scale]);
 
   const cells = useMemo<FrameGridCell[]>(() => {
     const list: FrameGridCell[] = [];
@@ -288,10 +305,10 @@ export const FrameGridSelector = ({
   const selectedCount = selectedIds.length;
 
   const changeScale = (delta: number) => {
-    setScale((prev) => Math.max(0.5, parseFloat((prev + delta).toFixed(2))));
+    setScale((prev) => Math.max(0.05, parseFloat((prev + delta).toFixed(2))));
   };
 
-  const resetScale = () => setScale(1);
+  const resetScale = () => setScale(fitScaleTarget);
 
   const selectAllCells = () => {
     if (!rnImageSource || imageWidth <= 0 || imageHeight <= 0) {
