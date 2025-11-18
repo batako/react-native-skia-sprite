@@ -139,7 +139,7 @@ export const StoragePanel = ({
               </Text>
             </View>
           }
-          style={styles.window}
+          enableCompact={false}
         >
           <View style={styles.formRow}>
             <View style={{ flex: 1 }}>
@@ -226,9 +226,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(6, 10, 18, 0.8)',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  window: {
-    maxWidth: 720,
   },
   windowContent: {
     paddingHorizontal: 12,

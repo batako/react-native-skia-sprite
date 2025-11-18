@@ -597,16 +597,21 @@ export const FrameGridSelector = ({
 
 const styles = StyleSheet.create({
   wrapper: {
-    marginBottom: 20,
+    flex: 1,
+    marginBottom: 8,
   },
   selectorRow: {
     flexDirection: 'row',
     alignItems: 'stretch',
+    flex: 1,
+    minHeight: 0,
   },
   previewColumn: {
     flex: 1,
     marginRight: 12,
-    minHeight: 280,
+    minHeight: 240,
+    flexShrink: 1,
+    minWidth: 0,
   },
   controlsColumn: {
     width: 210,
@@ -645,7 +650,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   orderField: {
     marginRight: 12,
@@ -688,9 +693,11 @@ const styles = StyleSheet.create({
   },
   scrollWrapper: {
     flex: 1,
+    flexBasis: 0,
     width: '100%',
-    height: 420,
-    marginBottom: 12,
+    minHeight: 340,
+    maxHeight: '100%',
+    marginBottom: 0,
     position: 'relative',
     backgroundColor: '#444444',
   },
@@ -804,7 +811,7 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   addButton: {
-    marginTop: 8,
+    marginTop: 20,
     paddingVertical: 10,
     paddingHorizontal: 24,
     borderRadius: 8,

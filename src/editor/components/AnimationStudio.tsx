@@ -2083,6 +2083,6 @@ const styles = StyleSheet.create({
   },
   framePickerContent: {
     flex: 1,
-    minHeight: 780,
+    minHeight: 0,
   },
 });
