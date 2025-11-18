@@ -7,12 +7,15 @@ import type { EditorIntegration } from '../hooks/useEditorIntegration';
 import { buildAnimatedSpriteFrames } from '../utils/buildAnimatedSpriteFrames';
 import { IconButton } from './IconButton';
 import type { DataSourceParam } from '@shopify/react-native-skia';
+import type { SpriteFramesResource } from '../animatedSprite2dTypes';
+import { useSpriteAnimationTicker } from '../../hooks/useSpriteAnimationTicker';
 
 interface AnimatedSprite2DPreviewProps {
   editor: SpriteEditorApi;
   integration: EditorIntegration;
   image: DataSourceParam;
   animationName: string | null;
+  mode?: 'timeline' | 'self';
 }
 
 export const AnimatedSprite2DPreview = ({
@@ -20,6 +23,7 @@ export const AnimatedSprite2DPreview = ({
   integration,
   image,
   animationName,
+  mode = 'timeline',
 }: AnimatedSprite2DPreviewProps) => {
   const resource = useMemo(
     () =>
@@ -29,18 +33,25 @@ export const AnimatedSprite2DPreview = ({
       }),
     [editor.state, image, integration.animationsMeta, integration.runtimeData.animations],
   );
+  const resolvedResource: SpriteFramesResource = useMemo(() => {
+    if (resource) {
+      return resource;
+    }
+    return { frames: [], animations: {}, animationsMeta: {}, autoPlayAnimation: null, meta: {} };
+  }, [resource]);
+
   const sceneBounds = useMemo(() => {
-    if (!resource) {
+    if (!resolvedResource.frames.length) {
       return { width: 64, height: 64 };
     }
-    return resource.frames.reduce(
+    return resolvedResource.frames.reduce(
       (acc, frame) => ({
         width: Math.max(acc.width, frame.width),
         height: Math.max(acc.height, frame.height),
       }),
       { width: 0, height: 0 },
     );
-  }, [resource]);
+  }, [resolvedResource.frames]);
 
   const MIN_PREVIEW_HEIGHT = 420;
 
@@ -91,10 +102,6 @@ export const AnimatedSprite2DPreview = ({
 
   let targetWidth = baseWidth;
   let targetHeight = baseHeight;
-  if (!resource) {
-    targetWidth = 64;
-    targetHeight = 64;
-  }
   if (maxWidth && targetWidth > maxWidth) {
     const scale = maxWidth / targetWidth;
     targetWidth = maxWidth;
@@ -142,6 +149,42 @@ export const AnimatedSprite2DPreview = ({
 
   const displayWidth = maxWidth ?? targetWidth;
   const displayHeight = previewHeight;
+  const isSelfDriven = mode === 'self';
+
+  const {
+    animationName: selfAnimationName,
+    setAnimationName: setSelfAnimationName,
+    playing: selfPlaying,
+    setPlaying: setSelfPlaying,
+    play: selfPlay,
+    pause: selfPause,
+    stop: selfStop,
+  } = useSpriteAnimationTicker({
+    frames: resolvedResource,
+    initialAnimation: animationName,
+    initialPlaying: isSelfDriven,
+    speedScale: integration.speedScale,
+  });
+
+  useEffect(() => {
+    if (mode === 'self') {
+      setSelfAnimationName(animationName);
+    }
+  }, [animationName, mode, setSelfAnimationName]);
+
+  useEffect(() => {
+    if (mode !== 'self') {
+      setSelfPlaying(false);
+    }
+  }, [mode, setSelfPlaying]);
+
+  const handleSelfToggle = useCallback(() => {
+    if (selfPlaying) {
+      selfPause();
+    } else {
+      selfPlay(animationName);
+    }
+  }, [animationName, selfPause, selfPlay, selfPlaying]);
 
   return (
     <View style={styles.container}>
@@ -191,10 +234,10 @@ export const AnimatedSprite2DPreview = ({
                 }}
               >
                 <AnimatedSprite2D
-                  frames={resource}
-                  animation={animationName}
-                  playing={false}
-                  frame={integration.frameCursor}
+                  frames={resolvedResource}
+                  animation={isSelfDriven ? selfAnimationName : animationName}
+                  playing={isSelfDriven ? selfPlaying : false}
+                  frame={isSelfDriven ? undefined : integration.frameCursor}
                   speedScale={integration.speedScale}
                   centered
                 />
@@ -207,6 +250,22 @@ export const AnimatedSprite2DPreview = ({
             its own image URI.
           </Text>
         )}
+        {isSelfDriven ? (
+          <View style={styles.playbackControls}>
+            <IconButton
+              name={selfPlaying ? 'pause' : 'play-arrow'}
+              onPress={handleSelfToggle}
+              accessibilityLabel={selfPlaying ? 'Pause preview' : 'Play preview'}
+              style={styles.zoomButton}
+            />
+            <IconButton
+              name="stop"
+              onPress={selfStop}
+              accessibilityLabel="Stop preview"
+              style={styles.zoomButton}
+            />
+          </View>
+        ) : null}
       </View>
     </View>
   );
@@ -278,5 +337,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     minWidth: 50,
     textAlign: 'center',
+  },
+  playbackControls: {
+    flexDirection: 'row',
+    marginTop: 12,
+    alignItems: 'center',
   },
 });

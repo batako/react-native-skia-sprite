@@ -16,7 +16,7 @@
   - `useEditorIntegration` で `SpriteAnimatorHandle` 依存を削除し、上記 ticker を利用して `frameCursor` や `isPlaying` を管理する。
   - TimelinePanel / Animation Frames の操作も ticker 経由で synchronise する。
 
-- [ ] **プレビューの統一**
+- [x] **プレビューの統一**
   - `AnimatedSprite2DPreview` に同期描画モードと自走モードを両立させ、Studio では前者・アプリでは後者を使えるようにする。
   - AnimatedSprite2D コンポーネント単体が fps/multiplier/loop を正しく再生することをテスト手順として明記する。
 
