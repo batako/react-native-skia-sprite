@@ -1770,7 +1770,7 @@ const styles = StyleSheet.create({
     borderColor: '#1f2430',
   },
   headerRow: {
-    marginBottom: 8,
+    marginBottom: 0,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
