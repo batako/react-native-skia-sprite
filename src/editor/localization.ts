@@ -386,7 +386,7 @@ const translations: Record<SupportedLanguage, EditorStrings> = {
       importFailedDescription: '選択した画像を読み込めませんでした。',
       deleteAnimationTitle: 'アニメーションを削除しますか？',
       deleteAnimationMessage: 'このアニメーションを削除してもよろしいですか？',
-      templateExported: 'SpriteStorage 互換の JSON をエクスポートしました。',
+      templateExported: 'スプライトストレージ互換の JSON をエクスポートしました。',
       templateImported: 'インポートが完了し、エディタ履歴をリセットしました。',
     },
     metadataModal: {
