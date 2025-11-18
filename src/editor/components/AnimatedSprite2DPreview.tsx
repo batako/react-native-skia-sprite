@@ -144,8 +144,8 @@ export const AnimatedSprite2DPreview = ({
   );
 
   const resetZoom = useCallback(() => {
-    setZoom(1);
-  }, []);
+    setZoom(() => clampZoom(1, maxZoomAllowed));
+  }, [clampZoom, maxZoomAllowed]);
 
   const displayWidth = maxWidth ?? targetWidth;
   const displayHeight = previewHeight;
