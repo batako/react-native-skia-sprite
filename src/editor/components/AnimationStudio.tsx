@@ -1414,7 +1414,7 @@ export const AnimationStudio = ({
               animationColumnMaxHeight ? { maxHeight: animationColumnMaxHeight } : null,
             ]}
           >
-            <Text style={styles.sectionTitle}>Animations</Text>
+            <Text style={styles.sectionTitle}>{strings.animationStudio.animationsTitle}</Text>
             <View style={styles.animationToolbar}>
               <IconButton
                 name="add"

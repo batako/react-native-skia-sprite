@@ -188,7 +188,7 @@ export interface TimelinePanelProps {
  * Timeline card grid with transport controls and multiplier editor.
  */
 export const TimelinePanel = ({
-  title = 'Animation Frames',
+  title,
   isPlaying,
   hasActiveAnimation,
   currentSequenceLength,
@@ -223,6 +223,7 @@ export const TimelinePanel = ({
   animationsMeta,
 }: TimelinePanelProps) => {
   const strings = useMemo(() => getEditorStrings(), []);
+  const heading = title ?? strings.animationStudio.animationFramesTitle;
   const renderRestartForwardIcon = useCallback(
     ({ color, size }: { color: string; size: number }) => (
       <View style={styles.restartIcon}>
@@ -377,7 +378,7 @@ export const TimelinePanel = ({
   return (
     <View style={styles.timelineColumn} onLayout={handleLayout}>
       <View style={styles.timelineHeader}>
-        <Text style={styles.sectionTitle}>{title}</Text>
+        <Text style={styles.sectionTitle}>{heading}</Text>
       </View>
       <View style={styles.timelineToolbar}>
         <View style={styles.timelineButtons}>

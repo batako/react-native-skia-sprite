@@ -193,7 +193,7 @@ export const AnimatedSprite2DPreview = ({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Animation Preview</Text>
+      <Text style={styles.title}>{strings.animationStudio.animationPreviewTitle}</Text>
       <View style={styles.previewCard} onLayout={handleLayout}>
         {resource ? (
           <View style={styles.zoomOverlay}>

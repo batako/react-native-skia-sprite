@@ -50,6 +50,9 @@ export type EditorStrings = {
   animationStudio: {
     defaultStatusMessage: string;
     requireNameMessage: string;
+    animationPreviewTitle: string;
+    animationsTitle: string;
+    animationFramesTitle: string;
     statusSaved: string;
     statusLoaded: string;
     needFramesBeforeSave: string;
@@ -209,6 +212,9 @@ const translations: Record<SupportedLanguage, EditorStrings> = {
     animationStudio: {
       defaultStatusMessage: 'Manage saved sprites or import past work.',
       requireNameMessage: 'Use Sprite Storage to name and save new sprites.',
+      animationPreviewTitle: 'Animation Preview',
+      animationsTitle: 'Animations',
+      animationFramesTitle: 'Animation Frames',
       statusSaved: 'Saved {name}',
       statusLoaded: 'Loaded {name}',
       needFramesBeforeSave: 'Add at least one frame before saving.',
@@ -367,6 +373,9 @@ const translations: Record<SupportedLanguage, EditorStrings> = {
       defaultStatusMessage:
         '保存済みのスプライトを管理するか、過去の作業をインポートしてください。',
       requireNameMessage: 'スプライトストレージで名前を付けて保存してください。',
+      animationPreviewTitle: 'アニメーションプレビュー',
+      animationsTitle: 'アニメーション',
+      animationFramesTitle: 'アニメーションフレーム',
       statusSaved: '{name} を保存しました',
       statusLoaded: '{name} を読み込みました',
       needFramesBeforeSave: '保存する前に少なくとも1フレーム追加してください。',

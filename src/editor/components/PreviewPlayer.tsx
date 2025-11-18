@@ -31,7 +31,7 @@ export interface PreviewPlayerProps {
 export const PreviewPlayer = ({
   integration,
   image,
-  title = 'Animation Preview',
+  title,
   width,
   height,
   centered = true,
@@ -174,11 +174,12 @@ export const PreviewPlayer = ({
     }
   }, [height, targetWidth, maxWidth, previewHeight]);
 
-  const showTitle = Boolean(title);
+  const resolvedTitle = title ?? strings.animationStudio.animationPreviewTitle;
+  const showTitle = Boolean(resolvedTitle);
 
   return (
     <View style={styles.container}>
-      {showTitle && <Text style={styles.title}>{title}</Text>}
+      {showTitle && <Text style={styles.title}>{resolvedTitle}</Text>}
       <View
         style={styles.canvasCard}
         onLayout={(event: LayoutChangeEvent) => {
