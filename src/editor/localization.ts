@@ -337,15 +337,15 @@ const translations: Record<SupportedLanguage, EditorStrings> = {
       privacyTitle: 'Privacy Policy',
       licensesTitle: 'Open Source Licenses',
       termsBodyIntro:
-        'By using React Native Skia Sprite Animator you agree to use the application for lawful purposes, respect intellectual property, and avoid uploading content that infringes the rights of others. The application is provided “as-is” without warranties, and liability for data loss, downtime, or other damages is disclaimed.',
+        'By installing or using React Native Skia Sprite Animator you agree to follow applicable laws, respect intellectual property, and refrain from uploading assets that infringe third-party rights. You are solely responsible for the projects you create and the data you import into the app.',
       termsBodyUse:
-        'You are responsible for keeping backups of your work and ensuring any assets imported into the editor are appropriately licensed. We may update the application at any time and reserve the right to suspend access in case of abusive behavior.',
+        'The app is provided on an “as-is” basis without warranties of any kind. We may update or remove features at any time. Access can be suspended if abusive behavior, reverse engineering, or attempts to breach security safeguards are detected.',
       termsBodyContact:
-        'These terms may change without notice, and continued use after updates constitutes acceptance.',
+        'You are responsible for maintaining backups of your files. We are not liable for loss of data, business interruption, or any indirect or consequential damages arising from use of the application. Continued use after updates constitutes acceptance of any revised terms.',
       privacyBodyIntro:
-        'React Native Skia Sprite Animator does not collect personal data. Sprite sheets, JSON exports, and local saves remain on your device unless you explicitly share them. Expo and the operating system may gather anonymous diagnostics under their own policies.',
+        'React Native Skia Sprite Animator does not collect personal data, analytics, or tracking information. Sprite sheets, JSON exports, and local saves remain on your device unless you explicitly share them. Expo runtime components and the underlying operating system may collect anonymous diagnostics under their own policies.',
       privacyBodyContact:
-        'If you reach out for support we only use your email to respond and do not sell or share it. Delete the app at any time to remove local data.',
+        'If you contact us for support, any email or message is used solely to respond to that request and is discarded when the conversation ends. We do not sell or share user data. Deleting the app removes locally stored content from your device.',
       licensesIntro:
         'React Native Skia Sprite Animator uses the open-source modules listed below. Refer to each project for complete license texts.',
       helpHeading: 'Help & Links',
@@ -518,15 +518,15 @@ const translations: Record<SupportedLanguage, EditorStrings> = {
       privacyTitle: 'プライバシーポリシー',
       licensesTitle: 'オープンソースライセンス',
       termsBodyIntro:
-        'React Native Skia Sprite Animator を利用することで、合法的な目的でアプリを使用し、知的財産権を尊重し、他者の権利を侵害する素材をアップロードしないことに同意したものとみなします。本アプリは無保証で提供され、データ消失やダウンタイム、その他の損害について一切の責任を負いません。',
+        'React Native Skia Sprite Animator をインストールまたは利用することにより、利用者は適用法令を遵守し、知的財産権を尊重し、第三者の権利を侵害する素材をアップロードしないことに同意したものとみなします。アプリに取り込むデータや成果物の管理は利用者の責任です。',
       termsBodyUse:
-        '作業内容のバックアップや、エディタに読み込むアセットのライセンス確認は利用者の責任です。不正利用が確認された場合には、予告なくアプリの提供やアクセスを停止する場合があります。',
+        '本アプリは現状有姿で提供され、明示または黙示を問わず一切の保証を行いません。不正利用、リバースエンジニアリング、セキュリティ侵害を試みる行為が確認された場合は予告なく利用を停止することがあります。',
       termsBodyContact:
-        '本規約は予告なく変更される場合があり、変更後もアプリを利用することで改定内容に同意したものとみなされます。',
+        '作業内容のバックアップは利用者が管理してください。アプリの仕様変更や利用停止に起因するデータ消失、営業上の損失、その他の損害について開発者は責任を負いません。規約は予告なく改定され、改定後も利用を継続する場合は新しい規約に同意したものとみなされます。',
       privacyBodyIntro:
-        'React Native Skia Sprite Animator は個人情報を収集しません。スプライト画像や JSON、ローカル保存されたデータは、利用者が明示的に共有しない限りデバイス内に留まります。Expo や OS が匿名の診断情報を収集する場合がありますが、それらのポリシーに従います。',
+        'React Native Skia Sprite Animator は個人情報や解析データを収集しません。スプライト画像や JSON などのデータは利用者のデバイスに留まり、利用者が明示的に共有しない限り外部へ送信されません。Expo ランタイムや OS が匿名の診断情報を収集する場合がありますが、それぞれのポリシーに従います。',
       privacyBodyContact:
-        'サポート依頼で受け取ったメールアドレスは回答目的のみに利用し、第三者へ販売・共有することはありません。アプリを削除すればローカルデータも削除されます。',
+        'サポート依頼で受け取ったメールアドレス等は回答のみに使用し、第三者へ共有・販売することはありません。アプリをアンインストールすればローカルに保存されたデータも削除されます。',
       licensesIntro:
         'React Native Skia Sprite Animator は以下のオープンソースモジュールを利用しています。各プロジェクトのライセンス文を参照してください。',
       helpHeading: 'サポート情報',
