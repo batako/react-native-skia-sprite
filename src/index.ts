@@ -28,7 +28,6 @@ export {
   type FrameGridCell,
   type FrameGridImageDescriptor,
 } from './editor/components/FrameGridSelector';
-export { PreviewPlayer, type PreviewPlayerProps } from './editor/components/PreviewPlayer';
 export { StoragePanel } from './editor/components/StoragePanel';
 export {
   TimelinePanel,

@@ -5,7 +5,7 @@
 ## 0. コンポーネントのゴール
 
 - **完全独立**: `SpriteAnimator` に依存せず、ステート管理・タイミング・描画を `AnimatedSprite2D` 単体で完結させる。
-- **フレーム毎の画像差異**: 各フレームは別 URI/require/SkImage を参照でき、旧 PreviewPlayer と同じ「最大フレームサイズ = Canvas サイズ」を尊重する。
+- **フレーム毎の画像差異**: 各フレームは別 URI/require/SkImage を参照でき、旧 PreviewPlayer（現在は廃止）で採用していた「最大フレームサイズ = Canvas サイズ」のレイアウトを尊重する。
 - **Godot ライクな API**: `playing`/`animation`/`frame`/`speedScale`/`centered`/`flipH`/`flipV`/`offset` を持ち、imperative handle で `play`/`stop`/`pause`/`seekFrame` を制御できる。
 - **JSON 互換**: Animation Studio (`cleanSpriteData`) が吐く `SpriteFramesResource` をそのまま渡せる。`autoplay` prop は JSON の `autoPlayAnimation` を書き換えるだけで描画には影響させない。
 - **スタンドアロンエディタとの整合**: AnimatedSprite2DPreview（同期モード/自走モードを切り替え可能なプレビュー）で「Editor で見たままの挙動」を保証する。
