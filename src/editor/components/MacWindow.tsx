@@ -146,11 +146,7 @@ export const MacWindow = ({
             accessibilityLabel="Close window"
           />
           <TouchableOpacity
-            style={[
-              styles.windowDot,
-              styles.windowDotMinimize,
-              !enableCompact && styles.windowDotDisabled,
-            ]}
+            style={[styles.windowDot, styles.windowDotMinimize]}
             onPress={enableCompact ? handleMinimizePress : undefined}
             disabled={!enableCompact}
             accessibilityLabel="Minimize window"
@@ -222,9 +218,6 @@ const styles = StyleSheet.create({
   },
   windowDotExpand: {
     backgroundColor: '#27c840',
-  },
-  windowDotDisabled: {
-    opacity: 0.4,
   },
   windowTitle: {
     flex: 1,
