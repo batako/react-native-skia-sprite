@@ -2,10 +2,21 @@
 import type { SkImage } from '@shopify/react-native-skia';
 import type { StyleProp, ViewStyle } from 'react-native';
 
+export interface FrameImageSubset {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+type FrameImageSourceBase = {
+  subset?: FrameImageSubset;
+};
+
 export type FrameImageSource =
-  | { type: 'uri'; uri: string }
-  | { type: 'require'; assetId: number }
-  | { type: 'skImage'; image: SkImage };
+  | ({ type: 'uri'; uri: string } & FrameImageSourceBase)
+  | ({ type: 'require'; assetId: number } & FrameImageSourceBase)
+  | ({ type: 'skImage'; image: SkImage } & FrameImageSourceBase);
 
 export interface AnimatedSpriteFrame {
   /** Stable identifier carried over from Animation Studio. */

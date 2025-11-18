@@ -3,6 +3,7 @@ import {
   Canvas,
   Group,
   Image as SkiaImage,
+  Skia,
   type SkImage,
   type Transforms3d,
 } from '@shopify/react-native-skia';
@@ -44,16 +45,53 @@ export const AnimatedSprite2DView = memo(
       return transform.length ? transform : undefined;
     }, [canvasSize.height, canvasSize.width, flipH, flipV]);
 
+    const clipRect = useMemo(() => {
+      if (!frame) {
+        return null;
+      }
+      return Skia.XYWHRect(drawOrigin.x, drawOrigin.y, frame.width, frame.height);
+    }, [drawOrigin, frame]);
+
+    const translatedImage = useMemo(() => {
+      if (!frame || !frameImage) {
+        return null;
+      }
+      const subset = frame.image?.subset;
+      if (!subset) {
+        return {
+          x: drawOrigin.x,
+          y: drawOrigin.y,
+          width: frame.width,
+          height: frame.height,
+        };
+      }
+      const widthGetter = (frameImage as SkImage & { width?: () => number }).width;
+      const heightGetter = (frameImage as SkImage & { height?: () => number }).height;
+      const width =
+        typeof widthGetter === 'function' ? widthGetter.call(frameImage) : frame.width + subset.x;
+      const height =
+        typeof heightGetter === 'function'
+          ? heightGetter.call(frameImage)
+          : frame.height + subset.y;
+      return {
+        x: drawOrigin.x - subset.x,
+        y: drawOrigin.y - subset.y,
+        width,
+        height,
+      };
+    }, [drawOrigin, frame, frameImage]);
+
     return (
       <Canvas style={[{ width: canvasSize.width, height: canvasSize.height }, style]}>
-        {frame && frameImage ? (
-          <Group transform={transforms}>
+        {frame && frameImage && translatedImage && clipRect ? (
+          <Group transform={transforms} clip={clipRect}>
             <SkiaImage
               image={frameImage}
-              x={drawOrigin.x}
-              y={drawOrigin.y}
-              width={frame.width}
-              height={frame.height}
+              x={translatedImage.x}
+              y={translatedImage.y}
+              width={translatedImage.width}
+              height={translatedImage.height}
+              fit="none"
             />
           </Group>
         ) : null}

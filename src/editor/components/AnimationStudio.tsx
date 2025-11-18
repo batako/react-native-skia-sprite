@@ -29,8 +29,8 @@ import type { DataSourceParam } from '@shopify/react-native-skia';
 import { MaterialIcons } from '@expo/vector-icons';
 import { IconButton } from './IconButton';
 import { MacWindow, type MacWindowVariant } from './MacWindow';
-import { PreviewPlayer } from './PreviewPlayer';
 import { AnimatedSprite2DPreview } from './AnimatedSprite2DPreview';
+import { SpriteAnimatorDriver } from './SpriteAnimatorDriver';
 import {
   FrameGridSelector,
   type FrameGridCell,
@@ -1312,11 +1312,13 @@ export const AnimationStudio = ({
         </View>
       </View>
       <View style={styles.previewSection}>
-        <View style={styles.previewHeaderRow}>
-          <Text style={styles.sectionTitle}>Animation Preview</Text>
-        </View>
-        <PreviewPlayer integration={integration} image={image} title="" />
-        <AnimatedSprite2DPreview editor={editor} integration={integration} />
+        <SpriteAnimatorDriver integration={integration} image={image} />
+        <AnimatedSprite2DPreview
+          editor={editor}
+          integration={integration}
+          image={image}
+          animationName={currentAnimationName}
+        />
       </View>
       <View style={styles.body}>
         <View style={styles.sequenceGroup}>
@@ -1831,10 +1833,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#151b2a',
     padding: 16,
     alignItems: 'center',
-  },
-  previewHeaderRow: {
-    width: '100%',
-    marginBottom: 8,
   },
   body: {
     marginTop: 16,

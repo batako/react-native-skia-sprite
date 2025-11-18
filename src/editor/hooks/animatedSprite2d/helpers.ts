@@ -54,17 +54,18 @@ export const computeFrameDuration = (
   speedScale: number,
 ) => {
   const safeSpeed = clamp(speedScale, MIN_SPEED_SCALE, MAX_SPEED_SCALE);
-  if (!frame) {
-    return DEFAULT_FRAME_DURATION / safeSpeed;
-  }
-  if (typeof frame.duration === 'number' && Number.isFinite(frame.duration)) {
-    return clamp(frame.duration, MIN_FRAME_DURATION, Number.MAX_SAFE_INTEGER) / safeSpeed;
-  }
-  const fpsValue = frames.animationsMeta?.[animationName ?? '']?.fps;
-  const normalizedFps = typeof fpsValue === 'number' && fpsValue > 0 ? fpsValue : DEFAULT_FPS;
-  const multipliers = frames.animationsMeta?.[animationName ?? '']?.multipliers ?? [];
+  const meta = frames.animationsMeta?.[animationName ?? ''];
+  const fpsValue = typeof meta?.fps === 'number' && meta.fps > 0 ? meta.fps : null;
+  const multipliers = meta?.multipliers ?? [];
   const multiplier = clamp(multipliers[timelineIndex] ?? 1, MIN_TIMELINE_MULTIPLIER, 100);
-  const baseDuration = 1000 / normalizedFps;
+  let baseDuration: number;
+  if (fpsValue) {
+    baseDuration = 1000 / fpsValue;
+  } else if (frame && typeof frame.duration === 'number' && Number.isFinite(frame.duration)) {
+    baseDuration = clamp(frame.duration, MIN_FRAME_DURATION, Number.MAX_SAFE_INTEGER);
+  } else {
+    baseDuration = DEFAULT_FRAME_DURATION;
+  }
   return (baseDuration * multiplier) / safeSpeed;
 };
 
