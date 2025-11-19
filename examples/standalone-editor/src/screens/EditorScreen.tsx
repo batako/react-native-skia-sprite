@@ -89,15 +89,130 @@ export const EditorScreen = () => {
 
   const [imageSource, setImageSource] = React.useState<DataSourceParam>(SAMPLE_SPRITE);
   const editorRef = React.useRef(editor);
-  const [legalModal, setLegalModal] = React.useState<
-    'overview' | 'terms' | 'privacy' | 'licenses' | null
-  >(null);
-
+  const [legalModalView, setLegalModalView] = React.useState<
+    'overview' | 'terms' | 'privacy' | 'licenses'
+  >('overview');
+  const [isLegalModalVisible, setLegalModalVisible] = React.useState(false);
+  const handleLegalModalClose = React.useCallback(() => {
+    if (legalModalView === 'overview') {
+      setLegalModalVisible(false);
+      return;
+    }
+    setLegalModalView('overview');
+  }, [legalModalView, setLegalModalView, setLegalModalVisible]);
   const handleOpenLink = React.useCallback((url: string) => {
     Linking.openURL(url).catch(() => {
       // ignore
     });
   }, []);
+  const legalModalTitle = React.useMemo(() => {
+    switch (legalModalView) {
+      case 'terms':
+        return legalStrings.termsTitle;
+      case 'privacy':
+        return legalStrings.privacyTitle;
+      case 'licenses':
+        return legalStrings.licensesTitle;
+      default:
+        return legalStrings.infoCenterTitle;
+    }
+  }, [legalModalView, legalStrings]);
+  const renderLegalModalContent = React.useCallback(() => {
+    switch (legalModalView) {
+      case 'terms':
+        return (
+          <>
+            <Text style={styles.legalParagraph}>{legalStrings.termsBodyIntro}</Text>
+            <Text style={styles.legalParagraph}>{legalStrings.termsBodyUse}</Text>
+            <Text style={styles.legalParagraph}>{legalStrings.termsBodyContact}</Text>
+          </>
+        );
+      case 'privacy':
+        return (
+          <>
+            <Text style={styles.legalParagraph}>{legalStrings.privacyBodyIntro}</Text>
+            <Text style={styles.legalParagraph}>{legalStrings.privacyBodyContact}</Text>
+          </>
+        );
+      case 'licenses':
+        return (
+          <>
+            <Text style={styles.legalParagraph}>{legalStrings.licensesIntro}</Text>
+            {licenseEntries.map((entry) => (
+              <View key={`${entry.name}@${entry.version}`} style={styles.licenseRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.licenseName}>{`${entry.name}@${entry.version}`}</Text>
+                  {!!entry.repository && <Text style={styles.licenseMeta}>{entry.repository}</Text>}
+                  {!!entry.licenses && <Text style={styles.licenseMeta}>{entry.licenses}</Text>}
+                </View>
+                {!!entry.publisher && <Text style={styles.licenseVersion}>{entry.publisher}</Text>}
+              </View>
+            ))}
+          </>
+        );
+      case 'overview':
+        return (
+          <>
+            <Text style={styles.modalSectionHeading}>{legalStrings.legalHeading}</Text>
+            <Text style={styles.legalParagraph}>{legalStrings.legalOverviewIntro}</Text>
+            <View style={styles.inlineLinks}>
+              <Pressable
+                style={styles.inlineLink}
+                onPress={() => setLegalModalView('terms')}
+                accessibilityRole="button"
+              >
+                <Text style={styles.inlineLinkLabel}>{legalStrings.termsTitle}</Text>
+                <Text style={styles.inlineLinkArrow}>›</Text>
+              </Pressable>
+              <Pressable
+                style={styles.inlineLink}
+                onPress={() => setLegalModalView('privacy')}
+                accessibilityRole="button"
+              >
+                <Text style={styles.inlineLinkLabel}>{legalStrings.privacyTitle}</Text>
+                <Text style={styles.inlineLinkArrow}>›</Text>
+              </Pressable>
+              <Pressable
+                style={styles.inlineLink}
+                onPress={() => setLegalModalView('licenses')}
+                accessibilityRole="button"
+              >
+                <Text style={styles.inlineLinkLabel}>{legalStrings.licensesTitle}</Text>
+                <Text style={styles.inlineLinkArrow}>›</Text>
+              </Pressable>
+            </View>
+            <Text style={[styles.modalSectionHeading, styles.helpSectionHeading]}>
+              {legalStrings.helpHeading}
+            </Text>
+            <Text style={styles.legalParagraph}>{legalStrings.helpOverviewIntro}</Text>
+            <View style={styles.inlineLinks}>
+              <Pressable
+                style={styles.inlineLink}
+                onPress={() => handleOpenLink(HELP_FORM_URL)}
+                accessibilityRole="link"
+              >
+                <Text style={styles.inlineLinkLabel}>{legalStrings.contactLinkLabel}</Text>
+                <Text style={styles.inlineLinkArrow}>↗</Text>
+              </Pressable>
+              <Pressable
+                style={styles.inlineLink}
+                onPress={() => handleOpenLink(GITHUB_URL)}
+                accessibilityRole="link"
+              >
+                <Text style={styles.inlineLinkLabel}>{legalStrings.githubLinkLabel}</Text>
+                <Text style={styles.inlineLinkArrow}>↗</Text>
+              </Pressable>
+            </View>
+            <View style={styles.versionMetaWrapper}>
+              <Text style={styles.versionMetaLabel}>{legalStrings.appVersionLabel}</Text>
+              <Text style={styles.versionMetaValue}>{VERSION_SUMMARY}</Text>
+            </View>
+          </>
+        );
+      default:
+        return null;
+    }
+  }, [legalModalView, legalStrings, handleOpenLink, setLegalModalView]);
 
   React.useEffect(() => {
     editorRef.current = editor;
@@ -144,7 +259,10 @@ export const EditorScreen = () => {
           <IconButton
             iconFamily="material"
             name="info-outline"
-            onPress={() => setLegalModal('overview')}
+            onPress={() => {
+              setLegalModalView('overview');
+              setLegalModalVisible(true);
+            }}
             accessibilityLabel={legalStrings.infoCenterTitle}
           />
         </View>
@@ -152,98 +270,11 @@ export const EditorScreen = () => {
         <AnimationStudio editor={editor} integration={integration} image={imageSource} />
       </View>
       <LegalModal
-        title={legalStrings.infoCenterTitle}
-        visible={legalModal === 'overview'}
-        onClose={() => setLegalModal(null)}
+        title={legalModalTitle}
+        visible={isLegalModalVisible}
+        onClose={handleLegalModalClose}
       >
-        <Text style={styles.modalSectionHeading}>{legalStrings.legalHeading}</Text>
-        <Text style={styles.legalParagraph}>{legalStrings.legalOverviewIntro}</Text>
-        <View style={styles.inlineLinks}>
-          <Pressable
-            style={styles.inlineLink}
-            onPress={() => setLegalModal('terms')}
-            accessibilityRole="button"
-          >
-            <Text style={styles.inlineLinkLabel}>{legalStrings.termsTitle}</Text>
-            <Text style={styles.inlineLinkArrow}>›</Text>
-          </Pressable>
-          <Pressable
-            style={styles.inlineLink}
-            onPress={() => setLegalModal('privacy')}
-            accessibilityRole="button"
-          >
-            <Text style={styles.inlineLinkLabel}>{legalStrings.privacyTitle}</Text>
-            <Text style={styles.inlineLinkArrow}>›</Text>
-          </Pressable>
-          <Pressable
-            style={styles.inlineLink}
-            onPress={() => setLegalModal('licenses')}
-            accessibilityRole="button"
-          >
-            <Text style={styles.inlineLinkLabel}>{legalStrings.licensesTitle}</Text>
-            <Text style={styles.inlineLinkArrow}>›</Text>
-          </Pressable>
-        </View>
-        <Text style={[styles.modalSectionHeading, styles.helpSectionHeading]}>
-          {legalStrings.helpHeading}
-        </Text>
-        <Text style={styles.legalParagraph}>{legalStrings.helpOverviewIntro}</Text>
-        <View style={styles.inlineLinks}>
-          <Pressable
-            style={styles.inlineLink}
-            onPress={() => handleOpenLink(HELP_FORM_URL)}
-            accessibilityRole="link"
-          >
-            <Text style={styles.inlineLinkLabel}>{legalStrings.contactLinkLabel}</Text>
-            <Text style={styles.inlineLinkArrow}>↗</Text>
-          </Pressable>
-          <Pressable
-            style={styles.inlineLink}
-            onPress={() => handleOpenLink(GITHUB_URL)}
-            accessibilityRole="link"
-          >
-            <Text style={styles.inlineLinkLabel}>{legalStrings.githubLinkLabel}</Text>
-            <Text style={styles.inlineLinkArrow}>↗</Text>
-          </Pressable>
-        </View>
-        <View style={styles.versionMetaWrapper}>
-          <Text style={styles.versionMetaLabel}>{legalStrings.appVersionLabel}</Text>
-          <Text style={styles.versionMetaValue}>{VERSION_SUMMARY}</Text>
-        </View>
-      </LegalModal>
-      <LegalModal
-        title={legalStrings.termsTitle}
-        visible={legalModal === 'terms'}
-        onClose={() => setLegalModal('overview')}
-      >
-        <Text style={styles.legalParagraph}>{legalStrings.termsBodyIntro}</Text>
-        <Text style={styles.legalParagraph}>{legalStrings.termsBodyUse}</Text>
-        <Text style={styles.legalParagraph}>{legalStrings.termsBodyContact}</Text>
-      </LegalModal>
-      <LegalModal
-        title={legalStrings.privacyTitle}
-        visible={legalModal === 'privacy'}
-        onClose={() => setLegalModal('overview')}
-      >
-        <Text style={styles.legalParagraph}>{legalStrings.privacyBodyIntro}</Text>
-        <Text style={styles.legalParagraph}>{legalStrings.privacyBodyContact}</Text>
-      </LegalModal>
-      <LegalModal
-        title={legalStrings.licensesTitle}
-        visible={legalModal === 'licenses'}
-        onClose={() => setLegalModal('overview')}
-      >
-        <Text style={styles.legalParagraph}>{legalStrings.licensesIntro}</Text>
-        {licenseEntries.map((entry) => (
-          <View key={`${entry.name}@${entry.version}`} style={styles.licenseRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.licenseName}>{`${entry.name}@${entry.version}`}</Text>
-              {!!entry.repository && <Text style={styles.licenseMeta}>{entry.repository}</Text>}
-              {!!entry.licenses && <Text style={styles.licenseMeta}>{entry.licenses}</Text>}
-            </View>
-            {!!entry.publisher && <Text style={styles.licenseVersion}>{entry.publisher}</Text>}
-          </View>
-        ))}
+        {renderLegalModalContent()}
       </LegalModal>
     </SafeAreaView>
   );
