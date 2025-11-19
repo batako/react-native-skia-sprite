@@ -9,10 +9,13 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Switch,
 } from 'react-native';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as DocumentPicker from 'expo-document-picker';
-import { MacWindow } from './MacWindow';
+import * as ImageManipulator from 'expo-image-manipulator';
+import { MaterialIcons } from '@expo/vector-icons';
+import { MacWindow, type MacWindowVariant } from './MacWindow';
 import { getEditorStrings, formatEditorString } from '../localization';
 
 const APP_FILES_DIR = `${FileSystem.documentDirectory ?? ''}app_files`;
@@ -54,6 +57,9 @@ export const FileBrowserModal = ({
   const strings = React.useMemo(() => getEditorStrings(), []);
   const [entries, setEntries] = useState<FileEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [convertToWebp, setConvertToWebp] = useState(true);
+  const [isDocumentPickerActive, setDocumentPickerActive] = useState(false);
+  const [windowVariant, setWindowVariant] = useState<MacWindowVariant>('default');
   const shouldRender = visible;
 
   const ensureDirectory = useCallback(async () => {
@@ -195,7 +201,28 @@ export const FileBrowserModal = ({
     onClose();
   }, [onClose]);
 
+  const handleRequestClose = useCallback(() => {
+    if (isDocumentPickerActive) {
+      // Android dispatches a back press when the picker dismisses; ignore it.
+      return;
+    }
+    handleClose();
+  }, [handleClose, isDocumentPickerActive]);
+
   const handleUpload = useCallback(async () => {
+    if (isDocumentPickerActive) {
+      return;
+    }
+    setDocumentPickerActive(true);
+    const getFileSize = async (uri: string, fallback?: number) => {
+      try {
+        const info = await FileSystem.getInfoAsync(uri);
+        return info.size ?? fallback ?? 0;
+      } catch {
+        return fallback ?? 0;
+      }
+    };
+
     try {
       const pickerTypes =
         allowedMimeTypes && allowedMimeTypes.length > 0 ? allowedMimeTypes : ['*/*'];
@@ -224,20 +251,62 @@ export const FileBrowserModal = ({
       const extension = assetName.includes('.')
         ? assetName.substring(assetName.lastIndexOf('.'))
         : '';
-      const targetName = assetName.length ? assetName : `file-${Date.now()}${extension ?? ''}`;
-      const targetUri = `${APP_FILES_DIR}/${targetName}`;
-      await FileSystem.copyAsync({ from: sourceUri, to: targetUri });
+      const baseName =
+        assetName && assetName.includes('.')
+          ? assetName.substring(0, assetName.lastIndexOf('.'))
+          : assetName;
+      const targetBase = baseName.length ? baseName : `file-${Date.now()}`;
+      const shouldConvert =
+        convertToWebp &&
+        ((asset.mimeType && asset.mimeType.startsWith('image/')) ||
+          matchesImageExtension(assetName));
+      let workingUri = sourceUri;
+      let finalName = assetName.length ? assetName : `${targetBase}${extension}`;
+      if (shouldConvert) {
+        try {
+          const originalSize = await getFileSize(sourceUri, asset.size ?? undefined);
+          const result = await ImageManipulator.manipulateAsync(sourceUri, [], {
+            compress: 1,
+            format: ImageManipulator.SaveFormat.WEBP,
+          });
+          const convertedSize = await getFileSize(result.uri, 0);
+          if (convertedSize > 0 && (originalSize === 0 || convertedSize < originalSize)) {
+            workingUri = result.uri;
+            finalName = `${targetBase}.webp`;
+          } else {
+            await FileSystem.deleteAsync(result.uri, { idempotent: true });
+          }
+        } catch (error) {
+          console.error(error);
+          Alert.alert(
+            strings.fileBrowser.webpConversionFailedTitle,
+            strings.fileBrowser.webpConversionFailedMessage,
+          );
+        }
+      }
+      const targetUri = `${APP_FILES_DIR}/${finalName}`;
+      await FileSystem.copyAsync({ from: workingUri, to: targetUri });
+      if (workingUri !== sourceUri) {
+        await FileSystem.deleteAsync(workingUri, { idempotent: true });
+      }
       await refreshEntries();
     } catch (error) {
       console.error(error);
       Alert.alert(strings.general.errorTitle, strings.fileBrowser.errorUpload);
+    } finally {
+      setDocumentPickerActive(false);
     }
   }, [
     allowedMimeTypes,
+    convertToWebp,
     ensureDirectory,
+    isDocumentPickerActive,
+    matchesImageExtension,
     refreshEntries,
     shouldIncludeFile,
     strings.fileBrowser.errorUpload,
+    strings.fileBrowser.webpConversionFailedMessage,
+    strings.fileBrowser.webpConversionFailedTitle,
     strings.fileBrowser.unsupportedFileMessage,
     strings.fileBrowser.unsupportedFileTitle,
     strings.fileBrowser.uploadFailedMessage,
@@ -288,9 +357,23 @@ export const FileBrowserModal = ({
   );
 
   const toolbarContent = (
-    <TouchableOpacity style={styles.toolbarButton} onPress={handleUpload}>
-      <Text style={styles.toolbarButtonText}>{strings.fileBrowser.uploadButton}</Text>
-    </TouchableOpacity>
+    <View style={styles.toolbarContent}>
+      <View style={styles.optimizeChip}>
+        <View style={styles.optimizeTextStack}>
+          <Text style={styles.optimizeLabel}>{strings.fileBrowser.webpToggleLabel}</Text>
+          <Text style={styles.optimizeDescription}>
+            {strings.fileBrowser.webpToggleDescription}
+          </Text>
+        </View>
+        <View style={styles.optimizeToggleWrapper}>
+          <Switch value={convertToWebp} onValueChange={setConvertToWebp} />
+        </View>
+      </View>
+      <TouchableOpacity style={styles.toolbarButton} onPress={handleUpload} activeOpacity={0.8}>
+        <MaterialIcons name="file-upload" color="#0f172a" size={18} />
+        <Text style={styles.toolbarButtonText}>{strings.fileBrowser.uploadButton}</Text>
+      </TouchableOpacity>
+    </View>
   );
 
   const renderWindow = () => (
@@ -298,6 +381,8 @@ export const FileBrowserModal = ({
       title={strings.fileBrowser.title}
       onClose={handleClose}
       enableCompact={false}
+      onVariantChange={setWindowVariant}
+      style={windowVariant === 'default' ? styles.window : undefined}
       toolbarContent={toolbarContent}
       contentStyle={styles.content}
     >
@@ -355,7 +440,7 @@ export const FileBrowserModal = ({
   }
 
   return (
-    <Modal animationType="fade" transparent visible={visible} onRequestClose={handleClose}>
+    <Modal animationType="fade" transparent visible={visible} onRequestClose={handleRequestClose}>
       <View style={styles.modalOverlay}>{renderWindow()}</View>
     </Modal>
   );
@@ -369,24 +454,73 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 16,
   },
+  toolbarContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  window: {
+    width: '94%',
+    maxWidth: 760,
+    minHeight: 520,
+    maxHeight: '88%',
+  },
   toolbarButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-    backgroundColor: '#2b3247',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: '#f2f6ff',
+    flexShrink: 0,
   },
   toolbarButtonText: {
-    color: '#f2f6ff',
-    fontSize: 13,
-    fontWeight: '500',
+    color: '#0f172a',
+    fontSize: 14,
+    fontWeight: '600',
   },
   content: {
     flex: 1,
     padding: 12,
-    minHeight: 320,
+    minHeight: 280,
   },
   fileList: {
     flex: 1,
+  },
+  optimizeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(19,24,44,0.65)',
+    flex: 1,
+    gap: 12,
+  },
+  optimizeTextStack: {
+    flex: 1,
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  optimizeLabel: {
+    color: '#f7f9ff',
+    fontWeight: '600',
+    fontSize: 13,
+    marginBottom: 2,
+  },
+  optimizeDescription: {
+    color: '#c5cada',
+    fontSize: 11,
+    lineHeight: 14,
+  },
+  optimizeToggleWrapper: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   fileRow: {
     paddingVertical: 12,

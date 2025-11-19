@@ -141,6 +141,10 @@ export type EditorStrings = {
   fileBrowser: {
     title: string;
     uploadButton: string;
+    webpToggleLabel: string;
+    webpToggleDescription: string;
+    webpConversionFailedTitle: string;
+    webpConversionFailedMessage: string;
     deleteButton: string;
     deleteConfirmTitle: string;
     deleteConfirmMessage: string;
@@ -321,6 +325,11 @@ const translations: Record<SupportedLanguage, EditorStrings> = {
     fileBrowser: {
       title: 'File Browser',
       uploadButton: 'Upload',
+      webpToggleLabel: 'Optimize image uploads (use WebP if smaller)',
+      webpToggleDescription:
+        'Automatically converts images to WebP when it produces a smaller file. Turn off to keep originals unchanged.',
+      webpConversionFailedTitle: 'Conversion failed',
+      webpConversionFailedMessage: 'Could not convert the image. The original file was kept.',
       deleteButton: 'Delete',
       deleteConfirmTitle: 'Delete File',
       deleteConfirmMessage: 'Remove "{name}"?',
@@ -509,6 +518,12 @@ const translations: Record<SupportedLanguage, EditorStrings> = {
     fileBrowser: {
       title: 'ファイルブラウザー',
       uploadButton: 'アップロード',
+      webpToggleLabel: '画像を最適化（小さい場合は WebP に変換）',
+      webpToggleDescription:
+        'アップロード時に WebP へ変換し、元よりファイルサイズが小さければそちらを採用します。元の形式を必ず残したい場合はオフにしてください。',
+      webpConversionFailedTitle: '変換に失敗しました',
+      webpConversionFailedMessage:
+        '画像を変換できなかったため、元のファイルをそのまま使用しました。',
       deleteButton: '削除',
       deleteConfirmTitle: 'ファイルを削除',
       deleteConfirmMessage: '「{name}」を削除しますか？',

@@ -47,7 +47,9 @@
   },
   "dependencies": {
     "expo-document-picker": "^14.0.7",
-    "expo-localization": "^17.0.7"
+    "expo-image-manipulator": "^14.0.7",
+    "expo-localization": "^17.0.7",
+    "expo-sharing": "^14.0.7"
   },
   "devDependencies": {
     "@shopify/react-native-skia": "^2.3.10",
