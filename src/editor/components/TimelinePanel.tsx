@@ -95,7 +95,6 @@ const MultiplierField = React.forwardRef<MultiplierFieldHandle, MultiplierFieldP
             ref={inputRef}
             value={draft}
             onChangeText={setDraft}
-            keyboardType="numeric"
             style={[styles.multiplierInput, disabled && styles.multiplierInputDisabled]}
             editable={!disabled}
             onFocus={() => setFocused(true)}

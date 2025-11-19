@@ -1854,7 +1854,6 @@ const AnimationFpsField = ({ value, onSubmit }: AnimationFpsFieldProps) => {
       <SelectableTextInput
         ref={inputRef}
         style={styles.animationFpsInput}
-        keyboardType="numeric"
         value={text}
         onChangeText={setText}
         onFocus={() => setFocused(true)}
