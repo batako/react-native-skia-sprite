@@ -40,7 +40,6 @@ import {
   type FrameGridImageDescriptor,
 } from './FrameGridSelector';
 import { SelectableTextInput } from './SelectableTextInput';
-import { InlineConfirmButton } from './InlineConfirmButton';
 import type { EditorIntegration } from '../hooks/useEditorIntegration';
 import { FileBrowserModal } from './FileBrowserModal';
 import { StoragePanel } from './StoragePanel';
@@ -1849,8 +1848,6 @@ const AnimationFpsField = ({ value, onSubmit }: AnimationFpsFieldProps) => {
     }
   };
 
-  const showConfirm = isFocused || text !== baseValue;
-
   return (
     <View style={styles.animationFpsRow}>
       <Text style={styles.animationFpsLabel}>FPS</Text>
@@ -1867,12 +1864,6 @@ const AnimationFpsField = ({ value, onSubmit }: AnimationFpsFieldProps) => {
         }}
         onSubmitEditing={commit}
         returnKeyType="done"
-      />
-      <InlineConfirmButton
-        visible={showConfirm}
-        onPress={() => inputRef.current?.blur()}
-        accessibilityLabel={strings.general.confirmValue}
-        containerStyle={styles.animationFpsConfirm}
       />
     </View>
   );
@@ -2231,9 +2222,6 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     color: '#fff',
     backgroundColor: '#191f2e',
-  },
-  animationFpsConfirm: {
-    right: -36,
   },
   animationList: {
     marginTop: 8,

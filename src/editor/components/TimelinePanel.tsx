@@ -13,7 +13,6 @@ import { MaterialIcons } from '@expo/vector-icons';
 import type { SpriteAnimationsMeta } from '../../SpriteAnimator';
 import type { SpriteEditorFrame } from '../types';
 import { IconButton } from './IconButton';
-import { InlineConfirmButton } from './InlineConfirmButton';
 import { TimelineControls } from './TimelineControls';
 import { getEditorStrings } from '../localization';
 
@@ -88,8 +87,6 @@ const MultiplierField = React.forwardRef<MultiplierFieldHandle, MultiplierFieldP
       }
     }, [baseValue, isFocused]);
 
-    const showConfirm = !disabled && (isFocused || draft !== baseValue);
-
     return (
       <View style={styles.multiplierRow}>
         <Text style={styles.multiplierLabel}>{strings.timeline.multiplierLabel}</Text>
@@ -108,12 +105,6 @@ const MultiplierField = React.forwardRef<MultiplierFieldHandle, MultiplierFieldP
             }}
             onSubmitEditing={commit}
             returnKeyType="done"
-          />
-          <InlineConfirmButton
-            visible={showConfirm}
-            onPress={() => inputRef.current?.blur()}
-            accessibilityLabel={strings.general.confirmValue}
-            containerStyle={styles.multiplierConfirm}
           />
         </View>
         <Text style={styles.multiplierUnit}>×</Text>
@@ -610,8 +601,5 @@ const styles = StyleSheet.create({
     backgroundColor: '#0f1321',
     padding: 12,
     minHeight: TIMELINE_CARD_SIZE + TIMELINE_CARD_PADDING * 2 + 24,
-  },
-  multiplierConfirm: {
-    right: -34,
   },
 });
