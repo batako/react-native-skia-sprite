@@ -214,9 +214,11 @@ export const FileBrowserModal = ({
       return;
     }
     setDocumentPickerActive(true);
-    const getFileSize = async (uri: string, fallback?: number) => {
+    const getFileSize = async (uri: string, fallback?: number): Promise<number> => {
       try {
-        const info = await FileSystem.getInfoAsync(uri);
+        const info = (await FileSystem.getInfoAsync(uri)) as FileSystem.FileInfo & {
+          size?: number;
+        };
         return info.size ?? fallback ?? 0;
       } catch {
         return fallback ?? 0;
