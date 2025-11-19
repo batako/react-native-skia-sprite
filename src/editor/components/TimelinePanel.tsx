@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   Image,
   ScrollView,
@@ -13,6 +13,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import type { SpriteAnimationsMeta } from '../../SpriteAnimator';
 import type { SpriteEditorFrame } from '../types';
 import { IconButton } from './IconButton';
+import { InlineConfirmButton } from './InlineConfirmButton';
 import { TimelineControls } from './TimelineControls';
 import { getEditorStrings } from '../localization';
 
@@ -65,15 +66,17 @@ const MultiplierField = React.forwardRef<MultiplierFieldHandle, MultiplierFieldP
     const [draft, setDraft] = useState(String(value));
     const [isFocused, setFocused] = useState(false);
     const strings = useMemo(() => getEditorStrings(), []);
+    const baseValue = String(value);
+    const inputRef = useRef<TextInput>(null);
 
     const commit = useCallback(() => {
       const parsed = Number.parseFloat(draft);
       if (!Number.isFinite(parsed)) {
-        setDraft(String(value));
+        setDraft(baseValue);
         return;
       }
       onSubmit(parsed);
-    }, [draft, onSubmit, value]);
+    }, [baseValue, draft, onSubmit]);
 
     React.useImperativeHandle(ref, () => ({
       commit,
@@ -81,29 +84,41 @@ const MultiplierField = React.forwardRef<MultiplierFieldHandle, MultiplierFieldP
 
     React.useEffect(() => {
       if (!isFocused) {
-        setDraft(String(value));
+        setDraft(baseValue);
       }
-    }, [isFocused, value]);
+    }, [baseValue, isFocused]);
+
+    const showConfirm = !disabled && (isFocused || draft !== baseValue);
 
     return (
       <View style={styles.multiplierRow}>
         <Text style={styles.multiplierLabel}>{strings.timeline.multiplierLabel}</Text>
-        <TextInput
-          value={draft}
-          onChangeText={setDraft}
-          keyboardType="numeric"
-          style={[styles.multiplierInput, disabled && styles.multiplierInputDisabled]}
-          editable={!disabled}
-          onFocus={() => setFocused(true)}
-          onBlur={() => {
-            setFocused(false);
-            commit();
-          }}
-          onSubmitEditing={() => {
-            commit();
-          }}
-          returnKeyType="done"
-        />
+        <View style={styles.multiplierInputWrapper}>
+          <TextInput
+            ref={inputRef}
+            value={draft}
+            onChangeText={setDraft}
+            keyboardType="numeric"
+            style={[
+              styles.multiplierInput,
+              disabled && styles.multiplierInputDisabled,
+            ]}
+            editable={!disabled}
+            onFocus={() => setFocused(true)}
+            onBlur={() => {
+              setFocused(false);
+              commit();
+            }}
+            onSubmitEditing={commit}
+            returnKeyType="done"
+          />
+          <InlineConfirmButton
+            visible={showConfirm}
+            onPress={() => inputRef.current?.blur()}
+            accessibilityLabel={strings.general.confirmValue}
+            containerStyle={styles.multiplierConfirm}
+          />
+        </View>
         <Text style={styles.multiplierUnit}>×</Text>
       </View>
     );
@@ -561,6 +576,11 @@ const styles = StyleSheet.create({
     color: '#7d86a0',
     fontSize: 11,
   },
+  multiplierInputWrapper: {
+    position: 'relative',
+    width: 64,
+    justifyContent: 'center',
+  },
   multiplierInput: {
     width: 64,
     textAlign: 'left',
@@ -593,5 +613,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#0f1321',
     padding: 12,
     minHeight: TIMELINE_CARD_SIZE + TIMELINE_CARD_PADDING * 2 + 24,
+  },
+  multiplierConfirm: {
+    right: -34,
   },
 });

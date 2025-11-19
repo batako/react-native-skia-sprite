@@ -14,6 +14,7 @@ export type EditorStrings = {
     errorTitle: string;
     decreaseValue: string;
     increaseValue: string;
+    confirmValue: string;
   };
   frameGrid: {
     primaryAxisLabel: string;
@@ -197,6 +198,7 @@ const translations: Record<SupportedLanguage, EditorStrings> = {
       errorTitle: 'Error',
       decreaseValue: 'Decrease {label}',
       increaseValue: 'Increase {label}',
+      confirmValue: 'Apply value',
     },
     frameGrid: {
       primaryAxisLabel: 'Primary axis',
@@ -388,6 +390,7 @@ const translations: Record<SupportedLanguage, EditorStrings> = {
       errorTitle: 'エラー',
       decreaseValue: '{label} を減らす',
       increaseValue: '{label} を増やす',
+      confirmValue: '値を確定',
     },
     frameGrid: {
       primaryAxisLabel: '優先方向',

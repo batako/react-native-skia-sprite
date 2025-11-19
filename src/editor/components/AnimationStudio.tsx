@@ -40,6 +40,7 @@ import {
   type FrameGridImageDescriptor,
 } from './FrameGridSelector';
 import { SelectableTextInput } from './SelectableTextInput';
+import { InlineConfirmButton } from './InlineConfirmButton';
 import type { EditorIntegration } from '../hooks/useEditorIntegration';
 import { FileBrowserModal } from './FileBrowserModal';
 import { StoragePanel } from './StoragePanel';
@@ -1827,31 +1828,51 @@ interface AnimationFpsFieldProps {
 }
 
 const AnimationFpsField = ({ value, onSubmit }: AnimationFpsFieldProps) => {
+  const strings = useMemo(() => getEditorStrings(), []);
   const [text, setText] = useState(String(value));
+  const [isFocused, setFocused] = useState(false);
+  const baseValue = String(value);
+  const inputRef = useRef<TextInput>(null);
 
   useEffect(() => {
-    setText(String(value));
-  }, [value]);
+    if (!isFocused) {
+      setText(baseValue);
+    }
+  }, [baseValue, isFocused]);
 
   const commit = () => {
     const parsed = Number(text);
     if (!Number.isNaN(parsed)) {
       onSubmit(parsed);
     } else {
-      setText(String(value));
+      setText(baseValue);
     }
   };
+
+  const showConfirm = isFocused || text !== baseValue;
 
   return (
     <View style={styles.animationFpsRow}>
       <Text style={styles.animationFpsLabel}>FPS</Text>
       <SelectableTextInput
+        ref={inputRef}
         style={styles.animationFpsInput}
         keyboardType="numeric"
         value={text}
         onChangeText={setText}
-        onBlur={commit}
+        onFocus={() => setFocused(true)}
+        onBlur={() => {
+          setFocused(false);
+          commit();
+        }}
         onSubmitEditing={commit}
+        returnKeyType="done"
+      />
+      <InlineConfirmButton
+        visible={showConfirm}
+        onPress={() => inputRef.current?.blur()}
+        accessibilityLabel={strings.general.confirmValue}
+        containerStyle={styles.animationFpsConfirm}
       />
     </View>
   );
@@ -2194,6 +2215,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     marginTop: 8,
+    position: 'relative',
   },
   animationFpsLabel: {
     color: '#8ea2d8',
@@ -2209,6 +2231,9 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     color: '#fff',
     backgroundColor: '#191f2e',
+  },
+  animationFpsConfirm: {
+    right: -36,
   },
   animationList: {
     marginTop: 8,
