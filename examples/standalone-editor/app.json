@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "React Native Skia Sprite Animator",
+    "name": "RN Skia Sprite Animator",
     "slug": "react-native-skia-sprite-animator",
     "version": "0.1.0",
     "orientation": "portrait",
@@ -28,8 +28,13 @@
           "UIInterfaceOrientationPortrait",
           "UIInterfaceOrientationPortraitUpsideDown",
           "UIInterfaceOrientationLandscapeLeft",
+          "UIInterfaceOrientationLandscapeRight",
+          "UIInterfaceOrientationPortrait",
+          "UIInterfaceOrientationPortraitUpsideDown",
+          "UIInterfaceOrientationLandscapeLeft",
           "UIInterfaceOrientationLandscapeRight"
-        ]
+        ],
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -44,8 +49,12 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-localization",
-      "expo-font"
-    ]
+      "expo-localization"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "495d01ec-b3d6-4626-89bb-08b2edc265c2"
+      }
+    }
   }
 }

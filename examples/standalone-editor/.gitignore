@@ -1,7 +1,6 @@
 .expo/
 .expo-shared/
 node_modules/
-package-lock.json
 
 # Metro / bundler cache
 .metro-cache/
