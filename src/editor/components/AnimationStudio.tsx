@@ -50,12 +50,6 @@ import {
   type TimelineSequenceCard,
 } from './TimelinePanel';
 import { getEditorStrings, formatEditorString } from '../localization';
-import {
-  SPRITE_SHEET_META_KEY,
-  buildSpriteSheetMeta,
-  spriteSheetMetaEquals,
-  type SpriteSheetMeta,
-} from '../constants/spriteSheetMeta';
 
 /**
  * Adapter interface that lets consumers provide their own persistence layer.
@@ -588,6 +582,11 @@ export const AnimationStudio = ({
         updatedAt: stored.meta.updatedAt,
       };
       setLastStoredSummary(summary);
+      editor.updateMeta({
+        displayName: summary.displayName,
+        createdAt: summary.createdAt,
+        updatedAt: summary.updatedAt,
+      });
       setFileActionMessage(
         formatEditorString(strings.animationStudio.statusSaved, { name: summary.displayName }),
       );
@@ -890,35 +889,6 @@ export const AnimationStudio = ({
 
   const imageInfo = useImageDimensions(image);
   const timelineImageSource = useMemo(() => resolveReactNativeImageSource(image), [image]);
-  const activeSheetSource = useMemo(() => {
-    if (!timelineImageSource || !imageInfo?.ready || !imageInfo.width || !imageInfo.height) {
-      return null;
-    }
-    return {
-      imageSource: timelineImageSource,
-      width: imageInfo.width,
-      height: imageInfo.height,
-    };
-  }, [imageInfo?.height, imageInfo?.ready, imageInfo?.width, timelineImageSource]);
-  const activeSheetMeta = useMemo(() => {
-    if (!activeSheetSource) {
-      return null;
-    }
-    return buildSpriteSheetMeta(
-      activeSheetSource.imageSource,
-      activeSheetSource.width,
-      activeSheetSource.height,
-    );
-  }, [activeSheetSource]);
-  useEffect(() => {
-    if (!activeSheetMeta) {
-      return;
-    }
-    const currentMeta = editor.state.meta?.[SPRITE_SHEET_META_KEY] as SpriteSheetMeta | undefined;
-    if (!spriteSheetMetaEquals(currentMeta, activeSheetMeta)) {
-      editor.updateMeta({ [SPRITE_SHEET_META_KEY]: activeSheetMeta });
-    }
-  }, [activeSheetMeta, editor, editor.state.meta]);
   const frameImageUris = useMemo(() => {
     const unique = new Set<string>();
     editor.state.frames.forEach((frame) => {

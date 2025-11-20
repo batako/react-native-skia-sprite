@@ -15,7 +15,6 @@ import {
   type StoredSprite,
 } from '../../storage/spriteStorage';
 import { cleanSpriteData } from '../utils/cleanSpriteData';
-import { SPRITE_SHEET_META_KEY } from '../constants/spriteSheetMeta';
 
 /**
  * Adapter interface used to inject custom sprite storage implementations.
@@ -144,7 +143,11 @@ export const useSpriteStorage = ({
             },
           },
         });
-        editor.updateMeta({ displayName: trimmedName });
+        editor.updateMeta({
+          displayName: trimmedName,
+          createdAt: stored.meta.createdAt,
+          updatedAt: stored.meta.updatedAt,
+        });
         const summary = toSummary(stored);
         setStatus(`Saved sprite ${trimmedName}.`);
         onSpriteSaved?.(summary);
@@ -176,11 +179,14 @@ export const useSpriteStorage = ({
         }
         const displayName =
           typeof stored.meta?.displayName === 'string' ? stored.meta.displayName : 'Loaded sprite';
-        editor.updateMeta({
-          displayName,
-          [SPRITE_SHEET_META_KEY]:
-            stored.meta?.[SPRITE_SHEET_META_KEY] ?? editor.state.meta?.[SPRITE_SHEET_META_KEY],
-        });
+        const nextMeta: Record<string, unknown> = { displayName };
+        if (typeof stored.meta?.createdAt === 'number') {
+          nextMeta.createdAt = stored.meta.createdAt;
+        }
+        if (typeof stored.meta?.updatedAt === 'number') {
+          nextMeta.updatedAt = stored.meta.updatedAt;
+        }
+        editor.updateMeta(nextMeta);
         const summary = toSummary(stored);
         setStatus(`Loaded sprite ${stored.meta.displayName}.`);
         onSpriteLoaded?.(summary);
@@ -211,18 +217,23 @@ export const useSpriteStorage = ({
         }
         const now = Date.now();
         const result = await storage.saveSprite({
-          sprite: {
-            ...payload,
-            id,
-            meta: {
-              ...(payload.meta ?? {}),
-              displayName,
-              createdAt: coerceTimestamp(stored.meta.createdAt) ?? now,
-              updatedAt: now,
+            sprite: {
+              ...payload,
+              id,
+              meta: {
+                ...(payload.meta ?? {}),
+                displayName,
+                createdAt: coerceTimestamp(stored.meta.createdAt) ?? now,
+                updatedAt: now,
+              },
             },
-          },
         });
         const summary = toSummary(result);
+        editor.updateMeta({
+          displayName,
+          createdAt: summary.createdAt,
+          updatedAt: summary.updatedAt,
+        });
         setStatus(`Overwrote sprite ${displayName}.`);
         onSpriteSaved?.(summary);
         await refresh();
@@ -257,7 +268,12 @@ export const useSpriteStorage = ({
             frames: stored.frames as SpriteFrame[],
             animations: stored.animations as SpriteAnimations | undefined,
             animationsMeta: stored.animationsMeta as SpriteAnimationsMeta | undefined,
-            meta: { ...stored.meta, displayName: trimmed, updatedAt: Date.now() },
+            meta: {
+              ...stored.meta,
+              displayName: trimmed,
+              createdAt: coerceTimestamp(stored.meta.createdAt) ?? stored.meta.createdAt ?? Date.now(),
+              updatedAt: Date.now(),
+            },
           },
         });
         const summary = toSummary(result);

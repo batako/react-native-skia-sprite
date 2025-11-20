@@ -117,6 +117,15 @@ export const StoragePanel = ({
         return candidate;
       }
     }
+    const firstAnimation = Object.values(stored.animations ?? {}).find(
+      (sequence) => Array.isArray(sequence) && sequence.length > 0,
+    );
+    if (firstAnimation) {
+      const candidate = firstAnimation[0];
+      if (typeof candidate === 'number' && stored.frames[candidate]) {
+        return candidate;
+      }
+    }
     return 0;
   }, []);
 
@@ -133,32 +142,53 @@ export const StoragePanel = ({
       }
       const frames = snapshot.frames as StoredSpriteFrame[];
       const frameIndex = resolvePreviewFrameIndex(snapshot);
+      const updatedAt =
+        typeof snapshot.meta?.updatedAt === 'number' ? snapshot.meta.updatedAt : Date.now();
       const frame = frames[frameIndex] ?? frames[0];
       const frameUri = frame?.imageUri;
       if (!frame || !frameUri) {
         setThumbnails((prev) => {
-          if (prev[spriteId]) {
+          if (!prev[spriteId]) {
             return prev;
           }
-          return prev;
+          const next = { ...prev };
+          delete next[spriteId];
+          return next;
         });
         return;
       }
       ensureImageInfo(frameUri);
       setThumbnails((prev) => {
-        if (prev[spriteId]) {
+        const { x, y, w, h } = frame;
+        if (w <= 0 || h <= 0) {
+          if (!prev[spriteId]) {
+            return prev;
+          }
+          const next = { ...prev };
+          delete next[spriteId];
+          return next;
+        }
+        const nextThumb: SpriteThumbnail = {
+          uri: frameUri,
+          frame: { x, y, w, h },
+          updatedAt,
+        };
+        const current = prev[spriteId];
+        if (
+          current &&
+          current.updatedAt === nextThumb.updatedAt &&
+          current.uri === nextThumb.uri &&
+          current.frame.x === nextThumb.frame.x &&
+          current.frame.y === nextThumb.frame.y &&
+          current.frame.w === nextThumb.frame.w &&
+          current.frame.h === nextThumb.frame.h
+        ) {
           return prev;
         }
-        const { x, y, w, h } = frame;
-        return w > 0 && h > 0
-          ? {
-              ...prev,
-              [spriteId]: {
-                uri: frameUri,
-                frame: { x, y, w, h },
-              },
-            }
-          : prev;
+        return {
+          ...prev,
+          [spriteId]: nextThumb,
+        };
       });
     },
     [ensureImageInfo, fetchSpriteById, resolvePreviewFrameIndex],
@@ -166,7 +196,8 @@ export const StoragePanel = ({
 
   React.useEffect(() => {
     sprites.forEach((sprite) => {
-      if (!thumbnailsRef.current[sprite.id]) {
+      const existing = thumbnailsRef.current[sprite.id];
+      if (!existing || existing.updatedAt !== sprite.updatedAt) {
         fetchThumbnail(sprite.id);
       }
     });
@@ -570,6 +601,7 @@ type SpriteThumbnail = {
     w: number;
     h: number;
   };
+  updatedAt?: number;
 };
 
 type StoredSpriteFrame = {
