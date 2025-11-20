@@ -520,13 +520,24 @@ export const AnimationStudio = ({
 
   const handleStorageLoaded = useCallback(
     (summary: SpriteSummary) => {
+      stop();
+      setActiveAnimation(null);
+      setTimelineSelection(null);
+      editor.setSelection([]);
       setLastStoredSummary(summary);
       setFileActionMessage(
         formatEditorString(strings.animationStudio.statusLoaded, { name: summary.displayName }),
       );
       handleCloseStorageManager();
     },
-    [handleCloseStorageManager, strings.animationStudio.statusLoaded],
+    [
+      editor,
+      handleCloseStorageManager,
+      setActiveAnimation,
+      setTimelineSelection,
+      stop,
+      strings.animationStudio.statusLoaded,
+    ],
   );
 
   const handleQuickSave = useCallback(async () => {
