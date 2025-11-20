@@ -1,9 +1,20 @@
 import React from 'react';
 import { Asset } from 'expo-asset';
-import { Linking, Pressable, SafeAreaView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import {
+  Linking,
+  Platform,
+  Pressable,
+  SafeAreaView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import {
+  AnimatedSprite2D,
   type SpriteEditorFrame,
   type SpriteEditorState,
+  type SpriteFramesResource,
   useSpriteEditor,
   getEditorStrings,
   SPRITE_ANIMATOR_VERSION,
@@ -76,6 +87,43 @@ const SAMPLE_INITIAL_STATE: Partial<SpriteEditorState> = {
   meta: {},
 };
 
+const ABOUT_SAMPLE_ANIMATION = 'walk';
+const aboutSampleAnimationsMeta: SpriteFramesResource['animationsMeta'] =
+  SAMPLE_INITIAL_STATE.animationsMeta
+    ? JSON.parse(JSON.stringify(SAMPLE_INITIAL_STATE.animationsMeta))
+    : {};
+if (!aboutSampleAnimationsMeta[ABOUT_SAMPLE_ANIMATION]) {
+  aboutSampleAnimationsMeta[ABOUT_SAMPLE_ANIMATION] = {
+    loop: true,
+    fps: 1,
+    multipliers: createDefaultMultipliers(
+      SAMPLE_INITIAL_STATE.animations?.[ABOUT_SAMPLE_ANIMATION]?.length ?? 0,
+    ),
+  };
+} else {
+  aboutSampleAnimationsMeta[ABOUT_SAMPLE_ANIMATION]!.fps = 1;
+}
+const ABOUT_SAMPLE_RESOURCE: SpriteFramesResource = {
+  frames: SAMPLE_FRAMES.map((frame) => ({
+    id: frame.id,
+    width: frame.w,
+    height: frame.h,
+    duration: frame.duration,
+    image: {
+      type: 'require',
+      assetId: SAMPLE_SPRITE as number,
+      subset:
+        typeof frame.x === 'number' && typeof frame.y === 'number'
+          ? { x: frame.x, y: frame.y, width: frame.w, height: frame.h }
+          : undefined,
+    },
+  })),
+  animations: SAMPLE_INITIAL_STATE.animations ?? {},
+  animationsMeta: aboutSampleAnimationsMeta,
+  autoPlayAnimation: SAMPLE_INITIAL_STATE.autoPlayAnimation ?? ABOUT_SAMPLE_ANIMATION,
+  meta: SAMPLE_INITIAL_STATE.meta ?? {},
+};
+
 /**
  * The standalone editor demo screen that wires up AnimationStudio.
  */
@@ -92,7 +140,7 @@ export const EditorScreen = () => {
   const [imageSource, setImageSource] = React.useState<DataSourceParam>(SAMPLE_SPRITE);
   const editorRef = React.useRef(editor);
   const [legalModalView, setLegalModalView] = React.useState<
-    'overview' | 'terms' | 'privacy' | 'licenses'
+    'overview' | 'about' | 'terms' | 'privacy' | 'licenses'
   >('overview');
   const [isLegalModalVisible, setLegalModalVisible] = React.useState(false);
   const handleLegalModalClose = React.useCallback(() => {
@@ -109,6 +157,8 @@ export const EditorScreen = () => {
   }, []);
   const legalModalTitle = React.useMemo(() => {
     switch (legalModalView) {
+      case 'about':
+        return legalStrings.infoAppHeading;
       case 'terms':
         return legalStrings.termsTitle;
       case 'privacy':
@@ -121,6 +171,33 @@ export const EditorScreen = () => {
   }, [legalModalView, legalStrings]);
   const renderLegalModalContent = React.useCallback(() => {
     switch (legalModalView) {
+      case 'about':
+        return (
+          <>
+            <Text style={styles.legalParagraph}>{legalStrings.infoAppDescription}</Text>
+            <Text style={styles.legalParagraph}>{legalStrings.infoAppModuleNote}</Text>
+            <Text style={styles.legalParagraph}>{legalStrings.infoAppJsonUsage}</Text>
+            <Text style={styles.modalSectionHeading}>{legalStrings.infoAppSampleHeading}</Text>
+            <View style={styles.sampleCard}>
+      <Text style={styles.sampleCardDescription}>
+        {legalStrings.infoAppSampleDescription}
+      </Text>
+      <Text style={styles.sampleLabel}>{legalStrings.infoAppSampleCodeLabel}</Text>
+      <View style={styles.codeBlock}>
+        <Text style={styles.codeText}>{legalStrings.infoAppSampleCode}</Text>
+      </View>
+      <Text style={styles.sampleLabel}>{legalStrings.infoAppSamplePreviewLabel}</Text>
+              <View style={styles.samplePreview}>
+                <AnimatedSprite2D
+                  frames={ABOUT_SAMPLE_RESOURCE}
+                  animation={ABOUT_SAMPLE_ANIMATION}
+                  autoplay={ABOUT_SAMPLE_ANIMATION}
+                  centered
+                />
+              </View>
+            </View>
+          </>
+        );
       case 'terms':
         return (
           <>
@@ -215,6 +292,17 @@ export const EditorScreen = () => {
       case 'overview':
         return (
           <>
+            <Text style={styles.modalSectionHeading}>{legalStrings.infoAppSectionHeading}</Text>
+            <View style={styles.inlineLinks}>
+              <Pressable
+                style={styles.inlineLink}
+                onPress={() => setLegalModalView('about')}
+                accessibilityRole="button"
+              >
+                <Text style={styles.inlineLinkLabel}>{legalStrings.infoAppLinkLabel}</Text>
+                <Text style={styles.inlineLinkArrow}>›</Text>
+              </Pressable>
+            </View>
             <Text style={styles.modalSectionHeading}>{legalStrings.legalHeading}</Text>
             <Text style={styles.legalParagraph}>{legalStrings.legalOverviewIntro}</Text>
             <View style={styles.inlineLinks}>
@@ -426,6 +514,49 @@ const styles = StyleSheet.create({
     color: '#d8deff',
     marginBottom: 12,
     lineHeight: 20,
+  },
+  codeBlock: {
+    backgroundColor: '#05070f',
+    borderWidth: 1,
+    borderColor: '#1c2538',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+  },
+  codeText: {
+    color: '#e7ecff',
+    fontFamily: Platform.select({
+      ios: 'Menlo',
+      android: 'monospace',
+      default: 'Courier',
+    }),
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  sampleCard: {
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#1d2639',
+    backgroundColor: '#0a0f1d',
+    padding: 14,
+    marginBottom: 20,
+  },
+  sampleCardDescription: {
+    color: '#cfd7f2',
+    marginBottom: 12,
+    lineHeight: 20,
+  },
+  sampleLabel: {
+    color: '#9fb2ff',
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 6,
+    marginTop: 6,
+  },
+  samplePreview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
   },
   licenseList: {
     gap: 12,

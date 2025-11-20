@@ -163,6 +163,18 @@ export type EditorStrings = {
   editorScreen: {
     subtitle: string;
     legalHeading: string;
+    infoAppSectionHeading: string;
+    infoAppHeading: string;
+    infoAppDescription: string;
+    infoAppJsonUsage: string;
+    infoAppModuleNote: string;
+    infoAppCustomization: string;
+    infoAppSampleHeading: string;
+    infoAppSampleDescription: string;
+    infoAppSampleCodeLabel: string;
+    infoAppSampleCode: string;
+    infoAppSamplePreviewLabel: string;
+    infoAppLinkLabel: string;
     infoCenterTitle: string;
     appVersionLabel: string;
     legalOverviewIntro: string;
@@ -350,6 +362,23 @@ const translations: Record<SupportedLanguage, EditorStrings> = {
       subtitle:
         'Edit frames, play animations, preview with AnimatedSprite2D, and persist sprites to disk with a single screen.',
       legalHeading: 'Policies & Notices',
+      infoAppSectionHeading: 'App Info',
+      infoAppHeading: 'App Overview',
+      infoAppDescription:
+        'This app is built directly with react-native-skia-sprite-animator. The on-screen Animation Studio, Sprite Storage workflow, and AnimatedSprite2D preview are the same components exported by the library.',
+      infoAppModuleNote:
+        'Combining these pieces lets you slice sprite sheets, edit animation timelines, manage metadata, and preview results without bespoke tooling, and you can embed or customize them to match your editor.',
+      infoAppCustomization: '',
+      infoAppJsonUsage:
+        'The exported cleanSpriteData JSON is understood by AnimatedSprite2D and the Sprite Storage helpers, so apps using react-native-skia-sprite-animator can load it without additional conversion.',
+      infoAppSampleHeading: 'Demo',
+      infoAppSampleDescription:
+        'Load the exported JSON next to your sprite sheet image and feed it into AnimatedSprite2D. The snippet below maps each frame to the subset inside the sheet, and the preview underneath renders the exact same setup.',
+      infoAppSampleCodeLabel: 'Sample code',
+      infoAppSampleCode:
+        "import React from 'react';\nimport spriteSheet from './assets/sprite.png';\nimport spriteJson from './assets/sprite.json';\nimport { AnimatedSprite2D } from 'react-native-skia-sprite-animator';\n\nconst frames = {\n  frames: spriteJson.frames.map((frame) => ({\n    id: frame.id,\n    width: frame.w,\n    height: frame.h,\n    duration: frame.duration,\n    image: {\n      type: 'require',\n      assetId: spriteSheet,\n      subset: frame.x !== undefined && frame.y !== undefined\n        ? { x: frame.x, y: frame.y, width: frame.w, height: frame.h }\n        : undefined,\n    },\n  })),\n  animations: spriteJson.animations,\n  animationsMeta: spriteJson.animationsMeta,\n  autoPlayAnimation: spriteJson.autoPlayAnimation ?? null,\n  meta: spriteJson.meta,\n};\n\nexport const PlayerPreview = () => {\n  return <AnimatedSprite2D frames={frames} animation=\"walk\" autoplay=\"walk\" centered />;\n};",
+      infoAppSamplePreviewLabel: 'AnimatedSprite2D preview',
+      infoAppLinkLabel: 'App Overview',
       infoCenterTitle: 'Info & Support',
       appVersionLabel: 'App Version',
       legalOverviewIntro:
@@ -544,6 +573,23 @@ const translations: Record<SupportedLanguage, EditorStrings> = {
       subtitle:
         'フレーム編集・アニメーション再生・AnimatedSprite2Dでのプレビュー・ディスク保存をこの画面でまとめて行えます。',
       legalHeading: '利用規約・ポリシー',
+      infoAppSectionHeading: 'アプリ情報',
+      infoAppHeading: 'アプリ概要',
+      infoAppDescription:
+        'このアプリは react-native-skia-sprite-animator をそのまま使って構築したサンプルです。Animation Studio、Sprite Storage のワークフロー、AnimatedSprite2D のプレビューは、ライブラリが公開するコンポーネントを組み合わせて実装しています。',
+      infoAppModuleNote:
+        'これらのコンポーネントを組み合わせれば、スプライトシートの切り出しやアニメーションタイムラインの編集、メタデータ管理、再生プレビューまでを独自ツールなしで行えます。既存のエディタに組み込んだり、用途に応じてカスタマイズすることも可能です。',
+      infoAppCustomization: '',
+      infoAppJsonUsage:
+        'エクスポートされる cleanSpriteData JSON は AnimatedSprite2D と Sprite Storage ヘルパーが理解できるフォーマットなので、react-native-skia-sprite-animator を利用するアプリでは変換なしで読み込めます。',
+      infoAppSampleHeading: 'デモ',
+      infoAppSampleDescription:
+        'JSON とスプライトシートの画像ファイルを読み込み、各フレームを AnimatedSprite2D が期待するフォーマットへ変換して描画します。下のプレビューはこのサンプルコードと同じ設定で動作しています。',
+      infoAppSampleCodeLabel: 'サンプルコード',
+      infoAppSampleCode:
+        "import React from 'react';\nimport spriteSheet from './assets/sprite.png';\nimport spriteJson from './assets/sprite.json';\nimport { AnimatedSprite2D } from 'react-native-skia-sprite-animator';\n\nconst frames = {\n  frames: spriteJson.frames.map((frame) => ({\n    id: frame.id,\n    width: frame.w,\n    height: frame.h,\n    duration: frame.duration,\n    image: {\n      type: 'require',\n      assetId: spriteSheet,\n      subset: frame.x !== undefined && frame.y !== undefined\n        ? { x: frame.x, y: frame.y, width: frame.w, height: frame.h }\n        : undefined,\n    },\n  })),\n  animations: spriteJson.animations,\n  animationsMeta: spriteJson.animationsMeta,\n  autoPlayAnimation: spriteJson.autoPlayAnimation ?? null,\n  meta: spriteJson.meta,\n};\n\nexport const PlayerPreview = () => {\n  return <AnimatedSprite2D frames={frames} animation=\"walk\" autoplay=\"walk\" centered />;\n};",
+      infoAppSamplePreviewLabel: 'AnimatedSprite2D プレビュー',
+      infoAppLinkLabel: 'アプリ概要',
       infoCenterTitle: 'インフォメーション',
       legalOverviewIntro:
         '本アプリに適用される利用規約・プライバシーポリシー・オープンソースライセンスはこちらから確認できます。',
