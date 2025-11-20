@@ -6,6 +6,8 @@ v0.3 introduces headless editor primitives so you can build custom sprite editor
 2. `SpriteEditUtils` – geometry helpers for snapping, hit-testing, and layout math.
 3. Templates – `SpriteTemplate` interface plus `DefaultSpriteTemplate` for spriteStorage-compatible JSON.
 
+> **Note:** The legacy `SpriteAnimator` component stays available through v0.4.0 but will be **removed starting with v0.4.1**. Prefer the newer `AnimatedSprite2D` runtime when wiring previews or playback controls.
+
 ---
 
 ## useSpriteEditor hook
@@ -163,7 +165,7 @@ You can provide a custom `controller` to back these operations with your own fil
 
 ## useEditorIntegration hook
 
-`useEditorIntegration` ties `useSpriteEditor` state to a `SpriteAnimator` instance. It exposes imperative handlers (play/pause/seek), playback speed, selected animations, and refs so that your preview widgets stay synchronized with the editor state.
+`useEditorIntegration` ties `useSpriteEditor` state to an animation preview. Historically this targeted the `SpriteAnimator` component, but you can feed the returned `runtimeData` into `AnimatedSprite2D` as well. It exposes imperative handlers (play/pause/seek), playback speed, selected animations, and refs so that your preview widgets stay synchronized with the editor state.
 
 ```tsx
 import {

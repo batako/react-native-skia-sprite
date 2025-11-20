@@ -1,13 +1,16 @@
 # react-native-skia-sprite-animator
 
-`react-native-skia-sprite-animator` is a UI-agnostic helper built for React Native/Expo projects that rely on [@shopify/react-native-skia](https://shopify.github.io/react-native-skia/). It focuses on two things: playing sprite-sheet animations (`SpriteAnimator`) and persisting sprite JSON + images to `expo-file-system` (`spriteStorage`).
+`react-native-skia-sprite-animator` is a UI-agnostic helper built for React Native/Expo projects that rely on [@shopify/react-native-skia](https://shopify.github.io/react-native-skia/). It ships the modern `AnimatedSprite2D` runtime (recommended) plus persistence helpers (`spriteStorage`) and headless editor APIs. The legacy `SpriteAnimator` component will receive its final release in **v0.4.0** and will be removed in **v0.4.1+**—plan migrations accordingly.
 
 ## Feature Overview
 
-- **SpriteAnimator** – declarative + imperative animation playback with Skia rendering, frame events, directional flips, speed controls, and animation metadata overrides.
+- **AnimatedSprite2D** – lightweight runtime that consumes the same JSON as the editor/template helpers. Supports autoplay, timeline overrides, flips, and imperative control through `AnimatedSprite2DHandle`.
+- **SpriteAnimator** *(legacy, deprecated as of v0.4.0 and removed in v0.4.1+)* – declarative + imperative playback with Skia rendering. New code should prefer `AnimatedSprite2D`.
 - **spriteStorage** – `saveSprite`, `loadSprite`, `listSprites`, `deleteSprite`, and storage configuration helpers so sprites plus metadata persist on device using Expo File System.
 - **Editor APIs** – `useSpriteEditor` (frame CRUD, selection, clipboard, undo/redo, metadata updates), editor-agnostic hooks like `useTimelineEditor` / `useMetadataManager` / `useSpriteStorage`, plus `DefaultSpriteTemplate` helpers (import/export) and `SpriteEditUtils` (grid snapping, rect merging, hit-testing).
 - **Standalone Expo editor** – an example app under `examples/standalone-editor/` that combines every API (canvas editing, real-time playback, storage, templates, metadata) to serve as the canonical feature showcase.
+
+> ⚠️ The `SpriteAnimator` component remains available up to version **v0.4.0** but will be removed starting in **v0.4.1**. Use `AnimatedSprite2D` for new code paths.
 
 ## Installation
 
@@ -19,7 +22,37 @@ npx expo install react-native @shopify/react-native-skia expo-file-system
 
 > Tested with Expo SDK 52, React Native 0.82 (works with >=0.81), and React 19.
 
-## Using SpriteAnimator
+## Using AnimatedSprite2D
+
+```tsx
+import { AnimatedSprite2D, type SpriteFramesResource } from 'react-native-skia-sprite-animator';
+import spriteSheet from '../assets/hero.png';
+import spriteJson from '../assets/hero.json';
+
+const frames: SpriteFramesResource = {
+  frames: spriteJson.frames,
+  animations: spriteJson.animations,
+  animationsMeta: spriteJson.animationsMeta,
+  autoPlayAnimation: spriteJson.autoPlayAnimation ?? null,
+};
+
+export function HeroPreview() {
+  return (
+    <AnimatedSprite2D
+      frames={frames}
+      animation="idle"
+      autoplay="idle"
+      speedScale={1}
+      centered
+      style={{ width: 128, height: 128 }}
+    />
+  );
+}
+```
+
+`AnimatedSprite2D` consumes the `SpriteFramesResource` shape produced by `cleanSpriteData`, `buildAnimatedSpriteFrames`, and the Animation Studio export. It exposes the same imperative handle as `SpriteAnimator` (`play`, `pause`, `seekFrame`, etc.) while avoiding extra Skia plumbing.
+
+## Using SpriteAnimator *(deprecated after v0.4.0)*
 
 ```tsx
 import { SpriteAnimator, type SpriteData } from 'react-native-skia-sprite-animator';

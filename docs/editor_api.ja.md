@@ -6,6 +6,8 @@ UI を含まないエディター用プリミティブを利用することで�
 2. `SpriteEditUtils` – スナップやヒットテストなど、エディターでよく使うジオメトリ系ヘルパー。
 3. シリアライズヘルパー – `DefaultSpriteTemplate` が spriteStorage 互換の JSON を生成/復元します。
 
+> **注意:** 旧来の `SpriteAnimator` コンポーネントは v0.4.0 までは利用できますが、v0.4.1 以降で削除予定の deprecated 機能です。今後は `AnimatedSprite2D` を利用してください。
+
 ---
 
 ## useSpriteEditor Hook
@@ -158,7 +160,7 @@ const storage = useSpriteStorage({
 
 ## useEditorIntegration Hook
 
-`useEditorIntegration` は `useSpriteEditor` の状態と `SpriteAnimator` のプレビューを結び付けるためのフックです。`playForward` / `playReverse` / `seekFrame` といった再生操作、`animatorRef`、現在のアニメーション名、速度倍率などをまとめて返すため、プレビュー UI が常に編集内容と同期します。
+`useEditorIntegration` は `useSpriteEditor` の状態とプレビュー用アニメーションコンポーネント（従来の `SpriteAnimator` や推奨される `AnimatedSprite2D`）を結び付けるためのフックです。`playForward` / `playReverse` / `seekFrame` といった再生操作、`animatorRef`、現在のアニメーション名、速度倍率などをまとめて返すため、プレビュー UI が常に編集内容と同期します。
 
 ```tsx
 import {
