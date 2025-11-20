@@ -1456,12 +1456,13 @@ export const AnimationStudio = ({
               <IconButton
                 name="add"
                 onPress={handleAddAnimation}
+                disabled={isPlaying}
                 accessibilityLabel={strings.animationStudio.addAnimation}
               />
               <IconButton
                 name="delete"
                 onPress={() => currentAnimationName && confirmDeleteAnimation(currentAnimationName)}
-                disabled={!currentAnimationName}
+                disabled={!currentAnimationName || isPlaying}
                 accessibilityLabel={strings.animationStudio.deleteAnimation}
               />
               <View style={styles.timelineDivider} />
@@ -1478,7 +1479,11 @@ export const AnimationStudio = ({
               />
             </View>
             {currentAnimationName && (
-              <AnimationFpsField value={currentAnimationFps} onSubmit={handleAnimationFpsChange} />
+              <AnimationFpsField
+                value={currentAnimationFps}
+                onSubmit={handleAnimationFpsChange}
+                disabled={isPlaying}
+              />
             )}
             <ScrollView
               style={[
@@ -1805,9 +1810,10 @@ export const AnimationStudio = ({
 interface AnimationFpsFieldProps {
   value: number;
   onSubmit: (value: number) => void;
+  disabled?: boolean;
 }
 
-const AnimationFpsField = ({ value, onSubmit }: AnimationFpsFieldProps) => {
+const AnimationFpsField = ({ value, onSubmit, disabled = false }: AnimationFpsFieldProps) => {
   const strings = useMemo(() => getEditorStrings(), []);
   const [text, setText] = useState(String(value));
   const [isFocused, setFocused] = useState(false);
@@ -1834,8 +1840,9 @@ const AnimationFpsField = ({ value, onSubmit }: AnimationFpsFieldProps) => {
       <Text style={styles.animationFpsLabel}>FPS</Text>
       <SelectableTextInput
         ref={inputRef}
-        style={styles.animationFpsInput}
+        style={[styles.animationFpsInput, disabled && styles.animationFpsInputDisabled]}
         value={text}
+        editable={!disabled}
         onChangeText={setText}
         onFocus={() => setFocused(true)}
         onBlur={() => {
@@ -2202,6 +2209,9 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     color: '#fff',
     backgroundColor: '#191f2e',
+  },
+  animationFpsInputDisabled: {
+    opacity: 0.5,
   },
   animationList: {
     marginTop: 8,
