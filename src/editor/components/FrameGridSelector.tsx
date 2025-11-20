@@ -5,6 +5,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -923,6 +924,7 @@ const NumericInputField: React.FC<NumericInputFieldProps> = ({
   const [text, setText] = useState(String(value));
   const [isFocused, setIsFocused] = useState(false);
   const strings = useMemo(() => getEditorStrings(), []);
+  const inputRef = useRef<TextInput>(null);
 
   useEffect(() => {
     if (!isFocused) {
@@ -967,6 +969,10 @@ const NumericInputField: React.FC<NumericInputFieldProps> = ({
     commitValue(numericValue);
   };
 
+  const blurInput = () => {
+    inputRef.current?.blur();
+  };
+
   return (
     <View style={styles.fieldRow}>
       <Text style={styles.fieldLabel}>{label}</Text>
@@ -974,13 +980,17 @@ const NumericInputField: React.FC<NumericInputFieldProps> = ({
         {showStepControls && (
           <TouchableOpacity
             style={[styles.stepButton, styles.stepButtonLeft]}
-            onPress={() => commitValue(value - step)}
+            onPress={() => {
+              blurInput();
+              commitValue(value - step);
+            }}
             accessibilityLabel={formatEditorString(strings.general.decreaseValue, { label })}
           >
             <Text style={styles.stepButtonText}>-</Text>
           </TouchableOpacity>
         )}
         <SelectableTextInput
+          ref={inputRef}
           value={text}
           onChangeText={handleChangeText}
           onFocus={() => setIsFocused(true)}
@@ -992,7 +1002,10 @@ const NumericInputField: React.FC<NumericInputFieldProps> = ({
         {showStepControls && (
           <TouchableOpacity
             style={[styles.stepButton, styles.stepButtonRight]}
-            onPress={() => commitValue(value + step)}
+            onPress={() => {
+              blurInput();
+              commitValue(value + step);
+            }}
             accessibilityLabel={formatEditorString(strings.general.increaseValue, { label })}
           >
             <Text style={styles.stepButtonText}>+</Text>
