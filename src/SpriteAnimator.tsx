@@ -195,6 +195,18 @@ const MIN_SPEED = 0.001;
 const DEFAULT_DIRECTION: SpriteAnimatorDirection = 'forward';
 const DEFAULT_LOOP_BEHAVIOR = true;
 
+let hasWarnedSpriteAnimator = false;
+const warnSpriteAnimatorDeprecation = () => {
+  if (__DEV__ && !hasWarnedSpriteAnimator) {
+    hasWarnedSpriteAnimator = true;
+    console.warn(
+      '[DEPRECATED] SpriteAnimator will be removed after v0.4.0. Please migrate to AnimatedSprite2D.',
+    );
+  }
+};
+
+warnSpriteAnimatorDeprecation();
+
 const clamp = (value: number, min: number, max: number) => {
   if (value < min) return min;
   if (value > max) return max;
