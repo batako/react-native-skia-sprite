@@ -1740,13 +1740,13 @@ export const AnimationStudio = ({
               >
                 <View style={styles.templateFieldHeader}>
                   <TouchableOpacity
-                    style={styles.templateFieldButton}
+                    style={[styles.templateFieldButton, styles.templateFieldButtonLight]}
                     onPress={handleExportTemplate}
                     accessibilityRole="button"
                     accessibilityLabel={strings.templateModal.exportButton}
                   >
-                    <MaterialIcons name="file-download" size={18} color="#e6ebff" />
-                    <Text style={styles.templateFieldButtonLabel}>
+                    <MaterialIcons name="file-download" size={18} color="#0f172a" />
+                    <Text style={[styles.templateFieldButtonLabel, styles.templateFieldButtonLabelDark]}>
                       {strings.templateModal.exportButton}
                     </Text>
                   </TouchableOpacity>
@@ -1773,6 +1773,7 @@ export const AnimationStudio = ({
                   <TouchableOpacity
                     style={[
                       styles.templateFieldButton,
+                      styles.templateFieldButtonLight,
                       !importText.trim() && styles.templateFieldButtonDisabled,
                     ]}
                     onPress={handleImportTemplate}
@@ -1780,8 +1781,14 @@ export const AnimationStudio = ({
                     accessibilityRole="button"
                     accessibilityLabel={strings.templateModal.importButton}
                   >
-                    <MaterialIcons name="file-upload" size={18} color="#e6ebff" />
-                    <Text style={styles.templateFieldButtonLabel}>
+                    <MaterialIcons name="file-upload" size={18} color="#0f172a" />
+                    <Text
+                      style={[
+                        styles.templateFieldButtonLabel,
+                        styles.templateFieldButtonLabelDark,
+                        !importText.trim() && styles.templateFieldButtonLabelDisabled,
+                      ]}
+                    >
                       {strings.templateModal.importButton}
                     </Text>
                   </TouchableOpacity>
@@ -2110,6 +2117,10 @@ const styles = StyleSheet.create({
     borderColor: '#2e3545',
     backgroundColor: '#13192b',
   },
+  templateFieldButtonLight: {
+    borderColor: '#c4cad9',
+    backgroundColor: '#fff',
+  },
   templateFieldButtonDisabled: {
     opacity: 0.4,
   },
@@ -2117,6 +2128,12 @@ const styles = StyleSheet.create({
     color: '#f1f5ff',
     fontWeight: '600',
     fontSize: 12,
+  },
+  templateFieldButtonLabelDark: {
+    color: '#0f172a',
+  },
+  templateFieldButtonLabelDisabled: {
+    color: '#6c7283',
   },
   templateSection: {
     marginTop: 12,
