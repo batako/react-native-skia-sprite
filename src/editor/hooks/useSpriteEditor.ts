@@ -415,10 +415,7 @@ export const useSpriteEditor = (options: UseSpriteEditorOptions = {}): SpriteEdi
   const reorderFrames = useCallback<SpriteEditorApi['reorderFrames']>(
     (from, to) => {
       apply((prev) => {
-        if (from === to) {
-          return prev;
-        }
-        if (from < 0 || from >= prev.frames.length || !prev.frames.length) {
+        if (from === to || from < 0 || from >= prev.frames.length || !prev.frames.length) {
           return prev;
         }
         const target = clamp(to, 0, prev.frames.length - 1);
@@ -428,9 +425,24 @@ export const useSpriteEditor = (options: UseSpriteEditorOptions = {}): SpriteEdi
           return prev;
         }
         frames.splice(target, 0, moved);
+        const idToIndex = new Map(frames.map((frame, index) => [frame.id, index]));
+        const animations = Object.fromEntries(
+          Object.entries(prev.animations).map(([name, sequence]) => [
+            name,
+            sequence.map((index) => {
+              const frame = prev.frames[index];
+              if (!frame) {
+                return index;
+              }
+              const mapped = idToIndex.get(frame.id);
+              return typeof mapped === 'number' ? mapped : index;
+            }),
+          ]),
+        );
         return {
           ...prev,
           frames,
+          animations,
         };
       });
     },

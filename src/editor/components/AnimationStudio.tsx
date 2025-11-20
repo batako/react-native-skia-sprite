@@ -796,6 +796,7 @@ export const AnimationStudio = ({
   }, [animations, currentAnimationName, setTimelineSelection]);
 
   const skipTimelineSelectionSeekRef = useRef(false);
+  const ignoreNextTimelineCursorRef = useRef(false);
 
   useEffect(() => {
     if (timelineCursor === null) {
@@ -807,9 +808,18 @@ export const AnimationStudio = ({
     if (selectedTimelineIndex === timelineCursor) {
       return;
     }
+    if (ignoreNextTimelineCursorRef.current) {
+      ignoreNextTimelineCursorRef.current = false;
+      return;
+    }
     skipTimelineSelectionSeekRef.current = true;
     setTimelineSelection(timelineCursor);
-  }, [currentSequence.length, selectedTimelineIndex, setTimelineSelection, timelineCursor]);
+  }, [
+    currentSequence.length,
+    selectedTimelineIndex,
+    setTimelineSelection,
+    timelineCursor,
+  ]);
 
   const resolvePlaybackStartCursor = useCallback(
     (direction: 'forward' | 'reverse' = 'forward') => {
@@ -1279,6 +1289,7 @@ export const AnimationStudio = ({
       result.splice(targetIndex, 0, value);
       return result;
     });
+    ignoreNextTimelineCursorRef.current = true;
     selectTimelineFrame(targetIndex, next);
   };
 
