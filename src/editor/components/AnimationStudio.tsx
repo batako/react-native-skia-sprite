@@ -240,9 +240,6 @@ export const AnimationStudio = ({
   const [framePickerVariant, setFramePickerVariant] = useState<MacWindowVariant>('default');
   const [isStorageManagerVisible, setStorageManagerVisible] = useState(false);
   const [fileActionMessage, setFileActionMessage] = useState<string | null>(null);
-  const [storagePromptMessage, setStoragePromptMessage] = useState<string>(
-    strings.animationStudio.defaultStatusMessage,
-  );
   const [isQuickSaving, setIsQuickSaving] = useState(false);
   const [lastStoredSummary, setLastStoredSummary] = useState<SpriteSummary | null>(null);
   const {
@@ -504,14 +501,12 @@ export const AnimationStudio = ({
   }, [animationsMeta, editor, editor.state.meta]);
 
   const handleOpenStorageManager = useCallback(() => {
-    setStoragePromptMessage(strings.animationStudio.defaultStatusMessage);
     setStorageManagerVisible(true);
-  }, [strings.animationStudio.defaultStatusMessage]);
+  }, []);
 
   const handleCloseStorageManager = useCallback(() => {
     setStorageManagerVisible(false);
-    setStoragePromptMessage(strings.animationStudio.defaultStatusMessage);
-  }, [strings.animationStudio.defaultStatusMessage]);
+  }, []);
 
   const handleStorageSaved = useCallback(
     (summary: SpriteSummary) => {
@@ -544,7 +539,6 @@ export const AnimationStudio = ({
     }
     if (!lastStoredSummary) {
       setFileActionMessage(strings.animationStudio.requireNameMessage);
-      setStoragePromptMessage(strings.animationStudio.requireNameMessage);
       setStorageManagerVisible(true);
       return;
     }
@@ -555,7 +549,6 @@ export const AnimationStudio = ({
     ).trim();
     if (!resolvedDisplayName.length) {
       setFileActionMessage(strings.animationStudio.requireNameMessage);
-      setStoragePromptMessage(strings.animationStudio.requireNameMessage);
       setStorageManagerVisible(true);
       return;
     }
@@ -1639,7 +1632,6 @@ export const AnimationStudio = ({
         onClose={handleCloseStorageManager}
         onSpriteLoaded={handleStorageLoaded}
         onSpriteSaved={handleStorageSaved}
-        defaultStatusMessage={storagePromptMessage}
         storageApi={{
           listSprites: storageApi.listSprites,
           loadSprite: storageApi.loadSprite,

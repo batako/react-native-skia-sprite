@@ -33,8 +33,6 @@ interface StoragePanelProps {
   onSpriteSaved?: (summary: SpriteSummary) => void;
   /** Callback fired when a sprite is loaded. */
   onSpriteLoaded?: (summary: SpriteSummary) => void;
-  /** Default status text shown in toolbar. */
-  defaultStatusMessage?: string;
   /** Custom storage API injection. */
   storageApi?: SpriteStorageController;
 }
@@ -48,7 +46,6 @@ export const StoragePanel = ({
   onClose,
   onSpriteSaved,
   onSpriteLoaded,
-  defaultStatusMessage,
   storageApi,
 }: StoragePanelProps) => {
   const strings = React.useMemo(() => getEditorStrings(), []);
@@ -369,13 +366,6 @@ export const StoragePanel = ({
           title={strings.storagePanel.title}
           onClose={onClose}
           contentStyle={styles.windowContent}
-          toolbarContent={
-            <View style={styles.toolbarContent}>
-              <Text style={styles.toolbarStatus}>
-                {translatedStatus ?? defaultStatusMessage ?? strings.storagePanel.defaultStatus}
-              </Text>
-            </View>
-          }
           enableCompact={false}
         >
           <View style={styles.formRow}>
@@ -476,20 +466,6 @@ const styles = StyleSheet.create({
   listContainer: {
     flex: 1,
     width: '100%',
-  },
-  toolbarContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 0,
-  },
-  toolbarStatus: {
-    color: '#d9def7',
-    fontSize: 13,
-  },
-  toolbarSpacer: {
-    flex: 1,
   },
   formRow: {
     flexDirection: 'row',

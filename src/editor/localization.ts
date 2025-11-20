@@ -49,7 +49,6 @@ export type EditorStrings = {
     stopPreview: string;
   };
   animationStudio: {
-    defaultStatusMessage: string;
     requireNameMessage: string;
     animationPreviewTitle: string;
     animationsTitle: string;
@@ -101,7 +100,6 @@ export type EditorStrings = {
   };
   storagePanel: {
     title: string;
-    defaultStatus: string;
     spriteNameLabel: string;
     spriteNamePlaceholder: string;
     saveSprite: string;
@@ -234,7 +232,6 @@ const translations: Record<SupportedLanguage, EditorStrings> = {
       stopPreview: 'Stop preview',
     },
     animationStudio: {
-      defaultStatusMessage: 'Manage saved sprites or import past work.',
       requireNameMessage: 'Use Sprite Storage to name and save new sprites.',
       animationPreviewTitle: 'Animation Preview',
       animationsTitle: 'Animations',
@@ -286,7 +283,6 @@ const translations: Record<SupportedLanguage, EditorStrings> = {
     },
     storagePanel: {
       title: 'Sprite Storage',
-      defaultStatus: 'Manage saved sprites or import past work.',
       spriteNameLabel: 'Sprite name',
       spriteNamePlaceholder: 'Untitled Sprite',
       saveSprite: 'Save sprite',
@@ -426,8 +422,6 @@ const translations: Record<SupportedLanguage, EditorStrings> = {
       stopPreview: 'プレビューを停止',
     },
     animationStudio: {
-      defaultStatusMessage:
-        '保存済みのスプライトを管理するか、過去の作業をインポートしてください。',
       requireNameMessage: 'スプライトストレージで名前を付けて保存してください。',
       animationPreviewTitle: 'アニメーションプレビュー',
       animationsTitle: 'アニメーション',
@@ -480,7 +474,6 @@ const translations: Record<SupportedLanguage, EditorStrings> = {
     },
     storagePanel: {
       title: 'スプライトストレージ',
-      defaultStatus: '保存済みのスプライトを管理するか、過去の作業をインポートしてください。',
       spriteNameLabel: 'スプライト名',
       spriteNamePlaceholder: '名称未設定のスプライト',
       saveSprite: 'スプライトを保存',
