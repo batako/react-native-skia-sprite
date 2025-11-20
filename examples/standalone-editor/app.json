@@ -2,12 +2,12 @@
   "expo": {
     "name": "RN Skia Sprite Animator",
     "slug": "react-native-skia-sprite-animator",
-    "version": "0.1.0",
+    "version": "0.4.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/splash-tablet.png",
+      "image": "./assets/splash.png",
       "tabletImage": "./assets/splash-tablet.png",
       "resizeMode": "contain",
       "backgroundColor": "#05070f"
