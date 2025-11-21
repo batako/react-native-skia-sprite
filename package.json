@@ -39,8 +39,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "clean": "rimraf dist",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "format": "prettier --write . \"!examples/standalone-editor/ios\"",
+    "format:check": "prettier --check . \"!examples/standalone-editor/ios\"",
     "lint": "eslint . --ext .ts,.tsx,.js",
     "test": "jest --config jest.config.cjs",
     "release": "npm ci && npm run build && npm publish --access public",
