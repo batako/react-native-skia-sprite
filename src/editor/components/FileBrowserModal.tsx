@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  Modal,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -442,16 +441,32 @@ export const FileBrowserModal = ({
   }
 
   return (
-    <Modal animationType="fade" transparent visible={visible} onRequestClose={handleRequestClose}>
-      <View style={styles.modalOverlay}>{renderWindow()}</View>
-    </Modal>
+    <View style={styles.overlayRoot} pointerEvents={visible ? 'auto' : 'none'}>
+      {visible ? (
+        <>
+          <View style={styles.backdrop} />
+          <View style={styles.modalOverlay}>{renderWindow()}</View>
+        </>
+      ) : null}
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  modalOverlay: {
-    flex: 1,
+  overlayRoot: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 999,
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 16,

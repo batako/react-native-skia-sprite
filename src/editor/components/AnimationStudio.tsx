@@ -3,7 +3,6 @@ import {
   Alert,
   Image,
   Linking,
-  Modal,
   Platform,
   ScrollView,
   StyleSheet,
@@ -1741,41 +1740,34 @@ export const AnimationStudio = ({
           />
         </View>
       </View>
-      <Modal
-        animationType="slide"
-        transparent
-        visible={isFramePickerVisible}
-        onRequestClose={() => {
-          setFramePickerVariant('default');
-          setFramePickerVisible(false);
-          setFramePickerImage(null);
-        }}
-      >
-        <View style={styles.modalOverlay}>
-          <MacWindow
-            title={strings.framePicker.title}
-            onVariantChange={setFramePickerVariant}
-            onClose={() => {
-              setFramePickerVariant('default');
-              setFramePickerVisible(false);
-              setFramePickerImage(null);
-            }}
-            enableCompact={false}
-            style={framePickerVariant === 'default' ? styles.framePickerWindow : undefined}
-            contentStyle={styles.framePickerContent}
-          >
-            <FrameGridSelector
-              image={framePickerImage ?? undefined}
-              emptyMessage={strings.framePicker.emptyMessage}
-              onAddFrames={(cells, descriptor) => {
-                handleGridAddFrames(cells, descriptor ?? framePickerImage ?? undefined);
+      {isFramePickerVisible ? (
+        <View style={styles.modalOverlayRoot}>
+          <View style={styles.modalOverlay}>
+            <MacWindow
+              title={strings.framePicker.title}
+              onVariantChange={setFramePickerVariant}
+              onClose={() => {
+                setFramePickerVariant('default');
                 setFramePickerVisible(false);
                 setFramePickerImage(null);
               }}
-            />
-          </MacWindow>
+              enableCompact={false}
+              style={framePickerVariant === 'default' ? styles.framePickerWindow : undefined}
+              contentStyle={styles.framePickerContent}
+            >
+              <FrameGridSelector
+                image={framePickerImage ?? undefined}
+                emptyMessage={strings.framePicker.emptyMessage}
+                onAddFrames={(cells, descriptor) => {
+                  handleGridAddFrames(cells, descriptor ?? framePickerImage ?? undefined);
+                  setFramePickerVisible(false);
+                  setFramePickerImage(null);
+                }}
+              />
+            </MacWindow>
+          </View>
         </View>
-      </Modal>
+      ) : null}
       <FileBrowserModal
         visible={isFrameSourceBrowserVisible}
         onClose={() => setFrameSourceBrowserVisible(false)}
@@ -1809,203 +1801,197 @@ export const AnimationStudio = ({
           saveSprite: storageApi.saveSprite,
         }}
       />
-      <Modal
-        visible={isMetaModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={handleCloseMetaModal}
-      >
-        <View style={styles.modalOverlay}>
-          <MacWindow
-            title={strings.metadataModal.title}
-            onClose={handleCloseMetaModal}
-            contentStyle={styles.metaModalContent}
-            enableCompact={false}
-            style={styles.metaModalWindow}
-          >
-            <View style={styles.metaHeaderRow}>
-              <View style={styles.metaHeaderLeft}>
-                <Text style={styles.metaHeading}>{strings.metadataModal.heading}</Text>
-              </View>
-              <IconButton
-                name="save"
-                onPress={applyEntries}
-                accessibilityLabel={strings.metadataModal.apply}
-              />
-            </View>
-            <View
-              style={styles.metaRowsWrapper}
-              onLayout={(event) => {
-                metaRowsViewportHeightRef.current = event.nativeEvent.layout.height;
-                evaluateMetaAddSticky();
-              }}
+      {isMetaModalVisible ? (
+        <View style={styles.modalOverlayRoot}>
+          <View style={styles.modalOverlay}>
+            <MacWindow
+              title={strings.metadataModal.title}
+              onClose={handleCloseMetaModal}
+              contentStyle={styles.metaModalContent}
+              enableCompact={false}
+              style={styles.metaModalWindow}
             >
-              <ScrollView
-                ref={metaRowsScrollRef}
-                style={styles.metaRowsStack}
-                contentContainerStyle={styles.metaRowsContent}
-                onScroll={handleMetaRowsScroll}
-                scrollEventThrottle={16}
-                onContentSizeChange={() => evaluateMetaAddSticky()}
+              <View style={styles.metaHeaderRow}>
+                <View style={styles.metaHeaderLeft}>
+                  <Text style={styles.metaHeading}>{strings.metadataModal.heading}</Text>
+                </View>
+                <IconButton
+                  name="save"
+                  onPress={applyEntries}
+                  accessibilityLabel={strings.metadataModal.apply}
+                />
+              </View>
+              <View
+                style={styles.metaRowsWrapper}
+                onLayout={(event) => {
+                  metaRowsViewportHeightRef.current = event.nativeEvent.layout.height;
+                  evaluateMetaAddSticky();
+                }}
               >
-                {metaEntries.map((entry) => (
-                  <View key={entry.id} style={styles.metaRow}>
-                    <View style={styles.metaField}>
-                      <Text style={styles.metaLabel}>{strings.metadataModal.keyLabel}</Text>
-                      <TextInput
-                        value={entry.key}
-                        onChangeText={(text) => updateEntry(entry.id, 'key', text)}
-                        style={styles.metaInput}
-                        editable={!entry.readOnly}
-                        placeholder={strings.metadataModal.keyPlaceholder}
-                      />
+                <ScrollView
+                  ref={metaRowsScrollRef}
+                  style={styles.metaRowsStack}
+                  contentContainerStyle={styles.metaRowsContent}
+                  onScroll={handleMetaRowsScroll}
+                  scrollEventThrottle={16}
+                  onContentSizeChange={() => evaluateMetaAddSticky()}
+                >
+                  {metaEntries.map((entry) => (
+                    <View key={entry.id} style={styles.metaRow}>
+                      <View style={styles.metaField}>
+                        <Text style={styles.metaLabel}>{strings.metadataModal.keyLabel}</Text>
+                        <TextInput
+                          value={entry.key}
+                          onChangeText={(text) => updateEntry(entry.id, 'key', text)}
+                          style={styles.metaInput}
+                          editable={!entry.readOnly}
+                          placeholder={strings.metadataModal.keyPlaceholder}
+                        />
+                      </View>
+                      <View style={styles.metaField}>
+                        <Text style={styles.metaLabel}>{strings.metadataModal.valueLabel}</Text>
+                        <TextInput
+                          value={entry.value}
+                          onChangeText={(text) => updateEntry(entry.id, 'value', text)}
+                          style={styles.metaInput}
+                          editable={!entry.readOnly}
+                          placeholder={strings.metadataModal.valuePlaceholder}
+                        />
+                      </View>
+                      {entry.readOnly ? (
+                        <View style={styles.metaDeleteSpacer} />
+                      ) : (
+                        <IconButton
+                          name="delete"
+                          onPress={() => removeEntry(entry.id)}
+                          accessibilityLabel={strings.metadataModal.removeEntry}
+                        />
+                      )}
                     </View>
-                    <View style={styles.metaField}>
-                      <Text style={styles.metaLabel}>{strings.metadataModal.valueLabel}</Text>
-                      <TextInput
-                        value={entry.value}
-                        onChangeText={(text) => updateEntry(entry.id, 'value', text)}
-                        style={styles.metaInput}
-                        editable={!entry.readOnly}
-                        placeholder={strings.metadataModal.valuePlaceholder}
-                      />
-                    </View>
-                    {entry.readOnly ? (
-                      <View style={styles.metaDeleteSpacer} />
-                    ) : (
-                      <IconButton
-                        name="delete"
-                        onPress={() => removeEntry(entry.id)}
-                        accessibilityLabel={strings.metadataModal.removeEntry}
-                      />
-                    )}
+                  ))}
+                  <View
+                    style={styles.metaAddRow}
+                    onLayout={(event) => {
+                      metaAddRowLayoutRef.current = {
+                        y: event.nativeEvent.layout.y,
+                        height: event.nativeEvent.layout.height,
+                      };
+                      evaluateMetaAddSticky();
+                    }}
+                  >
+                    {renderMetaAddButton()}
                   </View>
-                ))}
+                </ScrollView>
                 <View
-                  style={styles.metaAddRow}
-                  onLayout={(event) => {
-                    metaAddRowLayoutRef.current = {
-                      y: event.nativeEvent.layout.y,
-                      height: event.nativeEvent.layout.height,
-                    };
-                    evaluateMetaAddSticky();
-                  }}
+                  pointerEvents={isMetaAddStickyVisible ? 'auto' : 'none'}
+                  style={[
+                    styles.metaAddRow,
+                    styles.metaAddRowSticky,
+                    isMetaAddStickyVisible && styles.metaAddRowStickyVisible,
+                  ]}
                 >
                   {renderMetaAddButton()}
                 </View>
-              </ScrollView>
-              <View
-                pointerEvents={isMetaAddStickyVisible ? 'auto' : 'none'}
-                style={[
-                  styles.metaAddRow,
-                  styles.metaAddRowSticky,
-                  isMetaAddStickyVisible && styles.metaAddRowStickyVisible,
-                ]}
-              >
-                {renderMetaAddButton()}
               </View>
-            </View>
-            <Text style={styles.metaHelpText}>{strings.metadataModal.helpText}</Text>
-          </MacWindow>
+              <Text style={styles.metaHelpText}>{strings.metadataModal.helpText}</Text>
+            </MacWindow>
+          </View>
         </View>
-      </Modal>
-      <Modal
-        visible={isTemplateModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={handleCloseTemplateModal}
-      >
-        <View style={styles.modalOverlay}>
-          <MacWindow
-            title={strings.templateModal.title}
-            onClose={handleCloseTemplateModal}
-            contentStyle={styles.templateModalContent}
-            enableCompact={false}
-            onVariantChange={setTemplateModalVariant}
-            style={styles.templateModalWindow}
-          >
-            <View style={styles.templateContent}>
-              <Text style={styles.templateDescription}>{strings.templateModal.description}</Text>
-              <View
-                style={[
-                  styles.templateSection,
-                  templateModalExpanded && styles.templateSectionExpanded,
-                ]}
-              >
-                <View style={styles.templateFieldHeader}>
-                  <TouchableOpacity
-                    style={[styles.templateFieldButton, styles.templateFieldButtonLight]}
-                    onPress={handleExportTemplate}
-                    accessibilityRole="button"
-                    accessibilityLabel={strings.templateModal.exportButton}
-                  >
-                    <MaterialIcons name="file-download" size={18} color="#0f172a" />
-                    <Text
-                      style={[styles.templateFieldButtonLabel, styles.templateFieldButtonLabelDark]}
-                    >
-                      {strings.templateModal.exportButton}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-                <SelectableTextInput
+      ) : null}
+      {isTemplateModalVisible ? (
+        <View style={styles.modalOverlayRoot}>
+          <View style={styles.modalOverlay}>
+            <MacWindow
+              title={strings.templateModal.title}
+              onClose={handleCloseTemplateModal}
+              contentStyle={styles.templateModalContent}
+              enableCompact={false}
+              onVariantChange={setTemplateModalVariant}
+              style={styles.templateModalWindow}
+            >
+              <View style={styles.templateContent}>
+                <Text style={styles.templateDescription}>{strings.templateModal.description}</Text>
+                <View
                   style={[
-                    styles.templateTextArea,
-                    templateModalExpanded && styles.templateTextAreaExpanded,
-                    styles.templateTextAreaFixed,
+                    styles.templateSection,
+                    templateModalExpanded && styles.templateSectionExpanded,
                   ]}
-                  multiline
-                  value={exportPreview}
-                  onChangeText={() => {}}
-                  placeholder={strings.templateModal.exportPlaceholder}
-                />
-              </View>
-              <View
-                style={[
-                  styles.templateSection,
-                  templateModalExpanded && styles.templateSectionExpanded,
-                ]}
-              >
-                <View style={styles.templateFieldHeader}>
-                  <TouchableOpacity
+                >
+                  <View style={styles.templateFieldHeader}>
+                    <TouchableOpacity
+                      style={[styles.templateFieldButton, styles.templateFieldButtonLight]}
+                      onPress={handleExportTemplate}
+                      accessibilityRole="button"
+                      accessibilityLabel={strings.templateModal.exportButton}
+                    >
+                      <MaterialIcons name="file-download" size={18} color="#0f172a" />
+                      <Text
+                        style={[styles.templateFieldButtonLabel, styles.templateFieldButtonLabelDark]}
+                      >
+                        {strings.templateModal.exportButton}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                  <SelectableTextInput
                     style={[
-                      styles.templateFieldButton,
-                      styles.templateFieldButtonLight,
-                      !importText.trim() && styles.templateFieldButtonDisabled,
+                      styles.templateTextArea,
+                      templateModalExpanded && styles.templateTextAreaExpanded,
+                      styles.templateTextAreaFixed,
                     ]}
-                    onPress={handleImportTemplate}
-                    disabled={!importText.trim()}
-                    accessibilityRole="button"
-                    accessibilityLabel={strings.templateModal.importButton}
-                  >
-                    <MaterialIcons name="file-upload" size={18} color="#0f172a" />
-                    <Text
-                      style={[
-                        styles.templateFieldButtonLabel,
-                        styles.templateFieldButtonLabelDark,
-                        !importText.trim() && styles.templateFieldButtonLabelDisabled,
-                      ]}
-                    >
-                      {strings.templateModal.importButton}
-                    </Text>
-                  </TouchableOpacity>
+                    multiline
+                    value={exportPreview}
+                    onChangeText={() => {}}
+                    placeholder={strings.templateModal.exportPlaceholder}
+                  />
                 </View>
-                <TextInput
+                <View
                   style={[
-                    styles.templateTextArea,
-                    templateModalExpanded && styles.templateTextAreaExpanded,
-                    styles.templateTextAreaFixed,
+                    styles.templateSection,
+                    templateModalExpanded && styles.templateSectionExpanded,
                   ]}
-                  multiline
-                  value={importText}
-                  onChangeText={setImportText}
-                  placeholder={strings.templateModal.importPlaceholder}
-                />
+                >
+                  <View style={styles.templateFieldHeader}>
+                    <TouchableOpacity
+                      style={[
+                        styles.templateFieldButton,
+                        styles.templateFieldButtonLight,
+                        !importText.trim() && styles.templateFieldButtonDisabled,
+                      ]}
+                      onPress={handleImportTemplate}
+                      disabled={!importText.trim()}
+                      accessibilityRole="button"
+                      accessibilityLabel={strings.templateModal.importButton}
+                    >
+                      <MaterialIcons name="file-upload" size={18} color="#0f172a" />
+                      <Text
+                        style={[
+                          styles.templateFieldButtonLabel,
+                          styles.templateFieldButtonLabelDark,
+                          !importText.trim() && styles.templateFieldButtonLabelDisabled,
+                        ]}
+                      >
+                        {strings.templateModal.importButton}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                  <TextInput
+                    style={[
+                      styles.templateTextArea,
+                      templateModalExpanded && styles.templateTextAreaExpanded,
+                      styles.templateTextAreaFixed,
+                    ]}
+                    multiline
+                    value={importText}
+                    onChangeText={setImportText}
+                    placeholder={strings.templateModal.importPlaceholder}
+                  />
+                </View>
+                {templateStatus ? <Text style={styles.templateStatus}>{templateStatus}</Text> : null}
               </View>
-              {templateStatus ? <Text style={styles.templateStatus}>{templateStatus}</Text> : null}
-            </View>
-          </MacWindow>
+            </MacWindow>
+          </View>
         </View>
-      </Modal>
+      ) : null}
     </View>
   );
 };
@@ -2535,8 +2521,15 @@ const styles = StyleSheet.create({
     color: '#dfe7ff',
     fontWeight: '600',
   },
+  modalOverlayRoot: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 999,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   modalOverlay: {
-    flex: 1,
+    width: '100%',
+    height: '100%',
     backgroundColor: 'rgba(0,0,0,0.65)',
     justifyContent: 'center',
     alignItems: 'center',

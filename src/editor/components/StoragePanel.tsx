@@ -1,15 +1,5 @@
 import React from 'react';
-import {
-  Alert,
-  Image,
-  Modal,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import type { SpriteEditorApi } from '../hooks/useSpriteEditor';
 import { useSpriteStorage, type SpriteStorageController } from '../hooks/useSpriteStorage';
 import type { SpriteSummary, StoredSprite } from '../../storage/spriteStorage';
@@ -373,19 +363,19 @@ export const StoragePanel = ({
   }
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={styles.backdrop}>
-        <MacWindow
-          title={strings.storagePanel.title}
-          onClose={onClose}
-          contentStyle={styles.windowContent}
-          enableCompact={false}
-        >
-          <View style={styles.formRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.meta}>{strings.storagePanel.spriteNameLabel}</Text>
-              <TextInput
-                style={styles.nameInput}
+    <View style={styles.overlayRoot}>
+      <View style={styles.backdrop} />
+      <MacWindow
+        title={strings.storagePanel.title}
+        onClose={onClose}
+        contentStyle={styles.windowContent}
+        enableCompact={false}
+      >
+        <View style={styles.formRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.meta}>{strings.storagePanel.spriteNameLabel}</Text>
+            <TextInput
+              style={styles.nameInput}
                 value={saveName}
                 onChangeText={setSaveName}
                 placeholder={strings.storagePanel.spriteNamePlaceholder}
@@ -460,17 +450,20 @@ export const StoragePanel = ({
             </ScrollView>
           </View>
         </MacWindow>
-      </View>
-    </Modal>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(6, 10, 18, 0.8)',
+  overlayRoot: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 999,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(6, 10, 18, 0.8)',
   },
   windowContent: {
     paddingHorizontal: 12,
