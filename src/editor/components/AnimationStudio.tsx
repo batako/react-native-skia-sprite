@@ -9,6 +9,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  useColorScheme,
   View,
 } from 'react-native';
 import type {
@@ -230,6 +231,11 @@ export const AnimationStudio = ({
   protectedMetaKeys = DEFAULT_PROTECTED_META_KEYS,
 }: AnimationStudioProps) => {
   const strings = useMemo(() => getEditorStrings(), []);
+  const colorScheme = useColorScheme();
+  const isDarkMode = colorScheme !== 'light';
+  const styles = useMemo(() => createThemedStyles(isDarkMode), [isDarkMode]);
+  const headerChipIconColor = isDarkMode ? '#cfd7ff' : '#475569';
+  const headerChipCloseColor = isDarkMode ? '#aebdff' : '#0f172a';
   const frames = editor.state.frames;
   const animations = useMemo(() => editor.state.animations ?? {}, [editor.state.animations]);
   const animationsMeta = useMemo(
@@ -1544,7 +1550,7 @@ export const AnimationStudio = ({
             <Text style={styles.title}>Animation Studio</Text>
             {activeSpriteName ? (
               <View style={styles.activeSpriteChip}>
-                <MaterialIcons name="folder-open" size={14} color="#cfd7ff" />
+                <MaterialIcons name="folder-open" size={14} color={headerChipIconColor} />
                 <Text style={styles.activeSpriteName} numberOfLines={1}>
                   {activeSpriteName}
                 </Text>
@@ -1555,7 +1561,7 @@ export const AnimationStudio = ({
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   style={styles.activeSpriteCloseButton}
                 >
-                  <MaterialIcons name="close" size={12} color="#aebdff" />
+                  <MaterialIcons name="close" size={12} color={headerChipCloseColor} />
                 </TouchableOpacity>
               </View>
             ) : null}
@@ -1643,6 +1649,7 @@ export const AnimationStudio = ({
                 value={currentAnimationFps}
                 onSubmit={handleAnimationFpsChange}
                 disabled={isPlaying}
+                styles={styles}
               />
             )}
             <ScrollView
@@ -1996,13 +2003,21 @@ export const AnimationStudio = ({
   );
 };
 
+type AnimationStudioStyles = ReturnType<typeof createThemedStyles>;
+
 interface AnimationFpsFieldProps {
   value: number;
   onSubmit: (value: number) => void;
   disabled?: boolean;
+  styles: AnimationStudioStyles;
 }
 
-const AnimationFpsField = ({ value, onSubmit, disabled = false }: AnimationFpsFieldProps) => {
+const AnimationFpsField = ({
+  value,
+  onSubmit,
+  disabled = false,
+  styles,
+}: AnimationFpsFieldProps) => {
   const [text, setText] = useState(String(value));
   const [isFocused, setFocused] = useState(false);
   const baseValue = String(value);
@@ -2116,7 +2131,7 @@ const resolveReactNativeImageSource = (
   return null;
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   container: {
     marginTop: 8,
     marginBottom: 8,
@@ -2295,8 +2310,6 @@ const styles = StyleSheet.create({
   metaAddRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    borderTopWidth: 1,
-    borderTopColor: '#1c2334',
     backgroundColor: '#1c2233',
   },
   metaAddRowSticky: {
@@ -2465,7 +2478,7 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   animationFpsLabel: {
-    color: '#8ea2d8',
+    color: '#7d86a0',
     fontSize: 12,
   },
   animationFpsInput: {
@@ -2547,4 +2560,110 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 0,
   },
-});
+};
+
+const COLOR_PROP_KEYS = new Set([
+  'backgroundColor',
+  'borderBottomColor',
+  'borderColor',
+  'borderLeftColor',
+  'borderRightColor',
+  'borderStartColor',
+  'borderEndColor',
+  'borderTopColor',
+  'color',
+  'shadowColor',
+]);
+
+const lightColorMap: Record<string, string> = {
+  '#000': '#000',
+  '#0f172a': '#0f172a',
+  '#10141d': '#f7f9fd',
+  '#111520': '#f6f8fd',
+  '#121623': '#f4f7fd',
+  '#13192b': '#f1f4fb',
+  '#151b2a': '#edf1f8',
+  '#151c2e': '#eaf0f9',
+  '#191f2d': '#e6ebf5',
+  '#191f2e': '#e6ebf5',
+  '#1c2233': '#f6f7fb',
+  '#1c2334': '#e2e8f2',
+  '#1f2430': '#d9dfe9',
+  '#1f2436': '#d8dee9',
+  '#232a3c': '#d6dce8',
+  '#28304b': '#cfd6e3',
+  '#28a745': '#22c55e',
+  '#2a3147': '#ccd3e1',
+  '#2e3545': '#cbd2e1',
+  '#2f3850': '#c7cfdf',
+  '#4d5878': '#4b5563',
+  '#6c7283': '#94a3b8',
+  '#7ddac9': '#0f766e',
+  '#7f8aac': '#475569',
+  '#8ea2d8': '#3b5fb6',
+  '#8f97b0': '#4b5563',
+  '#9aa4bd': '#475569',
+  '#9ba5c2': '#475569',
+  '#aebdff': '#334155',
+  '#c4cad9': '#cdd3e0',
+  '#c5cbdc': '#d2d8e5',
+  '#cfd7ff': '#475569',
+  '#dee6ff': '#1f2937',
+  '#dfe7ff': '#111827',
+  '#e2e7ff': '#111827',
+  '#e6ebff': '#111827',
+  '#f1f5ff': '#0f172a',
+  '#f6c343': '#d97706',
+  '#f6f7ff': '#0f172a',
+  '#f6f8ff': '#0f172a',
+  '#ff6b6b': '#ef4444',
+  '#fff': '#fff',
+  'rgba(0,0,0,0.65)': 'rgba(0,0,0,0.55)',
+  'rgba(255,255,255,0.05)': 'rgba(0,0,0,0.06)',
+  'rgba(255,255,255,0.08)': 'rgba(0,0,0,0.08)',
+};
+
+const lightTextColorMap: Record<string, string> = {
+  '#fff': '#0f172a',
+  '#f1f5ff': '#0f172a',
+  '#f6f7ff': '#0f172a',
+  '#f6f8ff': '#0f172a',
+  '#dee6ff': '#0f172a',
+  '#dfe7ff': '#0f172a',
+  '#e2e7ff': '#0f172a',
+  '#e6ebff': '#0f172a',
+  '#cfd7ff': '#0f172a',
+  '#c5cbdc': '#334155',
+};
+
+const mapStyleColors = (
+  stylesObject: Record<string, any>,
+  mapColor: (value: string, key: string) => string,
+): Record<string, any> => {
+  const next: Record<string, any> = {};
+  Object.entries(stylesObject).forEach(([key, value]) => {
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      next[key] = mapStyleColors(value, mapColor);
+      return;
+    }
+    if (typeof value === 'string' && COLOR_PROP_KEYS.has(key)) {
+      next[key] = mapColor(value, key);
+      return;
+    }
+    next[key] = value;
+  });
+  return next;
+};
+
+const createThemedStyles = (isDarkMode: boolean) => {
+  const mapColor = (value: string, key: string) => {
+    if (isDarkMode) {
+      return value;
+    }
+    if (key === 'color') {
+      return lightTextColorMap[value] ?? lightColorMap[value] ?? value;
+    }
+    return lightColorMap[value] ?? value;
+  };
+  return StyleSheet.create(mapStyleColors(baseStyles, mapColor));
+};

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, useColorScheme } from 'react-native';
 import type { SpriteEditorApi } from '../hooks/useSpriteEditor';
 import { useSpriteStorage, type SpriteStorageController } from '../hooks/useSpriteStorage';
 import type { SpriteSummary, StoredSprite } from '../../storage/spriteStorage';
@@ -358,6 +358,10 @@ export const StoragePanel = ({
     [imageInfos, thumbnails],
   );
 
+  const colorScheme = useColorScheme();
+  const isDarkMode = colorScheme !== 'light';
+  const styles = React.useMemo(() => createThemedStyles(isDarkMode), [isDarkMode]);
+
   if (!visible) {
     return null;
   }
@@ -454,7 +458,7 @@ export const StoragePanel = ({
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   overlayRoot: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 999,
@@ -579,7 +583,71 @@ const styles = StyleSheet.create({
   thumbFrameImage: {
     position: 'absolute',
   },
-});
+} as const;
+
+const COLOR_KEYS = new Set([
+  'backgroundColor',
+  'borderColor',
+  'borderBottomColor',
+  'borderTopColor',
+  'borderLeftColor',
+  'borderRightColor',
+  'color',
+]);
+
+const lightColorMap: Record<string, string> = {
+  'rgba(6, 10, 18, 0.8)': 'rgba(15, 23, 42, 0.55)',
+  '#9ea4bc': '#475569',
+  '#303852': '#cbd5e1',
+  '#1a1f2d': '#eef2f9',
+  '#f6f8ff': '#0f172a',
+  '#dfe5ff': '#0f172a',
+  '#929abd': '#475569',
+  '#202837': '#d1d7e4',
+  '#39405c': '#cbd5e1',
+  '#f0f4ff': '#0f172a',
+  '#606984': '#475569',
+  '#111520': '#e7ecf7',
+  'rgba(255,255,255,0.08)': 'rgba(0,0,0,0.08)',
+};
+
+const lightTextColorMap: Record<string, string> = {
+  '#f6f8ff': '#0f172a',
+  '#dfe5ff': '#0f172a',
+  '#f0f4ff': '#0f172a',
+};
+
+const mapStyleColors = (
+  stylesObject: Record<string, any>,
+  mapColor: (value: string, key: string) => string,
+): Record<string, any> => {
+  const next: Record<string, any> = {};
+  Object.entries(stylesObject).forEach(([key, value]) => {
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      next[key] = mapStyleColors(value, mapColor);
+      return;
+    }
+    if (typeof value === 'string' && COLOR_KEYS.has(key)) {
+      next[key] = mapColor(value, key);
+      return;
+    }
+    next[key] = value;
+  });
+  return next;
+};
+
+const createThemedStyles = (isDarkMode: boolean) => {
+  const mapColor = (value: string, key: string) => {
+    if (isDarkMode) {
+      return value;
+    }
+    if (key === 'color') {
+      return lightTextColorMap[value] ?? lightColorMap[value] ?? value;
+    }
+    return lightColorMap[value] ?? value;
+  };
+  return StyleSheet.create(mapStyleColors(baseStyles, mapColor));
+};
 
 type SpriteThumbnail = {
   uri: string;

@@ -7,6 +7,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  useColorScheme,
 } from 'react-native';
 import type { ImageSourcePropType } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -19,6 +20,8 @@ import { getEditorStrings } from '../localization';
 const TIMELINE_CARD_SIZE = 150;
 const TIMELINE_CARD_PADDING = 10;
 const TIMELINE_FOOTER_HEIGHT = 28;
+
+type TimelinePanelStyles = ReturnType<typeof createThemedStyles>;
 
 /**
  * Caches intrinsic dimensions for timeline thumbnails.
@@ -58,10 +61,11 @@ interface MultiplierFieldProps {
   value: number;
   onSubmit: (value: number) => void;
   disabled?: boolean;
+  styles: TimelinePanelStyles;
 }
 
 const MultiplierField = React.forwardRef<MultiplierFieldHandle, MultiplierFieldProps>(
-  ({ value, onSubmit, disabled }, ref) => {
+  ({ value, onSubmit, disabled, styles }, ref) => {
     const [draft, setDraft] = useState(String(value));
     const [isFocused, setFocused] = useState(false);
     const strings = useMemo(() => getEditorStrings(), []);
@@ -225,6 +229,9 @@ export const TimelinePanel = ({
   animationsMeta,
 }: TimelinePanelProps) => {
   const strings = useMemo(() => getEditorStrings(), []);
+  const colorScheme = useColorScheme();
+  const isDarkMode = colorScheme !== 'light';
+  const styles = useMemo(() => createThemedStyles(isDarkMode), [isDarkMode]);
   const heading = title ?? strings.animationStudio.animationFramesTitle;
   const renderRestartForwardIcon = useCallback(
     ({ color, size }: { color: string; size: number }) => (
@@ -452,6 +459,7 @@ export const TimelinePanel = ({
           value={selectedMultiplier}
           disabled={isPlaying || !selectedFrame}
           onSubmit={onSubmitMultiplier}
+          styles={styles}
         />
       </View>
       <View style={styles.timelineTrack}>{trackContent}</View>
@@ -459,7 +467,7 @@ export const TimelinePanel = ({
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   timelineColumn: {
     flex: 1,
     minWidth: 320,
@@ -601,4 +609,66 @@ const styles = StyleSheet.create({
     padding: 12,
     minHeight: TIMELINE_CARD_SIZE + TIMELINE_CARD_PADDING * 2 + 24,
   },
-});
+} as const;
+
+const COLOR_KEYS = new Set([
+  'backgroundColor',
+  'borderColor',
+  'borderBottomColor',
+  'borderTopColor',
+  'borderLeftColor',
+  'borderRightColor',
+  'color',
+]);
+
+const lightColorMap: Record<string, string> = {
+  '#dfe7ff': '#0f172a',
+  '#141925': '#eef2f9',
+  '#1c2441': '#dbe3f3',
+  '#0f1321': '#e7edf7',
+  '#6f7896': '#4b5563',
+  '#a3acc7': '#334155',
+  '#7d86a0': '#475569',
+  '#2b3246': '#cbd5e1',
+  '#fff': '#fff',
+  '#191f2e': '#e6ecf7',
+  '#8a92ae': '#475569',
+  '#22293a': '#d1d7e4',
+  'rgba(255,255,255,0.08)': 'rgba(0,0,0,0.08)',
+};
+
+const lightTextColorMap: Record<string, string> = {
+  '#fff': '#0f172a',
+};
+
+const mapStyleColors = (
+  stylesObject: Record<string, any>,
+  mapColor: (value: string, key: string) => string,
+): Record<string, any> => {
+  const next: Record<string, any> = {};
+  Object.entries(stylesObject).forEach(([key, value]) => {
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      next[key] = mapStyleColors(value, mapColor);
+      return;
+    }
+    if (typeof value === 'string' && COLOR_KEYS.has(key)) {
+      next[key] = mapColor(value, key);
+      return;
+    }
+    next[key] = value;
+  });
+  return next;
+};
+
+const createThemedStyles = (isDarkMode: boolean) => {
+  const mapColor = (value: string, key: string) => {
+    if (isDarkMode) {
+      return value;
+    }
+    if (key === 'color') {
+      return lightTextColorMap[value] ?? lightColorMap[value] ?? value;
+    }
+    return lightColorMap[value] ?? value;
+  };
+  return StyleSheet.create(mapStyleColors(baseStyles, mapColor));
+};

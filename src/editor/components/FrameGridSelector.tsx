@@ -8,6 +8,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  useColorScheme,
 } from 'react-native';
 import type { DataSourceParam } from '@shopify/react-native-skia';
 import type { ImageSourcePropType } from 'react-native';
@@ -96,6 +97,8 @@ const formatAddButtonLabel = (count: number, strings: EditorStrings) => {
   return formatEditorString(strings.frameGrid.addMultipleFrames, { count });
 };
 
+type FrameGridSelectorStyles = ReturnType<typeof createThemedStyles>;
+
 /**
  * Interactive grid overlay that helps slice sprite sheets into individual frames.
  */
@@ -108,6 +111,9 @@ export const FrameGridSelector = ({
   emptyMessage,
 }: FrameGridSelectorProps) => {
   const strings = useMemo(() => getEditorStrings(), []);
+  const colorScheme = useColorScheme();
+  const isDarkMode = colorScheme !== 'light';
+  const styles = useMemo(() => createThemedStyles(isDarkMode), [isDarkMode]);
   const resolvedEmptyMessage = emptyMessage ?? strings.frameGrid.emptyStateDescription;
   const normalizedImage = useMemo(() => {
     const primary = normalizeImage(image);
@@ -579,6 +585,7 @@ export const FrameGridSelector = ({
             sanitize={(val) => Math.max(1, Math.floor(val))}
             showStepControls
             step={1}
+            styles={styles}
           />
           <NumericInputField
             label={strings.frameGrid.verticalCellsLabel}
@@ -587,6 +594,7 @@ export const FrameGridSelector = ({
             sanitize={(val) => Math.max(1, Math.floor(val))}
             showStepControls
             step={1}
+            styles={styles}
           />
           <NumericInputField
             label={strings.frameGrid.sizeXLabel}
@@ -595,6 +603,7 @@ export const FrameGridSelector = ({
             sanitize={(val) => Math.max(1, val)}
             showStepControls
             step={1}
+            styles={styles}
           />
           <NumericInputField
             label={strings.frameGrid.sizeYLabel}
@@ -603,6 +612,7 @@ export const FrameGridSelector = ({
             sanitize={(val) => Math.max(1, val)}
             showStepControls
             step={1}
+            styles={styles}
           />
           <NumericInputField
             label={strings.frameGrid.spacingXLabel}
@@ -611,6 +621,7 @@ export const FrameGridSelector = ({
             sanitize={(val) => Math.max(0, val)}
             showStepControls
             step={1}
+            styles={styles}
           />
           <NumericInputField
             label={strings.frameGrid.spacingYLabel}
@@ -619,6 +630,7 @@ export const FrameGridSelector = ({
             sanitize={(val) => Math.max(0, val)}
             showStepControls
             step={1}
+            styles={styles}
           />
           <NumericInputField
             label={strings.frameGrid.offsetXLabel}
@@ -627,6 +639,7 @@ export const FrameGridSelector = ({
             allowNegative
             showStepControls
             step={1}
+            styles={styles}
           />
           <NumericInputField
             label={strings.frameGrid.offsetYLabel}
@@ -635,6 +648,7 @@ export const FrameGridSelector = ({
             allowNegative
             showStepControls
             step={1}
+            styles={styles}
           />
         </View>
       </View>
@@ -649,7 +663,7 @@ export const FrameGridSelector = ({
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   wrapper: {
     flex: 1,
     marginBottom: 8,
@@ -889,18 +903,101 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 24,
     borderRadius: 8,
-    backgroundColor: '#4f8dff',
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#2a3142',
     alignItems: 'center',
     alignSelf: 'center',
   },
   addButtonDisabled: {
-    backgroundColor: '#2a3142',
+    opacity: 0.5,
   },
   addButtonText: {
-    color: '#fff',
+    color: '#0f172a',
     fontWeight: '600',
   },
-});
+} as const;
+
+const COLOR_KEYS = new Set([
+  'backgroundColor',
+  'borderColor',
+  'borderBottomColor',
+  'borderTopColor',
+  'borderLeftColor',
+  'borderRightColor',
+  'color',
+]);
+
+const lightColorMap: Record<string, string> = {
+  '#dfe7ff': '#0f172a',
+  '#c7d3f3': '#475569',
+  '#2a3142': '#cbd5e1',
+  '#4f8dff': '#2563eb',
+  '#e3eaff': '#0f172a',
+  '#444444': '#e6e9f2',
+  '#d4dae8': '#cbd5e1',
+  '#e5ebff': '#0f172a',
+  '#b8c1db': '#475569',
+  '#0c0c0c': '#0f172a',
+  '#fff': '#fff',
+  '#9fa9c2': '#475569',
+  '#1c2130': '#eef2f9',
+  '#30384a': '#cbd5e1',
+  '#191f2f': '#e6ecf7',
+  '#dfe3ff': '#0f172a',
+  '#252c45': '#eef2f9',
+  '#1a1f2f': '#e6ecf7',
+  '#8f96b8': '#475569',
+  '#2f1f1f': '#fff1f2',
+  '#ff7b7b': '#dc2626',
+  '#99a3c2': '#475569',
+  '#9aa2c0': '#475569',
+  '#f2f6ff': '#e2e8f5',
+  '#0f172a': '#0f172a',
+  'rgba(255,255,255,0.2)': 'rgba(0,0,0,0.08)',
+  'rgba(19,24,44,0.65)': 'rgba(241,245,255,0.9)',
+  'rgba(255,255,255,0.08)': 'rgba(0,0,0,0.08)',
+};
+
+const lightTextColorMap: Record<string, string> = {
+  '#fff': '#0f172a',
+  '#dfe7ff': '#0f172a',
+  '#e3eaff': '#0f172a',
+  '#e5ebff': '#0f172a',
+  '#dfe3ff': '#0f172a',
+};
+
+const mapStyleColors = (
+  stylesObject: Record<string, any>,
+  mapColor: (value: string, key: string) => string,
+): Record<string, any> => {
+  const next: Record<string, any> = {};
+  Object.entries(stylesObject).forEach(([key, value]) => {
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      next[key] = mapStyleColors(value, mapColor);
+      return;
+    }
+    if (typeof value === 'string' && COLOR_KEYS.has(key)) {
+      next[key] = mapColor(value, key);
+      return;
+    }
+    next[key] = value;
+  });
+  return next;
+};
+
+const createThemedStyles = (isDarkMode: boolean) => {
+  const mapColor = (value: string, key: string) => {
+    if (isDarkMode) {
+      return value;
+    }
+    if (key === 'color') {
+      return lightTextColorMap[value] ?? lightColorMap[value] ?? value;
+    }
+    return lightColorMap[value] ?? value;
+  };
+  return StyleSheet.create(mapStyleColors(baseStyles, mapColor));
+};
 
 interface NumericInputFieldProps {
   label: string;
@@ -910,6 +1007,7 @@ interface NumericInputFieldProps {
   allowNegative?: boolean;
   step?: number;
   showStepControls?: boolean;
+  styles: FrameGridSelectorStyles;
 }
 
 const NumericInputField: React.FC<NumericInputFieldProps> = ({
@@ -920,6 +1018,7 @@ const NumericInputField: React.FC<NumericInputFieldProps> = ({
   allowNegative = false,
   step = 1,
   showStepControls = false,
+  styles,
 }) => {
   const [text, setText] = useState(String(value));
   const [isFocused, setIsFocused] = useState(false);

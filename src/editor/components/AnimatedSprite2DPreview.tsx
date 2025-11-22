@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Text,
   View,
+  useColorScheme,
   useWindowDimensions,
 } from 'react-native';
 import { AnimatedSprite2D } from '../../AnimatedSprite2D';
@@ -41,6 +42,9 @@ export const AnimatedSprite2DPreview = ({
   allowRendering = true,
 }: AnimatedSprite2DPreviewProps) => {
   const strings = useMemo(() => getEditorStrings(), []);
+  const colorScheme = useColorScheme();
+  const isDarkMode = colorScheme !== 'light';
+  const styles = useMemo(() => createThemedStyles(isDarkMode), [isDarkMode]);
   const rawResource = useMemo(
     () =>
       buildAnimatedSpriteFrames(editor.state, image, {
@@ -217,6 +221,7 @@ export const AnimatedSprite2DPreview = ({
                 onPress={() => adjustZoom(-0.25)}
                 accessibilityLabel={strings.general.zoomOut}
                 style={styles.zoomButton}
+                color="#fff"
               />
               <Pressable
                 onPress={resetZoom}
@@ -231,6 +236,7 @@ export const AnimatedSprite2DPreview = ({
                 onPress={() => adjustZoom(0.25)}
                 accessibilityLabel={strings.general.zoomIn}
                 style={styles.zoomButton}
+                color="#fff"
               />
             </View>
           </View>
@@ -277,12 +283,14 @@ export const AnimatedSprite2DPreview = ({
                 selfPlaying ? strings.preview.pausePreview : strings.preview.playPreview
               }
               style={styles.zoomButton}
+              color="#fff"
             />
             <IconButton
               name="stop"
               onPress={selfStop}
               accessibilityLabel={strings.preview.stopPreview}
               style={styles.zoomButton}
+              color="#fff"
             />
           </View>
         ) : null}
@@ -291,7 +299,7 @@ export const AnimatedSprite2DPreview = ({
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   container: {
     width: '100%',
   },
@@ -316,6 +324,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: '100%',
     overflow: 'hidden',
+    backgroundColor: '#444444',
   },
   canvasInner: {
     width: '100%',
@@ -356,7 +365,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   zoomLabel: {
-    color: '#dfe7ff',
+    color: '#fff',
     fontWeight: '600',
     fontSize: 12,
     minWidth: 50,
@@ -367,4 +376,54 @@ const styles = StyleSheet.create({
     marginTop: 12,
     alignItems: 'center',
   },
-});
+} as const;
+
+const COLOR_KEYS = new Set([
+  'backgroundColor',
+  'borderColor',
+  'borderBottomColor',
+  'borderTopColor',
+  'borderLeftColor',
+  'borderRightColor',
+  'color',
+]);
+
+const lightColorMap: Record<string, string> = {
+  '#dfe7ff': '#0f172a',
+  '#444444': '#eef2f9',
+  '#1f2430': '#d1d7e4',
+  '#9ca9c7': '#475569',
+};
+
+const lightTextColorMap: Record<string, string> = {
+  '#dfe7ff': '#0f172a',
+};
+
+const mapStyleColors = (
+  stylesObject: Record<string, any>,
+  mapColor: (value: string, key: string) => string,
+): Record<string, any> => {
+  const next: Record<string, any> = {};
+  Object.entries(stylesObject).forEach(([key, value]) => {
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      next[key] = mapStyleColors(value, mapColor);
+      return;
+    }
+    if (typeof value === 'string' && COLOR_KEYS.has(key)) {
+      next[key] = mapColor(value, key);
+      return;
+    }
+    next[key] = value;
+  });
+  return next;
+};
+
+const createThemedStyles = (isDarkMode: boolean) => {
+  const mapColor = (value: string, key: string) => {
+    if (!isDarkMode && key === 'color' && value === '#dfe7ff') {
+      return '#0f172a';
+    }
+    return value;
+  };
+  return StyleSheet.create(mapStyleColors(baseStyles, mapColor));
+};

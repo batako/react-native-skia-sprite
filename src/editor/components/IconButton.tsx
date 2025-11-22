@@ -2,6 +2,7 @@ import React from 'react';
 import {
   StyleSheet,
   TouchableOpacity,
+  useColorScheme,
   ViewStyle,
   type StyleProp,
   type TextStyle,
@@ -57,14 +58,17 @@ export const IconButton: React.FC<IconButtonProps> = ({
   onPress,
   disabled,
   size = 20,
-  color = '#f4f7ff',
+  color,
   style,
   accessibilityLabel,
   iconStyle,
   iconFamily = 'material',
   renderIcon,
 }) => {
-  const iconColor = disabled ? '#6b7280' : color;
+  const colorScheme = useColorScheme();
+  const defaultColor = colorScheme === 'light' ? '#1f2937' : '#f4f7ff';
+  const resolvedColor = color ?? defaultColor;
+  const iconColor = disabled ? '#6b7280' : resolvedColor;
   const icon =
     renderIcon?.({ color: iconColor, size, disabled: Boolean(disabled) }) ??
     (iconFamily === 'material' ? (

@@ -9,6 +9,7 @@ import {
   Alert,
   Image,
   Switch,
+  useColorScheme,
 } from 'react-native';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as DocumentPicker from 'expo-document-picker';
@@ -54,6 +55,9 @@ export const FileBrowserModal = ({
   allowedExtensions,
 }: FileBrowserModalProps) => {
   const strings = React.useMemo(() => getEditorStrings(), []);
+  const colorScheme = useColorScheme();
+  const isDarkMode = colorScheme !== 'light';
+  const styles = React.useMemo(() => createThemedStyles(isDarkMode), [isDarkMode]);
   const [entries, setEntries] = useState<FileEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [convertToWebp, setConvertToWebp] = useState(true);
@@ -452,7 +456,7 @@ export const FileBrowserModal = ({
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   overlayRoot: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 999,
@@ -602,4 +606,71 @@ const styles = StyleSheet.create({
   emptyText: {
     color: '#9aa2c0',
   },
-});
+} as const;
+
+const COLOR_KEYS = new Set([
+  'backgroundColor',
+  'borderColor',
+  'borderBottomColor',
+  'borderTopColor',
+  'borderLeftColor',
+  'borderRightColor',
+  'color',
+]);
+
+const lightColorMap: Record<string, string> = {
+  'rgba(0,0,0,0.5)': 'rgba(0,0,0,0.35)',
+  '#f2f6ff': '#e2e8f5',
+  '#0f172a': '#0f172a',
+  'rgba(255,255,255,0.2)': 'rgba(0,0,0,0.08)',
+  'rgba(19,24,44,0.65)': 'rgba(241,245,255,0.9)',
+  '#f7f9ff': '#0f172a',
+  '#c5cada': '#475569',
+  'rgba(255,255,255,0.08)': 'rgba(0,0,0,0.08)',
+  '#252c45': '#eef2f9',
+  '#1a1f2f': '#e6ecf7',
+  '#8f96b8': '#475569',
+  '#2f1f1f': '#fff1f2',
+  '#ff7b7b': '#dc2626',
+  '#e4eaff': '#111827',
+  '#99a3c2': '#475569',
+  '#9aa2c0': '#475569',
+  '#ff6b6b66': '#fca5a566',
+};
+
+const lightTextColorMap: Record<string, string> = {
+  '#f7f9ff': '#0f172a',
+  '#e4eaff': '#111827',
+};
+
+const mapStyleColors = (
+  stylesObject: Record<string, any>,
+  mapColor: (value: string, key: string) => string,
+): Record<string, any> => {
+  const next: Record<string, any> = {};
+  Object.entries(stylesObject).forEach(([key, value]) => {
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      next[key] = mapStyleColors(value, mapColor);
+      return;
+    }
+    if (typeof value === 'string' && COLOR_KEYS.has(key)) {
+      next[key] = mapColor(value, key);
+      return;
+    }
+    next[key] = value;
+  });
+  return next;
+};
+
+const createThemedStyles = (isDarkMode: boolean) => {
+  const mapColor = (value: string, key: string) => {
+    if (isDarkMode) {
+      return value;
+    }
+    if (key === 'color') {
+      return lightTextColorMap[value] ?? lightColorMap[value] ?? value;
+    }
+    return lightColorMap[value] ?? value;
+  };
+  return StyleSheet.create(mapStyleColors(baseStyles, mapColor));
+};

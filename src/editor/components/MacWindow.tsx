@@ -1,4 +1,4 @@
-import React, { ReactNode, useCallback, useEffect, useRef, useState } from 'react';
+import React, { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -7,6 +7,7 @@ import {
   Pressable,
   StyleProp,
   ViewStyle,
+  useColorScheme,
 } from 'react-native';
 
 const DOUBLE_TAP_DELAY_MS = 300;
@@ -67,6 +68,9 @@ export const MacWindow = ({
   toolbarStyle,
   enableCompact = true,
 }: MacWindowProps) => {
+  const colorScheme = useColorScheme();
+  const isDarkMode = colorScheme !== 'light';
+  const styles = useMemo(() => createThemedStyles(isDarkMode), [isDarkMode]);
   const lastHeaderTapRef = useRef(0);
   const [internalVariant, setInternalVariant] = useState<MacWindowVariant>(
     variant ?? defaultVariant,
@@ -168,7 +172,7 @@ export const MacWindow = ({
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   window: {
     width: '90%',
     maxWidth: 640,
@@ -242,6 +246,62 @@ const styles = StyleSheet.create({
     padding: 12,
     minHeight: 320,
   },
-});
+} as const;
+
+const COLOR_KEYS = new Set([
+  'backgroundColor',
+  'borderColor',
+  'borderBottomColor',
+  'borderTopColor',
+  'borderLeftColor',
+  'borderRightColor',
+  'color',
+]);
+
+const lightColorMap: Record<string, string> = {
+  '#1c2233': '#f6f7fb',
+  '#2a3147': '#d1d7e4',
+  '#151b2a': '#e8edf6',
+  '#ff5f56': '#ef4444',
+  '#ffbd2e': '#f59e0b',
+  '#27c840': '#22c55e',
+  '#e6ecff': '#0f172a',
+};
+
+const lightTextColorMap: Record<string, string> = {
+  '#e6ecff': '#0f172a',
+};
+
+const mapStyleColors = (
+  stylesObject: Record<string, any>,
+  mapColor: (value: string, key: string) => string,
+): Record<string, any> => {
+  const next: Record<string, any> = {};
+  Object.entries(stylesObject).forEach(([key, value]) => {
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      next[key] = mapStyleColors(value, mapColor);
+      return;
+    }
+    if (typeof value === 'string' && COLOR_KEYS.has(key)) {
+      next[key] = mapColor(value, key);
+      return;
+    }
+    next[key] = value;
+  });
+  return next;
+};
+
+const createThemedStyles = (isDarkMode: boolean) => {
+  const mapColor = (value: string, key: string) => {
+    if (isDarkMode) {
+      return value;
+    }
+    if (key === 'color') {
+      return lightTextColorMap[value] ?? lightColorMap[value] ?? value;
+    }
+    return lightColorMap[value] ?? value;
+  };
+  return StyleSheet.create(mapStyleColors(baseStyles, mapColor));
+};
 
 export default MacWindow;
