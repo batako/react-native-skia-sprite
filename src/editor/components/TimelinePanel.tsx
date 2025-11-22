@@ -520,6 +520,8 @@ const baseStyles = {
   },
   timelineContent: {
     flexDirection: 'row',
+    alignItems: 'center',
+    paddingTop: 6,
     paddingBottom: 6,
   },
   timelineCard: {
