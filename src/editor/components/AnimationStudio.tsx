@@ -351,7 +351,12 @@ export const AnimationStudio = ({
         <Text style={styles.metaAddButtonLabel}>{strings.metadataModal.addEntry}</Text>
       </TouchableOpacity>
     ),
-    [handleAddMetaEntry, strings.metadataModal.addEntry],
+    [
+      handleAddMetaEntry,
+      strings.metadataModal.addEntry,
+      styles.metaAddButton,
+      styles.metaAddButtonLabel,
+    ],
   );
 
   useEffect(() => {
@@ -1643,7 +1648,9 @@ export const AnimationStudio = ({
                 disabled={!currentAnimationName}
                 style={[
                   styles.loopButtonBase,
-                  currentAnimationLoop ? { backgroundColor: loopActiveColor } : { backgroundColor: loopInactiveColor },
+                  currentAnimationLoop
+                    ? { backgroundColor: loopActiveColor }
+                    : { backgroundColor: loopInactiveColor },
                 ]}
                 color={currentAnimationLoop ? '#ffffff' : undefined}
                 accessibilityLabel={
@@ -1692,13 +1699,17 @@ export const AnimationStudio = ({
                       style={styles.autoPlayIndicatorButton}
                       hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                     >
-              <MaterialIcons
-                name={
-                  autoPlayAnimationName === name ? 'play-circle' : 'play-circle-outline'
-                }
-                size={20}
-                color={autoPlayAnimationName === name ? autoplayActiveColor : autoplayInactiveColor}
-              />
+                      <MaterialIcons
+                        name={
+                          autoPlayAnimationName === name ? 'play-circle' : 'play-circle-outline'
+                        }
+                        size={20}
+                        color={
+                          autoPlayAnimationName === name
+                            ? autoplayActiveColor
+                            : autoplayInactiveColor
+                        }
+                      />
                     </TouchableOpacity>
                     {renamingAnimation === name ? (
                       <>
@@ -1942,7 +1953,10 @@ export const AnimationStudio = ({
                     >
                       <MaterialIcons name="file-download" size={18} color="#0f172a" />
                       <Text
-                        style={[styles.templateFieldButtonLabel, styles.templateFieldButtonLabelDark]}
+                        style={[
+                          styles.templateFieldButtonLabel,
+                          styles.templateFieldButtonLabelDark,
+                        ]}
                       >
                         {strings.templateModal.exportButton}
                       </Text>
@@ -2002,7 +2016,9 @@ export const AnimationStudio = ({
                     placeholder={strings.templateModal.importPlaceholder}
                   />
                 </View>
-                {templateStatus ? <Text style={styles.templateStatus}>{templateStatus}</Text> : null}
+                {templateStatus ? (
+                  <Text style={styles.templateStatus}>{templateStatus}</Text>
+                ) : null}
               </View>
             </MacWindow>
           </View>

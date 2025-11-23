@@ -1,5 +1,15 @@
 import React from 'react';
-import { Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, useColorScheme } from 'react-native';
+import {
+  Alert,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+  useColorScheme,
+} from 'react-native';
 import type { SpriteEditorApi } from '../hooks/useSpriteEditor';
 import { useSpriteStorage, type SpriteStorageController } from '../hooks/useSpriteStorage';
 import type { SpriteSummary, StoredSprite } from '../../storage/spriteStorage';
@@ -307,6 +317,10 @@ export const StoragePanel = ({
   );
   const translatedStatus = React.useMemo(() => localizeStatus(status), [localizeStatus, status]);
 
+  const colorScheme = useColorScheme();
+  const isDarkMode = colorScheme !== 'light';
+  const styles = React.useMemo(() => createThemedStyles(isDarkMode), [isDarkMode]);
+
   const renderThumbnail = React.useCallback(
     (spriteId: string) => {
       const thumb = thumbnails[spriteId];
@@ -355,12 +369,8 @@ export const StoragePanel = ({
         </View>
       );
     },
-    [imageInfos, thumbnails],
+    [imageInfos, thumbnails, styles.thumbContainer, styles.thumbFrame, styles.thumbFrameImage],
   );
-
-  const colorScheme = useColorScheme();
-  const isDarkMode = colorScheme !== 'light';
-  const styles = React.useMemo(() => createThemedStyles(isDarkMode), [isDarkMode]);
 
   if (!visible) {
     return null;
@@ -380,80 +390,78 @@ export const StoragePanel = ({
             <Text style={styles.meta}>{strings.storagePanel.spriteNameLabel}</Text>
             <TextInput
               style={styles.nameInput}
-                value={saveName}
-                onChangeText={setSaveName}
-                placeholder={strings.storagePanel.spriteNamePlaceholder}
-                editable={!isBusy}
-              />
-            </View>
-            <View style={styles.formActions}>
-              <IconButton
-                iconFamily="material"
-                name="save"
-                onPress={handleSave}
-                disabled={isBusy}
-                accessibilityLabel={strings.storagePanel.saveSprite}
-              />
-            </View>
+              value={saveName}
+              onChangeText={setSaveName}
+              placeholder={strings.storagePanel.spriteNamePlaceholder}
+              editable={!isBusy}
+            />
           </View>
-          <View style={styles.listContainer}>
-            {translatedStatus ? <Text style={styles.statusText}>{translatedStatus}</Text> : null}
-            <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
-              {sprites.map((sprite) => (
-                <View key={sprite.id} style={styles.spriteRow}>
-                  <View style={styles.thumbnailSlot}>{renderThumbnail(sprite.id)}</View>
-                  <View style={{ flex: 1 }}>
-                    {editingId === sprite.id ? (
-                      <TextInput
-                        style={styles.renameInput}
-                        value={renameDraft}
-                        onChangeText={setRenameDraft}
-                        autoFocus
-                        onSubmitEditing={() => handleRename(sprite.id, renameDraft)}
-                        onBlur={() => handleRename(sprite.id, renameDraft)}
-                        editable={!isBusy}
-                      />
-                    ) : (
-                      <TouchableOpacity
-                        style={styles.renameDisplay}
-                        onPress={() => {
-                          setEditingId(sprite.id);
-                          setRenameDraft(sprite.displayName);
-                        }}
-                        disabled={isBusy}
-                      >
-                        <Text style={styles.spriteName}>{sprite.displayName}</Text>
-                        <Text style={styles.spriteMeta}>
-                          {strings.storagePanel.updatedPrefix}{' '}
-                          {new Date(sprite.updatedAt).toLocaleString()}
-                        </Text>
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                  <View style={styles.rowButtons}>
-                    <IconButton
-                      iconFamily="material"
-                      name="file-upload"
-                      onPress={() => handleLoad(sprite.id)}
-                      disabled={isBusy}
-                      accessibilityLabel={strings.storagePanel.loadSprite}
+          <View style={styles.formActions}>
+            <IconButton
+              iconFamily="material"
+              name="save"
+              onPress={handleSave}
+              disabled={isBusy}
+              accessibilityLabel={strings.storagePanel.saveSprite}
+            />
+          </View>
+        </View>
+        <View style={styles.listContainer}>
+          {translatedStatus ? <Text style={styles.statusText}>{translatedStatus}</Text> : null}
+          <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
+            {sprites.map((sprite) => (
+              <View key={sprite.id} style={styles.spriteRow}>
+                <View style={styles.thumbnailSlot}>{renderThumbnail(sprite.id)}</View>
+                <View style={{ flex: 1 }}>
+                  {editingId === sprite.id ? (
+                    <TextInput
+                      style={styles.renameInput}
+                      value={renameDraft}
+                      onChangeText={setRenameDraft}
+                      autoFocus
+                      onSubmitEditing={() => handleRename(sprite.id, renameDraft)}
+                      onBlur={() => handleRename(sprite.id, renameDraft)}
+                      editable={!isBusy}
                     />
-                    <IconButton
-                      iconFamily="material"
-                      name="delete"
-                      onPress={() => handleDelete(sprite.id, sprite.displayName)}
+                  ) : (
+                    <TouchableOpacity
+                      style={styles.renameDisplay}
+                      onPress={() => {
+                        setEditingId(sprite.id);
+                        setRenameDraft(sprite.displayName);
+                      }}
                       disabled={isBusy}
-                      accessibilityLabel={strings.storagePanel.deleteSprite}
-                    />
-                  </View>
+                    >
+                      <Text style={styles.spriteName}>{sprite.displayName}</Text>
+                      <Text style={styles.spriteMeta}>
+                        {strings.storagePanel.updatedPrefix}{' '}
+                        {new Date(sprite.updatedAt).toLocaleString()}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
-              ))}
-              {!sprites.length && (
-                <Text style={styles.empty}>{strings.storagePanel.emptyList}</Text>
-              )}
-            </ScrollView>
-          </View>
-        </MacWindow>
+                <View style={styles.rowButtons}>
+                  <IconButton
+                    iconFamily="material"
+                    name="file-upload"
+                    onPress={() => handleLoad(sprite.id)}
+                    disabled={isBusy}
+                    accessibilityLabel={strings.storagePanel.loadSprite}
+                  />
+                  <IconButton
+                    iconFamily="material"
+                    name="delete"
+                    onPress={() => handleDelete(sprite.id, sprite.displayName)}
+                    disabled={isBusy}
+                    accessibilityLabel={strings.storagePanel.deleteSprite}
+                  />
+                </View>
+              </View>
+            ))}
+            {!sprites.length && <Text style={styles.empty}>{strings.storagePanel.emptyList}</Text>}
+          </ScrollView>
+        </View>
+      </MacWindow>
     </View>
   );
 };

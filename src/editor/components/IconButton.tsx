@@ -39,7 +39,7 @@ export interface IconButtonProps {
   /** Icon tint color. */
   color?: string;
   /** Extra styles merged into container. */
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
   /** Accessibility label for screen readers. */
   accessibilityLabel?: string;
   /** Styles applied directly to the icon. */

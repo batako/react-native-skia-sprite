@@ -204,14 +204,6 @@ export const FileBrowserModal = ({
     onClose();
   }, [onClose]);
 
-  const handleRequestClose = useCallback(() => {
-    if (isDocumentPickerActive) {
-      // Android dispatches a back press when the picker dismisses; ignore it.
-      return;
-    }
-    handleClose();
-  }, [handleClose, isDocumentPickerActive]);
-
   const handleUpload = useCallback(async () => {
     if (isDocumentPickerActive) {
       return;

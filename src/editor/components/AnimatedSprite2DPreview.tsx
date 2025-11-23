@@ -420,10 +420,13 @@ const mapStyleColors = (
 
 const createThemedStyles = (isDarkMode: boolean) => {
   const mapColor = (value: string, key: string) => {
-    if (!isDarkMode && key === 'color' && value === '#dfe7ff') {
-      return '#0f172a';
+    if (isDarkMode) {
+      return value;
     }
-    return value;
+    if (key === 'color') {
+      return lightTextColorMap[value] ?? lightColorMap[value] ?? value;
+    }
+    return lightColorMap[value] ?? value;
   };
   return StyleSheet.create(mapStyleColors(baseStyles, mapColor));
 };

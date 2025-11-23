@@ -240,7 +240,7 @@ export const TimelinePanel = ({
         <MaterialIcons name="play-arrow" size={size} color={color} />
       </View>
     ),
-    [],
+    [styles.restartIcon, styles.restartIconBar],
   );
 
   const renderRestartReverseIcon = useCallback(
@@ -250,7 +250,7 @@ export const TimelinePanel = ({
         <MaterialIcons name="play-arrow" size={size} color={color} style={styles.reverseIcon} />
       </View>
     ),
-    [],
+    [styles.restartIcon, styles.restartIconBar, styles.restartIconReverse, styles.reverseIcon],
   );
 
   const handleLayout = useCallback(
@@ -357,6 +357,14 @@ export const TimelinePanel = ({
       onSelectFrame,
       strings,
       timelineImageSource,
+      styles.timelineCard,
+      styles.timelineCardSelected,
+      styles.timelineCardBody,
+      styles.timelineCardFooter,
+      styles.timelineCardMeta,
+      styles.thumb,
+      styles.thumbPlaceholder,
+      styles.thumbPlaceholderText,
     ],
   );
 
@@ -382,7 +390,13 @@ export const TimelinePanel = ({
         {sequenceCards.map((card) => renderTimelineCard(card))}
       </ScrollView>
     );
-  }, [renderTimelineCard, sequenceCards]);
+  }, [
+    renderTimelineCard,
+    sequenceCards,
+    styles.emptyTimelineWrapper,
+    styles.timelineContent,
+    styles.timelineScroll,
+  ]);
 
   return (
     <View style={styles.timelineColumn} onLayout={handleLayout}>
